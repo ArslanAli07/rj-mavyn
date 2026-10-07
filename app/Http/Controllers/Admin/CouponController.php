@@ -1,0 +1,87 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Coupon;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class CouponController extends Controller
+{
+    use Concerns\HandlesBulkActions;
+
+    public function index(): View
+    {
+        $coupons = Coupon::latest()->paginate(20);
+        return view('admin.coupons.index', compact('coupons'));
+    }
+
+    public function create(): View { return view('admin.coupons.create'); }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'code'            => 'required|string|max:50|unique:coupons,code',
+            'type'            => 'required|in:fixed,percentage',
+            'amount'          => 'required|numeric|min:0',
+            'minimum_order'   => 'nullable|numeric|min:0',
+            'maximum_discount'=> 'nullable|numeric|min:0',
+            'usage_limit'     => 'nullable|integer|min:1',
+            'per_user_limit'  => 'integer|min:1',
+            'starts_at'       => 'nullable|date',
+            'expires_at'      => 'nullable|date|after_or_equal:starts_at',
+            'is_active'       => 'boolean',
+        ]);
+        $data['code']      = strtoupper($data['code']);
+        $data['is_active'] = $request->boolean('is_active', true);
+        Coupon::create($data);
+        return redirect()->route('admin.coupons.index')->with('success', 'Coupon created!');
+    }
+
+    public function edit(Coupon $coupon): View
+    {
+        return view('admin.coupons.edit', compact('coupon'));
+    }
+
+    public function update(Request $request, Coupon $coupon): RedirectResponse
+    {
+        $data = $request->validate([
+            'type'            => 'required|in:fixed,percentage',
+            'amount'          => 'required|numeric|min:0',
+            'minimum_order'   => 'nullable|numeric|min:0',
+            'maximum_discount'=> 'nullable|numeric|min:0',
+            'usage_limit'     => 'nullable|integer|min:1',
+            'per_user_limit'  => 'integer|min:1',
+            'starts_at'       => 'nullable|date',
+            'expires_at'      => 'nullable|date',
+            'is_active'       => 'boolean',
+        ]);
+        $data['is_active'] = $request->boolean('is_active');
+        $coupon->update($data);
+        return redirect()->route('admin.coupons.index')->with('success', 'Coupon updated!');
+    }
+
+    public function destroy(Coupon $coupon): RedirectResponse
+    {
+        $coupon->delete();
+        return back()->with('success', 'Coupon deleted.');
+    }
+
+    public function bulk(Request $request): RedirectResponse
+    {
+        $data = $this->validatedBulk($request, 'coupons', ['activate', 'deactivate', 'delete']);
+        $coupons = Coupon::whereIn('id', $data['ids'])->get();
+
+        if ($data['bulk_action'] === 'delete') {
+            Coupon::whereIn('id', $coupons->pluck('id'))->delete();
+        } else {
+            Coupon::whereIn('id', $coupons->pluck('id'))->update([
+                'is_active' => $data['bulk_action'] === 'activate',
+            ]);
+        }
+
+        return back()->with('success', $this->bulkMessage($data['bulk_action'], $coupons->count(), 'coupon'));
+    }
+}

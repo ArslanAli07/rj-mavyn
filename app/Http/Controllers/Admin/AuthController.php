@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+
+class AuthController extends Controller
+{
+    public function showLogin(): View|RedirectResponse
+    {
+        if (auth('admin')->check()) {
+            return redirect()->route('admin.dashboard');
+        }
+        return view('admin.auth.login');
+    }
+
+    public function login(Request $request): RedirectResponse
+    {
+        $credentials = $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+            return redirect()->intended(route('admin.dashboard'))
+                ->with('success', 'Welcome back, ' . auth('admin')->user()->name . '!')
+                ->with('ask_order_notifications', true);
+        }
+
+        return back()->withErrors(['email' => 'Invalid credentials.'])->withInput($request->only('email'));
+    }
+
+    public function logout(Request $request): RedirectResponse
+    {
+        Auth::guard('admin')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect()->route('admin.login')->with('success', 'Logged out successfully.');
+    }
+}

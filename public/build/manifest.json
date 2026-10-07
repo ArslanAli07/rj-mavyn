@@ -1,0 +1,24 @@
+{
+  "_vendor-CWk4R-Yb.js": {
+    "file": "assets/vendor-CWk4R-Yb.js",
+    "name": "vendor"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-BRK6unao.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-f9t627Rm.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "_vendor-CWk4R-Yb.js"
+    ]
+  }
+}

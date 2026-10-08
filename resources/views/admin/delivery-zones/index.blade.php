@@ -6,9 +6,11 @@
             <h1 class="text-2xl font-heading font-bold text-espresso-800">Delivery Zones</h1>
             <p class="text-xs text-espresso-500 mt-1">Configure Sialkot delivery zones and their respective delivery charges.</p>
         </div>
-        <a href="{{ route('admin.delivery-zones.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
+        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.delivery-zones.create'))
+<a href="{{ route('admin.delivery-zones.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
             + Add Delivery Zone
         </a>
+@endif
     </div>
 
     {{-- Delivery Zones List --}}
@@ -49,7 +51,9 @@
                                 </td>
                                 <td>
                                     <div class="flex items-center gap-2 justify-end">
-                                        <a href="{{ route('admin.delivery-zones.edit', $zone->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+                                        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.delivery-zones.edit'))
+<a href="{{ route('admin.delivery-zones.edit', $zone->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+@endif
                                         
                                         <form action="{{ route('admin.delivery-zones.destroy', $zone->id) }}" method="POST"
                                               onsubmit="return confirm('Are you sure you want to delete this delivery zone?');">

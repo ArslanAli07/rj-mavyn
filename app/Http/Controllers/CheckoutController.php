@@ -2,20 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\OrderConfirmationMail;
-use App\Models\DeliveryZone;
 use App\Models\Order;
 use App\Services\CartService;
 use App\Services\CheckoutAttemptService;
+use App\Services\LocalDeliveryService;
 use App\Services\OrderAccessService;
 use App\Services\OrderPlacementService;
 use App\Services\PaymentMethodService;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
+use Mavyn\Contracts\Plugins\PaymentInstructions;
 
 class CheckoutController extends Controller
 {
@@ -47,11 +46,12 @@ class CheckoutController extends Controller
         // Eager-load addresses so default_address accessor costs 0 extra queries.
         $addresses = auth()->check() ? auth()->user()->load('addresses')->addresses : collect();
         $defaultAddr = auth()->check() ? auth()->user()->default_address : null;
-        $zones = DeliveryZone::active()->orderBy('display_order')->get();
+        $zones = collect(app(LocalDeliveryService::class)->zones())->map(fn ($zone) => (object) ['id' => $zone->id, 'name' => $zone->name, 'delivery_fee' => Money::decimal($zone->feeMinor)]);
+        $paymentChoices = $this->payments->choices();
 
         $enabledPaymentMethods = collect($this->payments->enabled());
 
-        return view('pages.checkout', compact('totals', 'items', 'addresses', 'defaultAddr', 'zones', 'enabledPaymentMethods', 'checkoutKey'));
+        return view('pages.checkout', compact('totals', 'items', 'addresses', 'defaultAddr', 'zones', 'enabledPaymentMethods', 'checkoutKey', 'paymentChoices'));
     }
 
     public function placeOrder(Request $request): RedirectResponse|JsonResponse
@@ -79,16 +79,6 @@ class CheckoutController extends Controller
         $placement = $this->orders->place($data, $request->file('payment_receipt'));
         $order = $placement->order;
 
-        // Send order confirmation email (if enabled)
-        if (! $placement->replayed && setting('email_order_confirmation', true)) {
-            try {
-                $order->loadMissing('items');
-                Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
-            } catch (\Exception $e) {
-                Log::error('Failed to send order confirmation email for Order '.$order->order_number.': '.$e->getMessage());
-            }
-        }
-
         // Save order ID in session so guest checkout works on successive pages
         session(['placed_order_id' => $order->id]);
 
@@ -115,7 +105,10 @@ class CheckoutController extends Controller
     {
         $this->access->authorizeCustomer($order);
 
-        return view('pages.payment-instructions', compact('order'));
+        $snapshot = $order->payment_instructions_snapshot;
+        $paymentInstructions = $snapshot ? new PaymentInstructions($snapshot['label'], $snapshot['instructions'], $snapshot['requires_receipt']) : $this->payments->historical($order->payment_method);
+
+        return view('pages.payment-instructions', compact('order', 'paymentInstructions'));
     }
 
     public function success(Order $order): View|RedirectResponse

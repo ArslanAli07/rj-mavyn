@@ -65,7 +65,7 @@
                             <label for="meta_title_{{ $key }}" class="label-luxury">Search Title (meta_title)</label>
                             <input type="text" id="meta_title_{{ $key }}" name="pages[{{ $key }}][meta_title]" 
                                    value="{{ old("pages.{$key}.meta_title", $metas->get($key)?->meta_title) }}"
-                                   placeholder="e.g. Happy Tea — Premium Beverages in Sialkot"
+                                   placeholder="e.g. Store name — Product catalog"
                                    class="input-luxury text-sm">
                         </div>
 
@@ -81,7 +81,7 @@
                                 <label for="meta_keywords_{{ $key }}" class="label-luxury">Keywords (Comma separated)</label>
                                 <input type="text" id="meta_keywords_{{ $key }}" name="pages[{{ $key }}][meta_keywords]" 
                                        value="{{ old("pages.{$key}.meta_keywords", $metas->get($key)?->meta_keywords) }}"
-                                       placeholder="e.g. boba, milk tea, coffee, sialkot"
+                                       placeholder="e.g. products, categories, store name"
                                        class="input-luxury text-sm">
                             </div>
                             <div>

@@ -22,7 +22,7 @@
 
         <div>
             <label for="slug" class="label-luxury">Category Slug (Optional)</label>
-            <input type="text" id="slug" name="slug" value="{{ old('slug') }}" placeholder="e.g. milk-tea" class="input-luxury text-sm font-mono">
+            <input type="text" id="slug" name="slug" value="{{ old('slug') }}" placeholder="e.g. example-category" class="input-luxury text-sm font-mono">
             @error('slug') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
         </div>
 

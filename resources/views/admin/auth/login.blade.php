@@ -1,9 +1,9 @@
-<x-auth-layout title="Admin Login — Happy Tea">
+<x-auth-layout title="Admin Login">
 
     <div class="space-y-4">
         <div class="text-center">
             <h2 class="text-xl font-heading font-bold text-espresso-800">Admin Portal</h2>
-            <p class="text-xs text-espresso-500 mt-1">Please sign in to manage your Happy Tea café.</p>
+            <p class="text-xs text-espresso-500 mt-1">Sign in to manage your store.</p>
         </div>
 
         <form method="POST" action="{{ route('admin.login.post') }}" class="space-y-4">

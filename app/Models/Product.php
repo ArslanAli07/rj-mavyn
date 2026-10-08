@@ -195,7 +195,7 @@ class Product extends Model
 
     // ── Accessors ──────────────────────────────────────────────────────────────
 
-    public function getEffectivePriceAttribute(): float
+    public function getEffectivePriceAttribute(): string
     {
         return $this->discount_price ?? $this->price;
     }

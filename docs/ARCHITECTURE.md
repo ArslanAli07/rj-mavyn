@@ -3,7 +3,7 @@
 Status: Proposed architecture for review  
 Date: 2026-10-07  
 Requirements: [Platform PRD](PRD.md)  
-Implementation status: Documentation only; no runtime components described here have been implemented by this document.
+Implementation status: Incremental implementation. Independent core/contracts foundations are installed; persistence/admin adapters remain in the host. Initial plugin discovery/lifecycle/hooks/registries/settings are implemented; theme discovery/fallback/inheritance/settings/preview/activation and Happy Tea extraction are implemented; advanced DTO/slot APIs remain proposed. See [implemented theme runtime](THEME_RUNTIME.md). See [implemented plugin runtime](PLUGIN_RUNTIME.md). See [core package operations](CORE_PACKAGES.md) and [progress](progress.md).
 
 ## 1. Architecture decision
 

@@ -72,9 +72,9 @@ class ProductVariant extends Model
         return $this->name ?: ($this->weight ?: 'Variant');
     }
 
-    public function getEffectivePriceAttribute(): float
+    public function getEffectivePriceAttribute(): string
     {
-        return (float) ($this->discount_price ?? $this->price);
+        return $this->discount_price ?? $this->price;
     }
 
     public function getIsOnSaleAttribute(): bool

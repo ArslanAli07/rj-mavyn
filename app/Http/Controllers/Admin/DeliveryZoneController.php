@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\DeliveryZoneRequest;
 use App\Models\DeliveryZone;
+use App\Services\AdminMutation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,9 +13,11 @@ use Illuminate\View\View;
 class DeliveryZoneController extends Controller
 {
     use Concerns\HandlesBulkActions;
+
     public function index(): View
     {
         $zones = DeliveryZone::orderBy('display_order')->paginate(30);
+
         return view('admin.delivery-zones.index', compact('zones'));
     }
 
@@ -56,6 +59,7 @@ class DeliveryZoneController extends Controller
         }
 
         $deliveryZone->delete();
+
         return back()->with('success', 'Delivery zone deleted.');
     }
 
@@ -65,9 +69,10 @@ class DeliveryZoneController extends Controller
         $zones = DeliveryZone::whereIn('id', $data['ids'])->get();
 
         if ($data['bulk_action'] !== 'delete') {
-            DeliveryZone::whereIn('id', $zones->pluck('id'))->update([
+            AdminMutation::update(DeliveryZone::whereIn('id', $zones->pluck('id')), [
                 'is_active' => $data['bulk_action'] === 'activate',
             ]);
+
             return back()->with('success', $this->bulkMessage($data['bulk_action'], $zones->count(), 'delivery zone'));
         }
 
@@ -76,6 +81,7 @@ class DeliveryZoneController extends Controller
         foreach ($zones as $zone) {
             if ($zone->orders()->exists()) {
                 $skipped++;
+
                 continue;
             }
             $zone->delete();

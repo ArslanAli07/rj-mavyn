@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Testimonial;
+use App\Services\AdminMutation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -12,28 +13,34 @@ use Illuminate\View\View;
 class TestimonialController extends Controller
 {
     use Concerns\HandlesBulkActions;
+
     public function index(): View
     {
         $testimonials = Testimonial::latest()->paginate(20);
+
         return view('admin.testimonials.index', compact('testimonials'));
     }
 
-    public function create(): View { return view('admin.testimonials.create'); }
+    public function create(): View
+    {
+        return view('admin.testimonials.create');
+    }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'customer_name'     => 'required|string|max:100',
+            'customer_name' => 'required|string|max:100',
             'customer_location' => 'nullable|string|max:100',
-            'review'            => 'required|string|max:1000',
-            'rating'            => 'required|integer|min:1|max:5',
-            'is_approved'       => 'boolean',
-            'is_featured'       => 'boolean',
+            'review' => 'required|string|max:1000',
+            'rating' => 'required|integer|min:1|max:5',
+            'is_approved' => 'boolean',
+            'is_featured' => 'boolean',
         ]);
         $data['is_approved'] = $request->boolean('is_approved', true);
         $data['is_featured'] = $request->boolean('is_featured');
         Testimonial::create($data);
         Cache::forget('home_testimonials');
+
         return redirect()->route('admin.testimonials.index')->with('success', 'Testimonial created!');
     }
 
@@ -45,17 +52,18 @@ class TestimonialController extends Controller
     public function update(Request $request, Testimonial $testimonial): RedirectResponse
     {
         $data = $request->validate([
-            'customer_name'     => 'required|string|max:100',
+            'customer_name' => 'required|string|max:100',
             'customer_location' => 'nullable|string|max:100',
-            'review'            => 'required|string|max:1000',
-            'rating'            => 'required|integer|min:1|max:5',
-            'is_approved'       => 'boolean',
-            'is_featured'       => 'boolean',
+            'review' => 'required|string|max:1000',
+            'rating' => 'required|integer|min:1|max:5',
+            'is_approved' => 'boolean',
+            'is_featured' => 'boolean',
         ]);
         $data['is_approved'] = $request->boolean('is_approved');
         $data['is_featured'] = $request->boolean('is_featured');
         $testimonial->update($data);
         Cache::forget('home_testimonials');
+
         return redirect()->route('admin.testimonials.index')->with('success', 'Testimonial updated!');
     }
 
@@ -63,14 +71,16 @@ class TestimonialController extends Controller
     {
         $testimonial->delete();
         Cache::forget('home_testimonials');
+
         return back()->with('success', 'Testimonial deleted.');
     }
 
     public function approve(Testimonial $testimonial): RedirectResponse
     {
-        $testimonial->update(['is_approved' => !$testimonial->is_approved]);
+        $testimonial->update(['is_approved' => ! $testimonial->is_approved]);
         Cache::forget('home_testimonials');
         $msg = $testimonial->is_approved ? 'Testimonial approved.' : 'Testimonial hidden.';
+
         return back()->with('success', $msg);
     }
 
@@ -81,11 +91,11 @@ class TestimonialController extends Controller
         $ids = $testimonials->pluck('id');
 
         match ($data['bulk_action']) {
-            'approve'   => Testimonial::whereIn('id', $ids)->update(['is_approved' => true]),
-            'hide'      => Testimonial::whereIn('id', $ids)->update(['is_approved' => false]),
-            'feature'   => Testimonial::whereIn('id', $ids)->update(['is_featured' => true]),
-            'unfeature' => Testimonial::whereIn('id', $ids)->update(['is_featured' => false]),
-            'delete'    => Testimonial::whereIn('id', $ids)->delete(),
+            'approve' => AdminMutation::update(Testimonial::whereIn('id', $ids), ['is_approved' => true]),
+            'hide' => AdminMutation::update(Testimonial::whereIn('id', $ids), ['is_approved' => false]),
+            'feature' => AdminMutation::update(Testimonial::whereIn('id', $ids), ['is_featured' => true]),
+            'unfeature' => AdminMutation::update(Testimonial::whereIn('id', $ids), ['is_featured' => false]),
+            'delete' => AdminMutation::delete(Testimonial::whereIn('id', $ids)),
         };
 
         Cache::forget('home_testimonials');

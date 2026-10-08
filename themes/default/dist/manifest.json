@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "styles": [
+    {
+      "path": "dist/storefront.css",
+      "sha256": "3c32966eb1c30dacc17a7d845239a816a5c6b891f7352ccfc7d7305ecd5615af"
+    },
+    {
+      "path": "dist/theme.css",
+      "sha256": "e0012746c23fd42b3429f5e3fd31ad125aee98c6e7ff8caf2ab925c2993537f5"
+    }
+  ],
+  "scripts": []
+}

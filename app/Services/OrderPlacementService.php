@@ -5,11 +5,11 @@ namespace App\Services;
 use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
-use App\Models\DeliveryZone;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Services\Media\MediaLibraryService;
+use App\Support\Money;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
-/** Transitional application service; provider extraction follows in the plugin milestone. */
+/** Authoritative host transaction; optional commerce behavior is provided by plugins. */
 class OrderPlacementService
 {
     public function __construct(
@@ -46,10 +46,9 @@ class OrderPlacementService
 
                     return new OrderPlacementResult($existing, true);
                 }
-                if (! in_array($data['payment_method'], $this->payments->enabled(), true)) {
-                    throw ValidationException::withMessages(['payment_method' => 'This payment method is unavailable.']);
-                }
-                if ($data['payment_method'] !== 'cod' && ! $receipt) {
+                app(StoreAvailabilityService::class)->assertAvailable();
+                $payment = $this->payments->choose($data['payment_method']);
+                if ($payment['instructions']->requiresReceipt && ! $receipt) {
                     throw ValidationException::withMessages(['payment_receipt' => 'Please attach your payment receipt.']);
                 }
 
@@ -79,7 +78,7 @@ class OrderPlacementService
                         $item->special_request,
                     );
 
-                    if (round((float) $item->price, 2) !== $configuration['unit_price']) {
+                    if (Money::minor($item->price) !== Money::minor($configuration['unit_price'])) {
                         $changedPrices = true;
                     }
                     $item->price = $configuration['unit_price'];
@@ -101,13 +100,10 @@ class OrderPlacementService
                 }
 
                 $this->inventory->assertAvailable($items);
-                $subtotal = round($items->sum(fn ($item) => (float) $item->price * $item->quantity), 2);
-                $coupon = $this->validatedCoupon($subtotal);
-                $discount = $coupon ? round($coupon->calculateDiscount($subtotal), 2) : 0;
-                $zone = DeliveryZone::active()->lockForUpdate()->find($data['delivery_zone_id']);
-                if (! $zone) {
-                    throw ValidationException::withMessages(['delivery_zone_id' => 'Choose an available delivery zone.']);
-                }
+                $subtotal = Money::decimal($items->sum(fn ($item) => Money::minor($item->price) * $item->quantity));
+                $coupon = $this->validatedCoupon($subtotal, $data['email']);
+                $discount = $coupon ? $coupon->calculateDiscount($subtotal) : '0.00';
+                $quote = app(LocalDeliveryService::class)->quote((int) $data['delivery_zone_id'], Money::minor($subtotal), $data['country']);
                 $address = $data['address_line'];
                 if (! empty($data['map_link'])) {
                     $address .= "\nMap Link: ".$data['map_link'];
@@ -126,20 +122,21 @@ class OrderPlacementService
                     'order_number' => Order::generateOrderNumber(),
                     'user_id' => auth('web')->id(),
                     'coupon_id' => $coupon?->id,
-                    'delivery_zone_id' => $zone->id,
+                    'delivery_zone_id' => $data['delivery_zone_id'],
                     'customer_name' => $data['first_name'].' '.$data['last_name'],
                     'customer_email' => $data['email'],
                     'customer_phone' => $data['phone'],
                     'delivery_country' => $data['country'],
                     'delivery_city' => $data['city'],
-                    'delivery_area' => $zone->name,
+                    'delivery_area' => $quote->label,
                     'delivery_address' => $address,
                     'subtotal' => $subtotal,
-                    'delivery_fee' => $zone->delivery_fee,
+                    'delivery_fee' => Money::decimal($quote->feeMinor),
                     'discount_amount' => $discount,
                     'tax_amount' => 0,
-                    'grand_total' => max(0, round($subtotal - $discount + (float) $zone->delivery_fee, 2)),
+                    'grand_total' => Money::decimal(max(0, Money::minor($subtotal) - Money::minor($discount) + $quote->feeMinor)),
                     'payment_method' => $data['payment_method'],
+                    'payment_instructions_snapshot' => ['provider_key' => $payment['provider_key'], 'label' => $payment['instructions']->label, 'instructions' => $payment['instructions']->instructions, 'requires_receipt' => $payment['instructions']->requiresReceipt],
                     'payment_receipt' => $receiptPath,
                     'payment_receipt_disk' => 'local',
                     'payment_status' => 'pending',
@@ -157,6 +154,7 @@ class OrderPlacementService
                         'variant_name' => $item->weight,
                         'options_snapshot' => $item->options_snapshot ?? [],
                         'special_request' => $item->special_request,
+                        'attributes_snapshot' => app(ProductAttributesService::class)->snapshot($item->product, $item->variant),
                         'product_title' => $item->product->title,
                         'product_sku' => $item->product->sku,
                         'product_image' => $item->product->main_image,
@@ -174,9 +172,12 @@ class OrderPlacementService
                         'coupon_id' => $coupon->id,
                         'user_id' => auth('web')->id(),
                         'order_id' => $order->id,
+                        ...app(CouponIdentityService::class)->snapshot($data['email']),
                     ]);
                     $coupon->increment('usage_count');
                 }
+
+                app(NotificationOutboxService::class)->recordConfirmation($order);
 
                 // Delete precisely the locked rows; leave concurrently added items intact.
                 CartItem::whereIn('id', $items->pluck('id'))->delete();
@@ -215,7 +216,7 @@ class OrderPlacementService
         return $placement;
     }
 
-    private function validatedCoupon(float $subtotal): ?Coupon
+    private function validatedCoupon(string $subtotal, string $email): ?Coupon
     {
         $code = session('coupon_code');
         if (! $code) {
@@ -223,12 +224,12 @@ class OrderPlacementService
         }
 
         $coupon = Coupon::where('code', $code)->lockForUpdate()->first();
-        if (! $coupon || ! $coupon->is_valid || $subtotal < (float) $coupon->minimum_order) {
+        if (! $coupon || ! $coupon->is_valid || Money::minor($subtotal) < Money::minor($coupon->minimum_order)) {
             throw ValidationException::withMessages(['coupon' => 'Your coupon is no longer valid. Remove it or choose another coupon.']);
         }
 
-        if (auth('web')->check() && $coupon->usages()->where('user_id', auth('web')->id())->count() >= $coupon->per_user_limit) {
-            throw ValidationException::withMessages(['coupon' => 'You have already used this coupon.']);
+        if (app(CouponIdentityService::class)->limitReached($coupon, $email, locked: true)) {
+            throw ValidationException::withMessages(['coupon' => 'The coupon usage limit has been reached for this customer.']);
         }
 
         return $coupon;

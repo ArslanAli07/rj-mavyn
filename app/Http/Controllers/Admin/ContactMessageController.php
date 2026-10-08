@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
+use App\Services\AdminMutation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,9 +12,11 @@ use Illuminate\View\View;
 class ContactMessageController extends Controller
 {
     use Concerns\HandlesBulkActions;
+
     public function index(): View
     {
         $messages = ContactMessage::latest()->paginate(20);
+
         return view('admin.contact-messages.index', compact('messages'));
     }
 
@@ -25,9 +28,10 @@ class ContactMessageController extends Controller
     public function resolve(ContactMessage $message): RedirectResponse
     {
         $message->update([
-            'is_resolved' => !$message->is_resolved,
+            'is_resolved' => ! $message->is_resolved,
             'resolved_at' => $message->is_resolved ? null : now(),
         ]);
+
         return back()->with('success', $message->is_resolved ? 'Marked as resolved.' : 'Marked as unresolved.');
     }
 
@@ -38,14 +42,14 @@ class ContactMessageController extends Controller
         $ids = $messages->pluck('id');
 
         if ($data['bulk_action'] === 'delete') {
-            ContactMessage::whereIn('id', $ids)->delete();
+            AdminMutation::delete(ContactMessage::whereIn('id', $ids));
         } elseif ($data['bulk_action'] === 'resolve') {
-            ContactMessage::whereIn('id', $ids)->update([
+            AdminMutation::update(ContactMessage::whereIn('id', $ids), [
                 'is_resolved' => true,
                 'resolved_at' => now(),
             ]);
         } else {
-            ContactMessage::whereIn('id', $ids)->update([
+            AdminMutation::update(ContactMessage::whereIn('id', $ids), [
                 'is_resolved' => false,
                 'resolved_at' => null,
             ]);

@@ -117,6 +117,9 @@ class InventoryService
 
     public function configureProduct(Product $product, string $mode, int $quantity, ?int $version, ?Admin $actor): void
     {
+        if ($actor && ($mode !== $product->inventory_mode || $quantity !== $product->stock_quantity)) {
+            abort_unless($actor->hasPermission('inventory.manage'), 403);
+        }
         if (! in_array($mode, self::MODES, true)) {
             throw ValidationException::withMessages(['inventory_mode' => 'Choose a supported stock policy.']);
         }
@@ -136,6 +139,9 @@ class InventoryService
 
     public function configureVariant(ProductVariant $variant, bool $tracked, int $quantity, ?int $version, ?Admin $actor): void
     {
+        if ($actor && ($tracked !== $variant->track_inventory || $quantity !== $variant->stock_quantity)) {
+            abort_unless($actor->hasPermission('inventory.manage'), 403);
+        }
         if (($variant->track_inventory || $tracked) && $variant->inventory_version > 0 && $version !== $variant->inventory_version) {
             throw ValidationException::withMessages(['variants' => 'Variant stock changed. Reload the product before saving inventory.']);
         }

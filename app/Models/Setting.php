@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasLibraryMedia;
+use App\Services\Plugins\LegacyCommerceSettings;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -31,6 +32,10 @@ class Setting extends Model
      */
     public static function get(string $key, mixed $default = null): mixed
     {
+        $bridge = app(LegacyCommerceSettings::class);
+        if ($bridge->owns($key)) {
+            return $bridge->read($key, $default);
+        }
         $settings = static::allCached();
         $setting = $settings[$key] ?? null;
 
@@ -50,6 +55,12 @@ class Setting extends Model
      */
     public static function set(string $key, mixed $value, string $group = 'general', string $type = 'text'): void
     {
+        $bridge = app(LegacyCommerceSettings::class);
+        if ($bridge->owns($key)) {
+            $bridge->write($key, $value);
+
+            return;
+        }
         $existing = static::where('key', $key)->first();
         $finalType = $existing ? $existing->type : $type;
         $finalGroup = $existing ? $existing->group : $group;

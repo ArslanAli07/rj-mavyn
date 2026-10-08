@@ -1,0 +1,17 @@
+{
+    "name": "mavyn/core",
+    "description": "Reusable Mavyn commerce core",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "mavyn/contracts": "^0.1",
+        "ext-mbstring": "*",
+        "composer/semver": "^3.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mavyn\\Core\\": "src/"
+        }
+    }
+}

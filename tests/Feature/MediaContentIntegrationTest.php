@@ -208,7 +208,7 @@ class MediaContentIntegrationTest extends TestCase
         $staff = Admin::create(['name' => 'Staff', 'email' => 'restricted@example.com', 'password' => 'password', 'role' => 'staff', 'is_active' => true]);
         $this->actingAs($staff, 'admin');
         Auth::shouldUse('web');
-        $this->get(route('admin.settings.index'))->assertOk()->assertDontSee('Choose store logo');
+        $this->get(route('admin.settings.index'))->assertForbidden();
     }
 
     public function test_staff_cannot_save_media_settings_or_bypass_typed_image_slots(): void

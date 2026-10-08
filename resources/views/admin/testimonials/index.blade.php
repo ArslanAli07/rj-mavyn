@@ -6,9 +6,11 @@
             <h1 class="text-2xl font-heading font-bold text-espresso-800">Testimonials</h1>
             <p class="text-xs text-espresso-500 mt-1">Approve, feature, and manage customer testimonials showing on the home page.</p>
         </div>
-        <a href="{{ route('admin.testimonials.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
+        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.testimonials.create'))
+<a href="{{ route('admin.testimonials.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
             + Add Testimonial
         </a>
+@endif
     </div>
 
     {{-- Testimonials List --}}
@@ -72,7 +74,9 @@
                                             </button>
                                         </form>
 
-                                        <a href="{{ route('admin.testimonials.edit', $t->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+                                        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.testimonials.edit'))
+<a href="{{ route('admin.testimonials.edit', $t->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+@endif
                                         
                                         <form action="{{ route('admin.testimonials.destroy', $t->id) }}" method="POST"
                                               onsubmit="return confirm('Are you sure you want to delete this review?');">

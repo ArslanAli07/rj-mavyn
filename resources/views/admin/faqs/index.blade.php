@@ -6,9 +6,11 @@
             <h1 class="text-2xl font-heading font-bold text-espresso-800">FAQs</h1>
             <p class="text-xs text-espresso-500 mt-1">Add or update frequently asked questions shown on the customer FAQ page.</p>
         </div>
-        <a href="{{ route('admin.faqs.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
+        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.faqs.create'))
+<a href="{{ route('admin.faqs.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
             + Add FAQ
         </a>
+@endif
     </div>
 
     {{-- FAQs List --}}
@@ -51,7 +53,9 @@
                                 </td>
                                 <td>
                                     <div class="flex items-center gap-2 justify-end">
-                                        <a href="{{ route('admin.faqs.edit', $f->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+                                        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.faqs.edit'))
+<a href="{{ route('admin.faqs.edit', $f->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+@endif
                                         
                                         <form action="{{ route('admin.faqs.destroy', $f->id) }}" method="POST"
                                               onsubmit="return confirm('Are you sure you want to delete this FAQ?');">

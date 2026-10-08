@@ -6,8 +6,10 @@ use App\Models\Product;
 use App\Models\ProductOptionGroup;
 use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
+use App\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Mavyn\Core\ProductConfiguration;
 
 class ProductConfigurationService
 {
@@ -17,10 +19,10 @@ class ProductConfigurationService
      * @param  array<int, int|string>  $optionValueIds
      * @return array{
      *     variant: ProductVariant,
-     *     unit_price: float,
+     *     unit_price: string,
      *     weight: string|null,
      *     variant_name: string,
-     *     options_snapshot: array<int, array{value_id:int,group_id:int,group_name:string,value_name:string,price_adjustment:float}>,
+     *     options_snapshot: array<int, array{value_id:int,group_id:int,group_name:string,value_name:string,price_adjustment:string}>,
      *     special_request: string|null,
      *     configuration_signature: string
      * }
@@ -49,12 +51,12 @@ class ProductConfigurationService
                 'group_id' => $value->product_option_group_id,
                 'group_name' => $value->group->name,
                 'value_name' => $value->name,
-                'price_adjustment' => round((float) $value->price_adjustment, 2),
+                'price_adjustment' => Money::decimal(Money::minor($value->price_adjustment)),
             ])
             ->all();
 
-        $optionsTotal = collect($optionsSnapshot)->sum('price_adjustment');
-        $unitPrice = round((float) $variant->effective_price + $optionsTotal, 2);
+        $optionsTotal = collect($optionsSnapshot)->sum(fn ($option) => Money::minor($option['price_adjustment']));
+        $unitPrice = Money::decimal(Money::minor($variant->discount_price ?? $variant->price) + $optionsTotal);
         $specialRequest = $this->normalizeSpecialRequest($specialRequest);
         $variantName = $variant->display_name;
 
@@ -79,20 +81,7 @@ class ProductConfigurationService
      */
     public function signature(int $productId, ?int $variantId, array $optionValueIds = [], ?string $specialRequest = null): string
     {
-        $ids = collect($optionValueIds)
-            ->map(fn ($id) => (int) $id)
-            ->filter()
-            ->unique()
-            ->sort()
-            ->values()
-            ->all();
-
-        return hash('sha256', json_encode([
-            'product_id' => $productId,
-            'variant_id' => $variantId,
-            'option_ids' => $ids,
-            'special_request' => $this->normalizeSpecialRequest($specialRequest) ?? '',
-        ]));
+        return ProductConfiguration::signature($productId, $variantId, $optionValueIds, $specialRequest);
     }
 
     protected function resolveVariant(Product $product, ?int $variantId): ProductVariant
@@ -107,7 +96,7 @@ class ProductConfigurationService
 
         if ($variantId) {
             $variant = $variants->firstWhere('id', $variantId);
-            if (!$variant) {
+            if (! $variant) {
                 throw ValidationException::withMessages([
                     'product_variant_id' => 'The selected variant is invalid for this product.',
                 ]);
@@ -182,8 +171,6 @@ class ProductConfigurationService
 
     protected function normalizeSpecialRequest(?string $specialRequest): ?string
     {
-        $value = trim((string) $specialRequest);
-
-        return $value === '' ? null : mb_substr($value, 0, 255);
+        return ProductConfiguration::normalizeSpecialRequest($specialRequest);
     }
 }

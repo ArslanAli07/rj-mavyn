@@ -144,8 +144,8 @@ class CartController extends Controller
 
     public function applyCoupon(Request $request): RedirectResponse|JsonResponse
     {
-        $request->validate(['code' => 'required|string|max:50']);
-        $result = $this->cart->applyCoupon($request->code);
+        $request->validate(['code' => 'required|string|max:50', 'email' => 'nullable|email|max:255']);
+        $result = $this->cart->applyCoupon($request->code, $request->input('email'));
 
         if ($request->expectsJson()) {
             $result['totals'] = $this->cart->totals();

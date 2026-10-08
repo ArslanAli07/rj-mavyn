@@ -117,6 +117,7 @@
             <div class="bg-white border border-cream-150 rounded-2xl p-6 shadow-sm space-y-4">
                 <h3 class="font-heading font-bold text-sm text-espresso-800 border-b border-cream-100 pb-2 mb-4">Update Execution</h3>
 
+                @if(auth('admin')->user()->hasPermission('orders.manage'))
                 <form action="{{ route('admin.orders.status', $order->id) }}" method="POST" class="space-y-4">
                     @csrf
                     @method('PATCH')
@@ -134,8 +135,9 @@
                     </div>
 
                     <div>
+                        @unless(auth('admin')->user()->hasPermission('orders.payment'))<input type="hidden" name="payment_status" value="{{ $order->payment_status }}">@endunless
                         <label for="payment_status" class="label-luxury text-xs">Payment Status</label>
-                        <select id="payment_status" name="payment_status" class="input-luxury text-xs bg-cream-50/20">
+                        <select @disabled(! auth('admin')->user()->hasPermission('orders.payment')) id="payment_status" name="payment_status" class="input-luxury text-xs bg-cream-50/20">
                             <option value="pending" {{ $order->payment_status === 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="paid" {{ $order->payment_status === 'paid' ? 'selected' : '' }}>Paid (Confirmed)</option>
                             <option value="failed" {{ $order->payment_status === 'failed' ? 'selected' : '' }}>Failed</option>
@@ -162,6 +164,7 @@
                         Save Status Update
                     </button>
                 </form>
+                @endif
             </div>
 
             {{-- Notes & Payments Snapshot info --}}
@@ -179,10 +182,12 @@
                     </div>
                 </div>
 
-                @if($order->payment_receipt)
+                @if($order->payment_receipt && auth('admin')->user()->hasPermission('orders.receipts'))
                     <div class="border-t border-cream-100 pt-3 mt-3">
                         <span class="font-bold text-espresso-800 block mb-1.5">Uploaded Payment Receipt:</span>
-                        <a href="{{ route('admin.orders.receipt', $order) }}" target="_blank" class="text-primary-600 hover:underline font-semibold block mb-2">View Full Size Screenshot ↗</a>
+                        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.orders.receipt'))
+<a href="{{ route('admin.orders.receipt', $order) }}" target="_blank" class="text-primary-600 hover:underline font-semibold block mb-2">View Full Size Screenshot ↗</a>
+@endif
                         <img src="{{ route('admin.orders.receipt', $order) }}" alt="Payment Receipt" class="max-w-full h-auto rounded-xl border border-cream-200">
                     </div>
                 @endif

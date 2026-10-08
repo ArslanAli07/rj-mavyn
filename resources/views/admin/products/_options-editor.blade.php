@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between border-b border-cream-100 pb-3">
         <div>
             <h3 class="font-heading font-bold text-sm text-espresso-800">Base Variants *</h3>
-            <p class="text-[11px] text-espresso-400 mt-0.5">Sizes or base choices with their own prices. Mark one as default for catalog display and quick-add.</p>
+            <p class="text-[11px] text-espresso-400 mt-0.5">Variants or base choices with their own prices. Mark one as default for catalog display and quick-add.</p>
         </div>
         <button type="button" @click="addVariant()" class="px-3 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1 border border-primary-150">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -52,10 +52,13 @@
                     <input type="number" step="0.01" :name="'variants[' + index + '][discount_price]'" x-model="variant.discount_price" class="input-luxury text-xs py-1.5" placeholder="Optional">
                 </div>
 
-                <div class="sm:col-span-2">
-                    <label class="label-luxury text-[11px]">Servings</label>
-                    <input type="text" :name="'variants[' + index + '][servings]'" x-model="variant.servings" class="input-luxury text-xs py-1.5" placeholder="Optional">
-                </div>
+                @foreach(app(\App\Services\ProductAttributesService::class)->fields('variant') as $entry)
+                    @php($field = $entry['field'])
+                    <div class="sm:col-span-2">
+                        <label class="label-luxury text-[11px]">{{ $field->label }}</label>
+                        <input type="text" :name="'variants[' + index + '][{{ $field->key }}]'" x-model="variant.{{ $field->key }}" maxlength="{{ $field->maxLength }}" class="input-luxury text-xs py-1.5" placeholder="Optional">
+                    </div>
+                @endforeach
 
                 <div class="sm:col-span-2 flex flex-col gap-2 pb-1">
                     <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-espresso-700 cursor-pointer">

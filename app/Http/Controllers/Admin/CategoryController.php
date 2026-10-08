@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Services\AdminMutation;
 use App\Services\Media\MediaLibraryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -124,14 +125,14 @@ class CategoryController extends Controller
         $categories = Category::whereIn('id', $data['ids'])->get();
 
         if ($data['bulk_action'] === 'activate') {
-            Category::whereIn('id', $categories->pluck('id'))->update(['is_active' => true]);
+            AdminMutation::update(Category::whereIn('id', $categories->pluck('id')), ['is_active' => true]);
             $this->bustCategoryCaches();
 
             return back()->with('success', $this->bulkMessage('activate', $categories->count(), 'category'));
         }
 
         if ($data['bulk_action'] === 'deactivate') {
-            Category::whereIn('id', $categories->pluck('id'))->update(['is_active' => false]);
+            AdminMutation::update(Category::whereIn('id', $categories->pluck('id')), ['is_active' => false]);
             $this->bustCategoryCaches();
 
             return back()->with('success', $this->bulkMessage('deactivate', $categories->count(), 'category'));

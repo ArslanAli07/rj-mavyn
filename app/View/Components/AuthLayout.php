@@ -20,6 +20,6 @@ class AuthLayout extends Component
      */
     public function render(): View
     {
-        return view('layouts.auth');
+        return view(request()->is('admin', 'admin/*') ? 'layouts.admin-auth' : 'layouts.auth');
     }
 }

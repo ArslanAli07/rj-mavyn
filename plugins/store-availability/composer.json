@@ -1,0 +1,47 @@
+{
+    "name": "mavyn/store-availability",
+    "description": "Mavyn store-availability commerce plugin",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "mavyn/contracts": "^0.1",
+        "mavyn/core": "^0.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mavyn\\StoreAvailability\\": "src/"
+        }
+    },
+    "extra": {
+        "mavyn": {
+            "kind": "plugin",
+            "id": "mavyn.store-availability",
+            "name": "Store Availability",
+            "provider": "Mavyn\\StoreAvailability\\Plugin",
+            "capabilities": [
+                "ordering.policy"
+            ],
+            "settings": {
+                "ordering_enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "nullable": false,
+                    "permission": "settings.manage"
+                },
+                "ordering_start_time": {
+                    "type": "time",
+                    "default": "09:00",
+                    "nullable": false,
+                    "permission": "settings.manage"
+                },
+                "ordering_end_time": {
+                    "type": "time",
+                    "default": "21:00",
+                    "nullable": false,
+                    "permission": "settings.manage"
+                }
+            }
+        }
+    }
+}

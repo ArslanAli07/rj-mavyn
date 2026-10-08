@@ -13,22 +13,24 @@ class AuthController extends Controller
     public function showLogin(): View|RedirectResponse
     {
         if (auth('admin')->check()) {
-            return redirect()->route('admin.dashboard');
+            return redirect()->route('admin.workspace');
         }
+
         return view('admin.auth.login');
     }
 
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
-        if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::guard('admin')->attempt($credentials + ['is_active' => true], $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended(route('admin.dashboard'))
-                ->with('success', 'Welcome back, ' . auth('admin')->user()->name . '!')
+
+            return redirect()->intended(route('admin.workspace'))
+                ->with('success', 'Welcome back, '.auth('admin')->user()->name.'!')
                 ->with('ask_order_notifications', true);
         }
 
@@ -40,6 +42,7 @@ class AuthController extends Controller
         Auth::guard('admin')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('admin.login')->with('success', 'Logged out successfully.');
     }
 }

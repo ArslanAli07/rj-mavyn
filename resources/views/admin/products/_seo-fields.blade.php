@@ -8,7 +8,7 @@
         <label for="meta_title" class="label-luxury">Search Title</label>
         <input type="text" id="meta_title" name="meta_title" maxlength="255"
                value="{{ old('meta_title', $product->meta_title ?? '') }}"
-               placeholder="e.g. Blueberry Seed Tea in Sialkot — Happy Tea"
+               placeholder="e.g. Product name — Store name"
                class="input-luxury text-sm">
         @error('meta_title') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
     </div>
@@ -25,7 +25,7 @@
         <label for="meta_keywords" class="label-luxury">Keywords (comma separated)</label>
         <input type="text" id="meta_keywords" name="meta_keywords" maxlength="1000"
                value="{{ old('meta_keywords', $product->meta_keywords ?? '') }}"
-               placeholder="e.g. blueberry tea, fruit tea, tea in Sialkot"
+               placeholder="e.g. product name, category, store name"
                class="input-luxury text-sm">
         @error('meta_keywords') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
     </div>

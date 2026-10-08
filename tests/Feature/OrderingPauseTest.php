@@ -75,7 +75,7 @@ class OrderingPauseTest extends TestCase
             ->assertOk()
             ->assertSee('Online ordering is paused', false)
             ->assertSee('Checkout on Foodpanda')
-            ->assertSee('images/popup-image.png', false);
+            ->assertSee('popup-image.png', false);
 
         $this->post(route('cart.add'), [
             'product_id' => $product->id,
@@ -98,7 +98,7 @@ class OrderingPauseTest extends TestCase
             ->assertOk()
             ->assertDontSee('Online ordering is paused', false)
             ->assertDontSee('The shop is currently closed', false)
-            ->assertDontSee('images/popup-image.png', false);
+            ->assertDontSee('popup-image.png', false);
 
         $this->post(route('cart.add'), [
             'product_id' => $product->id,
@@ -121,7 +121,7 @@ class OrderingPauseTest extends TestCase
             ->assertSee('The shop is currently closed', false)
             ->assertSee('9:00 AM to 9:00 PM', false)
             ->assertDontSee('Online ordering is paused', false)
-            ->assertDontSee('images/popup-image.png', false);
+            ->assertDontSee('popup-image.png', false);
 
         $this->post(route('cart.add'), [
             'product_id' => $product->id,

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Mail\OrderStatusUpdateMail;
 use App\Models\LegacyMediaImport;
 use App\Models\Order;
 use App\Services\InventoryService;
@@ -14,8 +13,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -118,6 +115,7 @@ class OrderController extends Controller
             'status' => 'required|in:'.implode(',', array_keys(Order::STATUSES)),
             'payment_status' => 'required|in:pending,paid,failed,refunded',
             'admin_notes' => 'nullable|string|max:1000',
+            'send_email' => 'sometimes|boolean',
         ]);
 
         $data = [
@@ -129,20 +127,9 @@ class OrderController extends Controller
             $data['admin_notes'] = $request->admin_notes;
         }
 
-        $oldStatus = $order->status;
-        $order = $this->states->updateMany([$order->id], $data, $request->user('admin'))->firstOrFail();
+        $order = $this->states->updateMany([$order->id], $data, $request->user('admin'), $request->boolean('send_email'))->firstOrFail();
         Cache::forget('admin_dashboard_stats');
         Cache::forget('admin_orders_poll_snapshot');
-
-        // Send status update email if status changed, admin checked the box, and globally enabled
-        if ($oldStatus !== $request->status && $request->boolean('send_email') && setting('email_order_update', true)) {
-            try {
-                $order->load('items');
-                Mail::to($order->customer_email)->send(new OrderStatusUpdateMail($order));
-            } catch (\Exception $e) {
-                Log::error('Failed to send order status update email for Order '.$order->order_number.': '.$e->getMessage());
-            }
-        }
 
         return back()->with('success', 'Order status and payment updated successfully.');
     }
@@ -152,16 +139,17 @@ class OrderController extends Controller
         $data = $this->validatedBulk($request, 'orders', ['set_status', 'set_payment', 'delete'], [
             'status' => 'required_if:bulk_action,set_status|nullable|in:'.implode(',', array_keys(Order::STATUSES)),
             'payment_status' => 'required_if:bulk_action,set_payment|nullable|in:pending,paid,failed,refunded',
+            'send_email' => 'sometimes|boolean',
         ]);
 
         $orders = Order::whereIn('id', $data['ids'])->get();
 
         if ($data['bulk_action'] === 'set_status') {
             $payload = ['status' => $data['status']];
-            $this->states->updateMany($orders->pluck('id')->all(), $payload, $request->user('admin'));
+            $this->states->updateMany($orders->pluck('id')->all(), $payload, $request->user('admin'), $request->boolean('send_email'));
             $message = $orders->count().' order'.($orders->count() === 1 ? '' : 's').' marked as '.(Order::STATUSES[$data['status']] ?? $data['status']).'.';
         } elseif ($data['bulk_action'] === 'set_payment') {
-            $this->states->updateMany($orders->pluck('id')->all(), ['payment_status' => $data['payment_status']], $request->user('admin'));
+            $this->states->updateMany($orders->pluck('id')->all(), ['payment_status' => $data['payment_status']], $request->user('admin'), $request->boolean('send_email'));
             $message = $orders->count().' order'.($orders->count() === 1 ? '' : 's').' payment set to '.$data['payment_status'].'.';
         } else {
             foreach ($orders as $order) {

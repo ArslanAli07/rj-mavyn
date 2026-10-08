@@ -232,7 +232,7 @@ class MediaLibraryService
 
     public function delete(MediaAsset $asset, Admin $actor): void
     {
-        Gate::forUser($actor)->authorize('manage-media');
+        Gate::forUser($actor)->authorize('delete-media');
         $this->lifecycle->requestDeletion($asset);
     }
 

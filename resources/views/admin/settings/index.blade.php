@@ -6,9 +6,26 @@
         <p class="text-xs text-espresso-500 mt-1">Configure company profiles, delivery charges, and manual payment details.</p>
     </div>
 
+    @if($errors->any())
+        <div role="alert" class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <ul>
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <form action="{{ route('admin.settings.update') }}" method="POST" class="space-y-6" x-data="{ activeTab: 'general' }">
         @csrf
         @method('PUT')
+
+        <details class="bg-white border rounded-xl p-5"><summary class="font-bold cursor-pointer">Store information and policy text</summary>
+            <p class="text-sm mt-2">Plain text used by the default storefront. Content stays with the store when themes change.</p>
+            @foreach(['site_city' => 'City', 'about_text' => 'About us', 'shipping_policy' => 'Shipping and delivery', 'returns_policy' => 'Returns and refunds', 'privacy_policy' => 'Privacy policy', 'terms_policy' => 'Terms and conditions'] as $key => $label)
+                <label class="block mt-4">{{ $label }}<textarea class="input-luxury mt-1" name="{{ $key }}" rows="4" maxlength="20000">{{ old($key, $settings[$key] ?? '') }}</textarea></label>
+            @endforeach
+        </details>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
@@ -116,15 +133,16 @@
                 @endif
 
                 {{-- Online Ordering Tab --}}
-                <div x-show="activeTab === 'ordering'" class="space-y-4">
+                <fieldset @disabled(!plugin_active('mavyn.store-availability')) x-show="activeTab === 'ordering'" class="space-y-4">
+                    @unless(plugin_active('mavyn.store-availability'))<p class="text-sm">This plugin is disabled. Enable it from Plugins to change these settings.</p>@endunless
                     <h3 class="font-heading font-bold text-base text-espresso-800 border-b border-cream-100 pb-2 mb-4">Online Ordering</h3>
-                    <p class="text-xs text-espresso-500">Turn online ordering on or off without a code deploy. When disabled, customers can still browse the menu, but add-to-cart and checkout are blocked. When enabled, orders are only accepted between the hours below (Pakistan time, every day).</p>
+                    <p class="text-xs text-espresso-500">Turn online ordering on or off without a code deploy. When disabled, customers can still browse the catalog, but add-to-cart and checkout are blocked. When enabled, orders are only accepted between the hours below ({{ config('site.timezone') }}, every day).</p>
 
                     <div class="flex items-start gap-4 p-4 border border-cream-100 rounded-xl hover:bg-cream-50/50 transition-colors">
                         <div class="flex items-center h-5">
                             <input type="hidden" name="ordering_enabled" value="0">
                             <input type="checkbox" id="ordering_enabled" name="ordering_enabled" value="1"
-                                   {{ setting('ordering_enabled', true) ? 'checked' : '' }}
+                                   {{ filter_var($settings->get('ordering_enabled')?->value, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
                                    class="rounded border-cream-300 text-primary-500 focus:ring-primary-300 h-4 w-4">
                         </div>
                         <div class="flex-1 text-xs">
@@ -147,38 +165,40 @@
                                    class="input-luxury text-sm">
                         </div>
                     </div>
-                    <p class="text-xs text-espresso-500">Times are Pakistan time (Asia/Karachi) and apply every day. Outside this window, customers can browse but cannot add to cart or check out — the pause popup is not shown.</p>
-                </div>
+                    <p class="text-xs text-espresso-500">Times use {{ config('site.timezone') }} and apply every day. Outside this window, customers can browse but cannot add to cart or check out — the pause popup is not shown.</p>
+                </fieldset>
 
                 {{-- Delivery Rates Tab --}}
-                <div x-show="activeTab === 'delivery'" class="space-y-4">
+                <fieldset @disabled(!plugin_active('mavyn.local-delivery')) x-show="activeTab === 'delivery'" class="space-y-4">
+                    @unless(plugin_active('mavyn.local-delivery'))<p class="text-sm">This plugin is disabled. Enable it from Plugins to change these settings.</p>@endunless
                     <h3 class="font-heading font-bold text-base text-espresso-800 border-b border-cream-100 pb-2 mb-4">Delivery Configurations</h3>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="delivery_fee" class="label-luxury">Standard Delivery Fee (PKR)</label>
-                            <input type="number" id="delivery_fee" name="delivery_fee" value="{{ $settings->get('delivery_fee')?->value }}" class="input-luxury text-sm">
+                            <input type="number" min="0" step="0.01" id="delivery_fee" name="delivery_fee" value="{{ $settings->get('delivery_fee')?->value }}" class="input-luxury text-sm">
                         </div>
                         <div>
                             <label for="free_delivery_above" class="label-luxury">Free Delivery Threshold (PKR)</label>
-                            <input type="number" id="free_delivery_above" name="free_delivery_above" value="{{ $settings->get('free_delivery_above')?->value }}" class="input-luxury text-sm">
+                            <input type="number" min="0" step="0.01" id="free_delivery_above" name="free_delivery_above" value="{{ $settings->get('free_delivery_above')?->value }}" class="input-luxury text-sm">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="express_delivery_fee" class="label-luxury">Express/Urgent Delivery Fee (PKR)</label>
-                            <input type="number" id="express_delivery_fee" name="express_delivery_fee" value="{{ $settings->get('express_delivery_fee')?->value }}" class="input-luxury text-sm">
+                            <input type="number" min="0" step="0.01" id="express_delivery_fee" name="express_delivery_fee" value="{{ $settings->get('express_delivery_fee')?->value }}" class="input-luxury text-sm">
                         </div>
                         <div>
                             <label for="same_day_cutoff" class="label-luxury">Same-day Order Cutoff (24h format)</label>
-                            <input type="text" id="same_day_cutoff" name="same_day_cutoff" value="{{ $settings->get('same_day_cutoff')?->value }}" placeholder="e.g. 14:00" class="input-luxury text-sm font-mono">
+                            <input type="time" id="same_day_cutoff" name="same_day_cutoff" value="{{ $settings->get('same_day_cutoff')?->value }}" placeholder="e.g. 14:00" class="input-luxury text-sm font-mono">
                         </div>
                     </div>
-                </div>
+                </fieldset>
 
                 {{-- Payment Credentials Tab --}}
-                <div x-show="activeTab === 'payment'" class="space-y-6">
+                <fieldset @disabled(!plugin_active('mavyn.manual-payments')) x-show="activeTab === 'payment'" class="space-y-6">
+                    @unless(plugin_active('mavyn.manual-payments'))<p class="text-sm">This plugin is disabled. Enable it from Plugins to change these settings.</p>@endunless
 
                     <div class="space-y-3">
                         <h3 class="font-heading font-bold text-base text-espresso-800 border-b border-cream-100 pb-2">Payment Methods</h3>
@@ -189,7 +209,7 @@
                                 <div class="flex items-center h-5">
                                     <input type="hidden" name="payment_cod_enabled" value="0">
                                     <input type="checkbox" id="payment_cod_enabled" name="payment_cod_enabled" value="1"
-                                           {{ setting('payment_cod_enabled', true) ? 'checked' : '' }}
+                                           {{ filter_var($settings->get('payment_cod_enabled')?->value, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
                                            class="rounded border-cream-300 text-primary-500 focus:ring-primary-300 h-4 w-4">
                                 </div>
                                 <div class="flex-1 text-xs">
@@ -202,7 +222,7 @@
                                 <div class="flex items-center h-5">
                                     <input type="hidden" name="payment_easypaisa_enabled" value="0">
                                     <input type="checkbox" id="payment_easypaisa_enabled" name="payment_easypaisa_enabled" value="1"
-                                           {{ setting('payment_easypaisa_enabled', true) ? 'checked' : '' }}
+                                           {{ filter_var($settings->get('payment_easypaisa_enabled')?->value, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
                                            class="rounded border-cream-300 text-primary-500 focus:ring-primary-300 h-4 w-4">
                                 </div>
                                 <div class="flex-1 text-xs">
@@ -215,7 +235,7 @@
                                 <div class="flex items-center h-5">
                                     <input type="hidden" name="payment_jazzcash_enabled" value="0">
                                     <input type="checkbox" id="payment_jazzcash_enabled" name="payment_jazzcash_enabled" value="1"
-                                           {{ setting('payment_jazzcash_enabled', true) ? 'checked' : '' }}
+                                           {{ filter_var($settings->get('payment_jazzcash_enabled')?->value, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
                                            class="rounded border-cream-300 text-primary-500 focus:ring-primary-300 h-4 w-4">
                                 </div>
                                 <div class="flex-1 text-xs">
@@ -228,7 +248,7 @@
                                 <div class="flex items-center h-5">
                                     <input type="hidden" name="payment_bank_transfer_enabled" value="0">
                                     <input type="checkbox" id="payment_bank_transfer_enabled" name="payment_bank_transfer_enabled" value="1"
-                                           {{ setting('payment_bank_transfer_enabled', true) ? 'checked' : '' }}
+                                           {{ filter_var($settings->get('payment_bank_transfer_enabled')?->value, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
                                            class="rounded border-cream-300 text-primary-500 focus:ring-primary-300 h-4 w-4">
                                 </div>
                                 <div class="flex-1 text-xs">
@@ -294,7 +314,7 @@
                         </div>
                     </div>
 
-                </div>
+                </fieldset>
 
                 {{-- Email Notifications Tab --}}
                 <div x-show="activeTab === 'emails'" class="space-y-6">
@@ -307,7 +327,7 @@
                             <div class="flex items-center h-5">
                                 <input type="hidden" name="email_order_confirmation" value="0">
                                 <input type="checkbox" id="email_order_confirmation" name="email_order_confirmation" value="1"
-                                       {{ setting('email_order_confirmation', true) ? 'checked' : '' }}
+                                       {{ filter_var($settings->get('email_order_confirmation')?->value, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
                                        class="rounded border-cream-300 text-primary-500 focus:ring-primary-300 h-4 w-4">
                             </div>
                             <div class="flex-1 text-xs">
@@ -321,7 +341,7 @@
                             <div class="flex items-center h-5">
                                 <input type="hidden" name="email_account_signup" value="0">
                                 <input type="checkbox" id="email_account_signup" name="email_account_signup" value="1"
-                                       {{ setting('email_account_signup', true) ? 'checked' : '' }}
+                                       {{ filter_var($settings->get('email_account_signup')?->value, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
                                        class="rounded border-cream-300 text-primary-500 focus:ring-primary-300 h-4 w-4">
                             </div>
                             <div class="flex-1 text-xs">
@@ -335,7 +355,7 @@
                             <div class="flex items-center h-5">
                                 <input type="hidden" name="email_forgot_password" value="0">
                                 <input type="checkbox" id="email_forgot_password" name="email_forgot_password" value="1"
-                                       {{ setting('email_forgot_password', true) ? 'checked' : '' }}
+                                       {{ filter_var($settings->get('email_forgot_password')?->value, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
                                        class="rounded border-cream-300 text-primary-500 focus:ring-primary-300 h-4 w-4">
                             </div>
                             <div class="flex-1 text-xs">
@@ -349,7 +369,7 @@
                             <div class="flex items-center h-5">
                                 <input type="hidden" name="email_order_update" value="0">
                                 <input type="checkbox" id="email_order_update" name="email_order_update" value="1"
-                                       {{ setting('email_order_update', true) ? 'checked' : '' }}
+                                       {{ filter_var($settings->get('email_order_update')?->value, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}
                                        class="rounded border-cream-300 text-primary-500 focus:ring-primary-300 h-4 w-4">
                             </div>
                             <div class="flex-1 text-xs">

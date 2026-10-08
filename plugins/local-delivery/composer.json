@@ -1,0 +1,59 @@
+{
+    "name": "mavyn/local-delivery",
+    "description": "Mavyn local-delivery commerce plugin",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "mavyn/contracts": "^0.1",
+        "mavyn/core": "^0.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mavyn\\LocalDelivery\\": "src/"
+        }
+    },
+    "extra": {
+        "mavyn": {
+            "kind": "plugin",
+            "id": "mavyn.local-delivery",
+            "name": "Local Delivery",
+            "provider": "Mavyn\\LocalDelivery\\Plugin",
+            "capabilities": [
+                "fulfillment.provider"
+            ],
+            "settings": {
+                "delivery_fee": {
+                    "type": "decimal",
+                    "default": null,
+                    "nullable": true,
+                    "permission": "settings.manage",
+                    "min": 0,
+                    "max": 999999999900
+                },
+                "free_delivery_above": {
+                    "type": "decimal",
+                    "default": null,
+                    "nullable": true,
+                    "permission": "settings.manage",
+                    "min": 0,
+                    "max": 999999999900
+                },
+                "express_delivery_fee": {
+                    "type": "decimal",
+                    "default": null,
+                    "nullable": true,
+                    "permission": "settings.manage",
+                    "min": 0,
+                    "max": 999999999900
+                },
+                "same_day_cutoff": {
+                    "type": "time",
+                    "default": null,
+                    "nullable": true,
+                    "permission": "settings.manage"
+                }
+            }
+        }
+    }
+}

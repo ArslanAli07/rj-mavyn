@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1a5069ff85811f14b14595775267198e",
+    "content-hash": "31bccce296493adcd6a566e5cd23338a",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -2777,6 +2777,568 @@
                 "source": "https://github.com/Masterminds/html5-php/tree/2.11.0"
             },
             "time": "2026-08-18T06:18:41+00:00"
+        },
+        {
+            "name": "mavyn/contracts",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/contracts",
+                "reference": "6b275bb6e19f0d4abc725d9cf013b9fd5d356936"
+            },
+            "require": {
+                "php": "^8.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Mavyn\\Contracts\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Reusable Mavyn commerce contracts",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "mavyn/core",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/core",
+                "reference": "6e39da959c4297fe81ed9f72393bb46c92931fb1"
+            },
+            "require": {
+                "composer/semver": "^3.4",
+                "ext-mbstring": "*",
+                "mavyn/contracts": "^0.1",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Mavyn\\Core\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Reusable Mavyn commerce core",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "mavyn/food-products",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "plugins/food-products",
+                "reference": "3db8adace59123501098206e3232437065f41b5d"
+            },
+            "require": {
+                "mavyn/contracts": "^0.1",
+                "mavyn/core": "^0.1",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "mavyn": {
+                    "kind": "plugin",
+                    "id": "mavyn.food-products",
+                    "name": "Food Products",
+                    "provider": "Mavyn\\FoodProducts\\Plugin",
+                    "capabilities": [
+                        "product.attributes"
+                    ],
+                    "settings": []
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Mavyn\\FoodProducts\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Mavyn food-products commerce plugin",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "mavyn/local-delivery",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "plugins/local-delivery",
+                "reference": "5f0726cb49061ae51ceaa4f7b58e894a15622a1b"
+            },
+            "require": {
+                "mavyn/contracts": "^0.1",
+                "mavyn/core": "^0.1",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "mavyn": {
+                    "kind": "plugin",
+                    "id": "mavyn.local-delivery",
+                    "name": "Local Delivery",
+                    "provider": "Mavyn\\LocalDelivery\\Plugin",
+                    "capabilities": [
+                        "fulfillment.provider"
+                    ],
+                    "settings": {
+                        "delivery_fee": {
+                            "type": "decimal",
+                            "default": null,
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "min": 0,
+                            "max": 999999999900
+                        },
+                        "free_delivery_above": {
+                            "type": "decimal",
+                            "default": null,
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "min": 0,
+                            "max": 999999999900
+                        },
+                        "express_delivery_fee": {
+                            "type": "decimal",
+                            "default": null,
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "min": 0,
+                            "max": 999999999900
+                        },
+                        "same_day_cutoff": {
+                            "type": "time",
+                            "default": null,
+                            "nullable": true,
+                            "permission": "settings.manage"
+                        }
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Mavyn\\LocalDelivery\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Mavyn local-delivery commerce plugin",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "mavyn/manual-payments",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "plugins/manual-payments",
+                "reference": "a0ab2bb6e6399c29dc6b26b545b950e7c73106ee"
+            },
+            "require": {
+                "mavyn/contracts": "^0.1",
+                "mavyn/core": "^0.1",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "mavyn": {
+                    "kind": "plugin",
+                    "id": "mavyn.manual-payments",
+                    "name": "Manual Payments",
+                    "provider": "Mavyn\\ManualPayments\\Plugin",
+                    "capabilities": [
+                        "payment.provider"
+                    ],
+                    "settings": {
+                        "payment_cod_enabled": {
+                            "type": "boolean",
+                            "default": true,
+                            "nullable": false,
+                            "permission": "settings.manage"
+                        },
+                        "payment_easypaisa_enabled": {
+                            "type": "boolean",
+                            "default": true,
+                            "nullable": false,
+                            "permission": "settings.manage"
+                        },
+                        "payment_jazzcash_enabled": {
+                            "type": "boolean",
+                            "default": true,
+                            "nullable": false,
+                            "permission": "settings.manage"
+                        },
+                        "payment_bank_transfer_enabled": {
+                            "type": "boolean",
+                            "default": true,
+                            "nullable": false,
+                            "permission": "settings.manage"
+                        },
+                        "easypaisa_account": {
+                            "type": "text",
+                            "default": "",
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "max": 500
+                        },
+                        "easypaisa_name": {
+                            "type": "text",
+                            "default": "",
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "max": 500
+                        },
+                        "jazzcash_account": {
+                            "type": "text",
+                            "default": "",
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "max": 500
+                        },
+                        "jazzcash_name": {
+                            "type": "text",
+                            "default": "",
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "max": 500
+                        },
+                        "bank_name": {
+                            "type": "text",
+                            "default": "",
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "max": 500
+                        },
+                        "bank_title": {
+                            "type": "text",
+                            "default": "",
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "max": 500
+                        },
+                        "bank_account": {
+                            "type": "text",
+                            "default": "",
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "max": 500
+                        },
+                        "bank_iban": {
+                            "type": "text",
+                            "default": "",
+                            "nullable": true,
+                            "permission": "settings.manage",
+                            "max": 500
+                        }
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Mavyn\\ManualPayments\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Mavyn manual-payments commerce plugin",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "mavyn/store-availability",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "plugins/store-availability",
+                "reference": "157e2cb671c150d284cc47d01a63951519daf2a2"
+            },
+            "require": {
+                "mavyn/contracts": "^0.1",
+                "mavyn/core": "^0.1",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "mavyn": {
+                    "kind": "plugin",
+                    "id": "mavyn.store-availability",
+                    "name": "Store Availability",
+                    "provider": "Mavyn\\StoreAvailability\\Plugin",
+                    "capabilities": [
+                        "ordering.policy"
+                    ],
+                    "settings": {
+                        "ordering_enabled": {
+                            "type": "boolean",
+                            "default": true,
+                            "nullable": false,
+                            "permission": "settings.manage"
+                        },
+                        "ordering_start_time": {
+                            "type": "time",
+                            "default": "09:00",
+                            "nullable": false,
+                            "permission": "settings.manage"
+                        },
+                        "ordering_end_time": {
+                            "type": "time",
+                            "default": "21:00",
+                            "nullable": false,
+                            "permission": "settings.manage"
+                        }
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Mavyn\\StoreAvailability\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Mavyn store-availability commerce plugin",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "mavyn/theme-default",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "themes/default",
+                "reference": "532b6db3dc0537a28fae6531430fd39f52db20ba"
+            },
+            "require": {
+                "mavyn/contracts": "^0.1",
+                "mavyn/core": "^0.1",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "mavyn": {
+                    "kind": "theme",
+                    "id": "mavyn.theme-default",
+                    "name": "Default",
+                    "contract": "^0.1",
+                    "parent": null,
+                    "requires_active": [],
+                    "settings": {
+                        "accent_color": {
+                            "type": "color",
+                            "default": "#2458A6"
+                        },
+                        "welcome_text": {
+                            "type": "text",
+                            "default": "Explore our collection",
+                            "max": 150
+                        }
+                    },
+                    "templates": {
+                        "account.addresses": "resources/views/account/addresses.blade.php",
+                        "account.dashboard": "resources/views/account/dashboard.blade.php",
+                        "account.order-detail": "resources/views/account/order-detail.blade.php",
+                        "account.orders": "resources/views/account/orders.blade.php",
+                        "account.password": "resources/views/account/password.blade.php",
+                        "account.profile": "resources/views/account/profile.blade.php",
+                        "account.wishlist": "resources/views/account/wishlist.blade.php",
+                        "auth.confirm-password": "resources/views/auth/confirm-password.blade.php",
+                        "auth.forgot-password": "resources/views/auth/forgot-password.blade.php",
+                        "auth.login": "resources/views/auth/login.blade.php",
+                        "auth.register": "resources/views/auth/register.blade.php",
+                        "auth.reset-password": "resources/views/auth/reset-password.blade.php",
+                        "auth.verify-email": "resources/views/auth/verify-email.blade.php",
+                        "components.breadcrumb": "resources/views/components/breadcrumb.blade.php",
+                        "components.pagination": "resources/views/components/pagination.blade.php",
+                        "components.product-card": "resources/views/components/product-card.blade.php",
+                        "components.product-card-add": "resources/views/components/product-card-add.blade.php",
+                        "layouts.app": "resources/views/layouts/app.blade.php",
+                        "layouts.auth": "resources/views/layouts/auth.blade.php",
+                        "pages.about": "resources/views/pages/about.blade.php",
+                        "pages.cart": "resources/views/pages/cart.blade.php",
+                        "pages.category": "resources/views/pages/category.blade.php",
+                        "pages.checkout": "resources/views/pages/checkout.blade.php",
+                        "pages.contact": "resources/views/pages/contact.blade.php",
+                        "pages.faq": "resources/views/pages/faq.blade.php",
+                        "pages.gallery": "resources/views/pages/gallery.blade.php",
+                        "pages.home": "resources/views/pages/home.blade.php",
+                        "pages.order-success": "resources/views/pages/order-success.blade.php",
+                        "pages.payment-instructions": "resources/views/pages/payment-instructions.blade.php",
+                        "pages.privacy": "resources/views/pages/privacy.blade.php",
+                        "pages.product": "resources/views/pages/product.blade.php",
+                        "pages.returns": "resources/views/pages/returns.blade.php",
+                        "pages.search": "resources/views/pages/search.blade.php",
+                        "pages.shipping": "resources/views/pages/shipping.blade.php",
+                        "pages.shop": "resources/views/pages/shop.blade.php",
+                        "pages.terms": "resources/views/pages/terms.blade.php",
+                        "pages.track-order": "resources/views/pages/track-order.blade.php",
+                        "pages.wishlist": "resources/views/pages/wishlist.blade.php",
+                        "layouts.guest": "resources/views/layouts/guest.blade.php"
+                    },
+                    "asset_manifest": "dist/manifest.json"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Default storefront theme",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "mavyn/theme-happy-tea",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "themes/happy-tea",
+                "reference": "d00005e66625420919d88065792b4a60f0d61e91"
+            },
+            "require": {
+                "mavyn/contracts": "^0.1",
+                "mavyn/core": "^0.1",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "mavyn": {
+                    "kind": "theme",
+                    "id": "mavyn.theme-happy-tea",
+                    "name": "Happy Tea",
+                    "contract": "^0.1",
+                    "parent": null,
+                    "requires_active": [],
+                    "settings": {
+                        "accent_color": {
+                            "type": "color",
+                            "default": "#F88027"
+                        },
+                        "welcome_text": {
+                            "type": "text",
+                            "default": "Freshly made, just for you",
+                            "max": 150
+                        }
+                    },
+                    "templates": {
+                        "account.addresses": "resources/views/account/addresses.blade.php",
+                        "account.dashboard": "resources/views/account/dashboard.blade.php",
+                        "account.order-detail": "resources/views/account/order-detail.blade.php",
+                        "account.orders": "resources/views/account/orders.blade.php",
+                        "account.password": "resources/views/account/password.blade.php",
+                        "account.profile": "resources/views/account/profile.blade.php",
+                        "account.wishlist": "resources/views/account/wishlist.blade.php",
+                        "auth.confirm-password": "resources/views/auth/confirm-password.blade.php",
+                        "auth.forgot-password": "resources/views/auth/forgot-password.blade.php",
+                        "auth.login": "resources/views/auth/login.blade.php",
+                        "auth.register": "resources/views/auth/register.blade.php",
+                        "auth.reset-password": "resources/views/auth/reset-password.blade.php",
+                        "auth.verify-email": "resources/views/auth/verify-email.blade.php",
+                        "components.breadcrumb": "resources/views/components/breadcrumb.blade.php",
+                        "components.pagination": "resources/views/components/pagination.blade.php",
+                        "components.product-card": "resources/views/components/product-card.blade.php",
+                        "components.product-card-add": "resources/views/components/product-card-add.blade.php",
+                        "layouts.app": "resources/views/layouts/app.blade.php",
+                        "layouts.auth": "resources/views/layouts/auth.blade.php",
+                        "pages.about": "resources/views/pages/about.blade.php",
+                        "pages.cart": "resources/views/pages/cart.blade.php",
+                        "pages.category": "resources/views/pages/category.blade.php",
+                        "pages.checkout": "resources/views/pages/checkout.blade.php",
+                        "pages.contact": "resources/views/pages/contact.blade.php",
+                        "pages.faq": "resources/views/pages/faq.blade.php",
+                        "pages.gallery": "resources/views/pages/gallery.blade.php",
+                        "pages.home": "resources/views/pages/home.blade.php",
+                        "pages.order-success": "resources/views/pages/order-success.blade.php",
+                        "pages.payment-instructions": "resources/views/pages/payment-instructions.blade.php",
+                        "pages.privacy": "resources/views/pages/privacy.blade.php",
+                        "pages.product": "resources/views/pages/product.blade.php",
+                        "pages.returns": "resources/views/pages/returns.blade.php",
+                        "pages.search": "resources/views/pages/search.blade.php",
+                        "pages.shipping": "resources/views/pages/shipping.blade.php",
+                        "pages.shop": "resources/views/pages/shop.blade.php",
+                        "pages.terms": "resources/views/pages/terms.blade.php",
+                        "pages.track-order": "resources/views/pages/track-order.blade.php",
+                        "pages.wishlist": "resources/views/pages/wishlist.blade.php",
+                        "layouts.guest": "resources/views/layouts/guest.blade.php"
+                    },
+                    "asset_manifest": "dist/manifest.json"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Happy Tea storefront theme",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "mavyn/theme-happy-tea-child",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "themes/happy-tea-child",
+                "reference": "4e078f45fe40e3e49c919a89585cf4a3c388a5fa"
+            },
+            "require": {
+                "mavyn/contracts": "^0.1",
+                "mavyn/core": "^0.1",
+                "mavyn/theme-happy-tea": "^0.1",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "mavyn": {
+                    "kind": "theme",
+                    "id": "mavyn.theme-happy-tea-child",
+                    "name": "Happy Tea child example",
+                    "contract": "^0.1",
+                    "parent": "mavyn.theme-happy-tea",
+                    "requires_active": [],
+                    "settings": {
+                        "accent_color": {
+                            "type": "color",
+                            "default": "#28735A"
+                        }
+                    },
+                    "templates": {
+                        "pages.home": "resources/views/pages/home.blade.php"
+                    },
+                    "asset_manifest": "dist/manifest.json"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Happy Tea child example storefront theme",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "monolog/monolog",

@@ -65,3 +65,58 @@ php tests/Support/inventory-concurrency.php
 The checkout check covers simultaneous retries, different keys contending for one cart, and a forced exception after commit that preserves the receipt and recovers the original order. Functional tests cover ownership, conflicting details/receipt bytes, rollback, coupon edits, new carts, disabled services, price review, interrupted uploads, deleted-order tombstones, page reloads, and delayed retries. Browser verification uses an isolated database/session/receipt directory and simulates loss of a committed manual-payment response before retrying from the same form.
 
 Decimal-safe pricing is the next implementation milestone, followed by guest coupon identity policy.
+
+## Coupon identity policy
+
+Guest per-customer coupon limits use the **normalized checkout email and client IP address together**. Reusing the same pair in another session consumes the same allowance. A different email or IP makes a different guest pair; two people sharing an IP do not share an allowance unless their email also matches. Email normalization trims surrounding whitespace and lowercases; provider-specific dots and plus aliases remain distinct. Equivalent IPv6 spellings and IPv4-mapped addresses normalize to the same address. This policy does not verify email ownership.
+
+Signed-in purchases also enforce the existing user-ID limit, so changing email or IP cannot reset an account's allowance. A usage snapshots both checkout-email/IP and account-email/IP hashes; guest and signed-in purchases using either pair share the allowance. A row matching multiple identities counts once. Only the `web` guard supplies account identity.
+
+Cart coupon application can precede the guest entering an email and is provisional. Checkout's apply action submits the current email for an eligibility check; editing the email afterward is revalidated on order placement. IP comes from Laravel's server-side request, never coupon fields. Keep trusted-proxy configuration limited to actual deployment proxies; arbitrary forwarded headers are not trusted by the current configuration. Missing/invalid client IP blocks coupon checkout rather than creating a bypass identity.
+
+Order placement locks the coupon row and performs a current locking read of matching usages before committing the order and usage together. This prevents independent carts from spending the same final pair allowance concurrently under MySQL repeatable-read isolation. Completed checkout retries recover the original order before eligibility checks and do not spend another allowance. Cancellation and order deletion do not refund usage. Existing user-deletion cascade behavior remains unchanged.
+
+Migration `2026_10_09_000008_add_coupon_usage_identity` adds indexed pair-hash columns without changing counters or historical orders. Legacy usages have no captured client IP; their pair hashes remain null rather than inferring an address from today's session. Legacy signed-in usages still count by user ID; legacy guests cannot be retrospectively matched to pairs. New hashes retain no raw IP address and use SHA-256 over normalized email and canonical IP bytes. They are deterministic identifiers, not anonymization or credentials. No existing-store pair backfill is possible without trustworthy historical IP data.
+
+## Durable order notification delivery
+
+New checkouts record one `notification_outbox` entry inside the order transaction when `email_order_confirmation` is enabled. Its unique event key is `order-confirmation:<order id>`. Recipient, confirmation fields, line-item snapshots, and a unique stable Message-ID are saved with the order. Receipt paths and admin notes are excluded. Rollbacks leave no entry; committed checkout replays never create another entry. Existing orders are not retroactively emailed.
+
+The checkout request performs no mail or queue push. The scheduler runs `notifications:dispatch` every minute. It claims up to 100 due entries (maximum configurable batch 1000), then queues `SendOutboxNotification` jobs. The older `SendOrderConfirmation` class remains compatible with previously queued jobs. The notification queue defaults to the database connection and `default` queue independently of the general queue configuration, so a synchronous general queue cannot send confirmation mail during checkout. Configure `NOTIFICATION_QUEUE_CONNECTION` and `NOTIFICATION_QUEUE` when using another backend or a dedicated queue.
+
+Keep the Laravel scheduler and queue worker running using the hosting platform's normal process supervision. Typical commands from the application directory:
+
+```sh
+# Run once per minute through the hosting scheduler/cron:
+php artisan schedule:run
+# Long-running queue worker (must cover the configured notification queue):
+php artisan queue:work database --queue=default --sleep=1 --tries=3 --timeout=60
+# Read-only counts, without recipient or payload disclosure:
+php artisan notifications:dispatch --report
+# Dispatch due entries immediately:
+php artisan notifications:dispatch --limit=100
+```
+
+Keep the queue's `retry_after` greater than the worker/job timeout; the default database values are 90 and 60 seconds respectively. Configure the mail transport timeout below the job timeout. Restart queue workers when deploying code updates. The five-minute dispatch lease prevents repeated scheduler pushes while jobs are pending. A failed queue push releases its lease. Interrupted dispatches and lost/exhausted jobs become eligible again after five minutes. Duplicate queue jobs are safe: the sender locks the outbox row across the mail send and delivery-marker update; completed entries are skipped.
+
+Transport/rendering failures persist the attempt count and error class and defer delivery for 60, 120, 240, 480, 960, 1920, then at most 3600 seconds. The next scheduler pass dispatches due retries. These expected failures do not exhaust Laravel queue retries; unexpected worker/database errors use the job's three attempts, with the outbox lease providing later recovery. Monitor pending counts and `last_error` on unsent entries; fix SMTP/template/queue configuration and allow due retries to recover. Error messages, credentials, and email content are not copied to logs or outbox error fields.
+
+Delivery uses the saved recipient and order details even if the order is edited/deleted or the email setting is later disabled. Links may cease to work after order deletion. The setting controls new entries; it does not discard already committed confirmations. Preserve outbox rows with order history and include them in backups. No automatic retention cleanup or admin retry UI is implemented.
+
+Delivery is **at least once**. Ordinary duplicate jobs and checkout retries do not send duplicates, but a process/database failure after the mail provider accepts the message and before `sent_at` commits can trigger a resend. Retries reuse the saved Message-ID; SMTP does not guarantee deduplication. Exactly-once provider delivery would require a provider supporting an idempotency key.
+
+Verification includes a real database-queue push/pop and handler execution, snapshot rendering, transport/dispatch failure recovery, stale lease recovery, transactional rollback, settings, and checkout replay. The disposable MySQL integration check also verifies outbox retention after an injected after-commit exception and simultaneous duplicate senders; only one simulated mail send occurs. These checks use test mail transports and do not send external email.
+
+### Order-status updates
+
+Single-order and bulk status/payment actions share `OrderStateService`. Select **Email customers when status changes** (or `send_email=true` in the validated request) and enable the global `email_order_update` setting to record status emails. Actual fulfillment-status changes are detected against the locked current order. Repeated/no-op submissions, note-only updates, and payment-only changes create no message. If a failed payment automatically cancels an inventory-managed order, that actual cancellation can create a status message when opted in. Deletion never creates a status email.
+
+Each actual change increments `orders.status_revision`, even when notifications are disabled. An opted-in change records `order-status:<order id>:<revision>` in the same transaction as status/inventory/audit changes. This handles later returns to a previous status in legacy unmanaged orders without confusing them with duplicate submissions. Existing transition restrictions on managed orders remain authoritative. Unauthorized requests, invalid bulk transitions, or audit persistence failures roll back revisions and outbox entries together.
+
+Status entries use `notification_type=order_status_update` with a minimal recipient/status snapshot. The mail contains the status and customer-facing summary from that transition, not today's order state. Private admin notes and receipt paths are excluded. Disabling the setting later does not cancel saved events. The existing retry, lease recovery, stable Message-ID, and at-least-once delivery rules also apply to status messages.
+
+Dispatch and delivery select the oldest unsent notification per order, including its initial confirmation. A later event waits until predecessors have been accepted and marked sent. Different orders can deliver independently. A permanently failing older message blocks later messages for that order; monitor the pending outbox/error class and fix the failure. This controls send order, not the mail provider's final arrival order. No automatic skipping or manual resend UI is implemented.
+
+Migration `2026_10_09_000011_add_order_status_notifications` initializes existing orders at revision zero and defaults existing outbox entries to confirmation type. It performs no historical status backfill. Apply it before serving the new code, then restart long-lived queue workers before permitting new status notifications; old worker code does not understand the new notification type. The dispatch schedule and queue configuration are unchanged.
+
+Tests cover single/bulk/no-op changes, re-entered statuses, opt-in/global settings, audit rollback, invalid bulk rollback, permission denial, original snapshots after edits/deletion, private-note exclusion, ordered delivery, retry recovery, compatibility with serialized legacy jobs, and a database-queue round trip for status mail. Disposable MySQL workers verify that concurrent identical status updates create one revision, change audit, and outbox entry, and duplicate senders send once. No live SMTP/provider test has been performed.

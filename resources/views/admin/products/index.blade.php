@@ -4,11 +4,13 @@
     <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl font-heading font-bold text-espresso-800">Products</h1>
-            <p class="text-xs text-espresso-500 mt-1">Add, update, and manage your Happy Tea menu catalog.</p>
+            <p class="text-xs text-espresso-500 mt-1">Add, update, and manage your product catalog.</p>
         </div>
-        <a href="{{ route('admin.products.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
+        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.products.create'))
+<a href="{{ route('admin.products.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
             + Add Product
         </a>
+@endif
     </div>
 
     {{-- Filters and Search Bar --}}
@@ -113,7 +115,9 @@
                                 </td>
                                 <td>
                                     <div class="flex items-center gap-2 justify-end">
-                                        <a href="{{ route('admin.products.edit', $p->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+                                        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.products.edit'))
+<a href="{{ route('admin.products.edit', $p->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+@endif
                                         
                                         <form action="{{ route('admin.products.destroy', $p->id) }}" method="POST"
                                               onsubmit="return confirm('Are you sure you want to delete this product? All image files will be removed.');">

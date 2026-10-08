@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CouponUsage extends Model
 {
-    protected $fillable = ['coupon_id', 'user_id', 'order_id'];
+    protected $fillable = ['coupon_id', 'user_id', 'order_id', 'identity_hash', 'account_identity_hash'];
 
     public function coupon(): BelongsTo
     {

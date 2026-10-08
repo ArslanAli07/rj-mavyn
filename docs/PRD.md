@@ -476,16 +476,20 @@ No dates or staffing estimates are committed until the technical design and base
 | Migration changes historical order meaning | Snapshot preservation, explicit mappings, reconciliation and representative fixtures |
 | Requirements exceed MVP regional capabilities | Document supported pilots/currencies/taxes and reject unsupported launch assumptions |
 
+Admin access decision (2026-10-09): catalog, fulfillment, support, and custom staff presets use granular registered grants; legacy ordinary admins receive no implicit grants. Super admins retain all registered grants. Sensitive payment, inventory, private-file, staff-management, export, and audit capabilities are separate. See [Admin operations](ADMIN_OPERATIONS.md).
+
+Guest coupon identity decision (2026-10-09): per-customer limits use normalized checkout email plus client IP as a pair. Signed-in customers additionally retain account-ID limits. Cart application before email entry is provisional; order placement revalidates and records usage atomically. Historical guest usages without IP are not assigned an inferred identity. See [Checkout operations](CHECKOUT_OPERATIONS.md).
+
 ## 20. Decisions pending technical design
 
 The following decisions do not block this PRD but must be resolved before their dependent implementation:
 
 - Core distribution/package boundaries and hosting-compatible deployment tooling.
 - Supported PHP/database/runtime versions, tested against the existing locked dependencies and target hosting.
-- Exact initial staff-role presets and who may approve/install versus activate extensions.
+- Who may approve/install versus activate extensions once the extension runtime exists.
 - Non-food pilot product line, realistic catalog size, concurrency, and performance budget.
 - Inventory reservation duration and deduction policy for COD/manual payment orders.
-- Guest coupon usage identity/rules and tracking-link information exposure/expiry policy.
+- Tracking-link information exposure/expiry policy.
 - Supported initial tax calculation, address formats, currency changes, and financial retention rules.
 - Optional content features packaged as modules versus independent plugins.
 - Supported release window and cadence for client deployments.

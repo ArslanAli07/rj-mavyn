@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Mail\OrderConfirmationMail;
 use App\Models\Admin;
 use App\Models\CartItem;
 use App\Models\Category;
@@ -13,6 +12,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\CartService;
+use App\Services\CheckoutAttemptService;
 use App\Services\Media\MediaLibraryService;
 use App\Services\OrderStateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -60,6 +61,26 @@ class CheckoutIdempotencyTest extends TestCase
             'delivery_zone_id' => $this->zone->id, 'payment_method' => 'cod'], $overrides));
     }
 
+    public function test_fractional_checkout_rounds_coupon_once_and_persists_exact_totals(): void
+    {
+        $this->product->variants()->first()->update(['price' => '0.10']);
+        $this->zone->update(['delivery_fee' => '0.20']);
+        Coupon::create(['code' => 'HALF', 'type' => 'percentage', 'amount' => '50.00',
+            'minimum_order' => '0.30', 'is_active' => true]);
+        $this->add(3);
+        $cart = app(CartService::class);
+        $this->assertSame('0.30', $cart->subtotal());
+        $this->assertTrue($cart->applyCoupon('HALF')['success']);
+        $this->assertSame('0.15', $cart->totals()['grand_total']);
+        $key = app(CheckoutAttemptService::class)->issue();
+        $this->post(route('checkout.place-order'), $this->data(['idempotency_key' => $key]))->assertSessionHasNoErrors();
+        $order = Order::sole();
+        $this->assertSame('0.30', $order->subtotal);
+        $this->assertSame('0.15', $order->discount_amount);
+        $this->assertSame('0.35', $order->grand_total);
+        $this->assertSame('0.30', $order->items()->sole()->total_price);
+    }
+
     public function test_retry_after_lost_response_and_cache_session_result_loss_returns_original_order(): void
     {
         $this->add();
@@ -76,7 +97,8 @@ class CheckoutIdempotencyTest extends TestCase
         $this->assertDatabaseCount('inventory_movements', 1);
         $this->assertSame(2, $this->product->fresh()->reserved_quantity);
         $this->assertSame(2, $this->product->fresh()->sales_count);
-        Mail::assertSent(OrderConfirmationMail::class, 1);
+        Mail::assertNothingSent();
+        $this->assertDatabaseCount('notification_outbox', 1);
     }
 
     public function test_committed_retry_ignores_disabled_shop_payment_zone_and_catalog_afterwards(): void
@@ -107,7 +129,8 @@ class CheckoutIdempotencyTest extends TestCase
         }
         $this->assertDatabaseCount('orders', 1);
         $this->assertSame(2, $this->product->fresh()->reserved_quantity);
-        Mail::assertSent(OrderConfirmationMail::class, 1);
+        Mail::assertNothingSent();
+        $this->assertDatabaseCount('notification_outbox', 1);
     }
 
     public function test_manual_receipt_retry_preserves_one_private_file_coupon_usage_and_reservation(): void
@@ -130,7 +153,8 @@ class CheckoutIdempotencyTest extends TestCase
         $this->assertDatabaseCount('coupon_usages', 1);
         $this->assertDatabaseCount('inventory_reservations', 1);
         $this->assertDatabaseCount('orders', 1);
-        Mail::assertSent(OrderConfirmationMail::class, 1);
+        Mail::assertNothingSent();
+        $this->assertDatabaseCount('notification_outbox', 1);
     }
 
     public function test_retry_with_different_receipt_bytes_is_a_conflict(): void

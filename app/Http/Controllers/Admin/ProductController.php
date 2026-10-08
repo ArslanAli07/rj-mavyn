@@ -10,8 +10,10 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
+use App\Services\AdminMutation;
 use App\Services\InventoryService;
 use App\Services\Media\MediaLibraryService;
+use App\Services\ProductAttributesService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -193,9 +195,9 @@ class ProductController extends Controller
         $products = Product::with('images')->whereIn('id', $data['ids'])->get();
 
         if ($data['bulk_action'] === 'activate') {
-            Product::whereIn('id', $products->pluck('id'))->update(['is_active' => true]);
+            AdminMutation::update(Product::whereIn('id', $products->pluck('id')), ['is_active' => true]);
         } elseif ($data['bulk_action'] === 'deactivate') {
-            Product::whereIn('id', $products->pluck('id'))->update(['is_active' => false]);
+            AdminMutation::update(Product::whereIn('id', $products->pluck('id')), ['is_active' => false]);
         } else {
             foreach ($products as $product) {
                 $this->deleteProduct($product);
@@ -230,16 +232,17 @@ class ProductController extends Controller
             ?? $request->variants[0];
 
         $request->merge([
-            'price' => isset($default['price']) && $default['price'] !== '' ? (float) $default['price'] : null,
-            'discount_price' => isset($default['discount_price']) && $default['discount_price'] !== '' ? (float) $default['discount_price'] : null,
+            'price' => isset($default['price']) && $default['price'] !== '' ? $default['price'] : null,
+            'discount_price' => isset($default['discount_price']) && $default['discount_price'] !== '' ? $default['discount_price'] : null,
             'weight' => $default['name'] ?? $default['weight'] ?? null,
-            'servings' => isset($default['servings']) && $default['servings'] !== '' ? $default['servings'] : null,
+            ...(app(ProductAttributesService::class)->has('variant', 'servings') && array_key_exists('servings', $default) ? ['servings' => $default['servings'] ?: null] : []),
         ]);
     }
 
     protected function validateProduct(Request $request, ?Product $product = null): array
     {
-        $data = $request->validate([
+        $attributeRules = app(ProductAttributesService::class)->rules($request);
+        $data = $request->validate([...$attributeRules,
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'display_order' => 'required|integer|min:0',
@@ -250,10 +253,7 @@ class ProductController extends Controller
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords' => 'nullable|string|max:1000',
-            'ingredients' => 'nullable|string',
-            'allergens' => 'nullable|string',
             'weight' => 'nullable|string|max:50',
-            'servings' => 'nullable|string|max:50',
             'stock_quantity' => 'required|integer|min:0|max:2147483647',
             'inventory_mode' => 'sometimes|in:untracked,shared,variant',
             'inventory_version' => 'sometimes|integer|min:0',
@@ -303,7 +303,6 @@ class ProductController extends Controller
                     }
                 },
             ],
-            'variants.*.servings' => 'nullable|string|max:50',
             'variants.*.sort_order' => 'nullable|integer|min:0',
             'variants.*.is_default' => 'nullable|boolean',
             'variants.*.is_active' => 'nullable|boolean',
@@ -420,14 +419,17 @@ class ProductController extends Controller
                 'discount_price' => isset($payload['discount_price']) && $payload['discount_price'] !== ''
                     ? $payload['discount_price']
                     : null,
-                'servings' => isset($payload['servings']) && $payload['servings'] !== ''
-                    ? $payload['servings']
-                    : null,
                 'sort_order' => $payload['sort_order'] ?? $index,
                 'is_default' => $isDefault,
                 'is_active' => $this->resolveActiveFlag($payload['is_active'] ?? null),
             ];
 
+            foreach (app(ProductAttributesService::class)->fields('variant') as $entry) {
+                $key = $entry['field']->key;
+                if (array_key_exists($key, $payload)) {
+                    $attributes[$key] = $payload[$key] === '' ? null : $payload[$key];
+                }
+            }
             if (! empty($payload['id'])) {
                 $variant = $product->variants()->find($payload['id']);
                 if (! $variant) {
@@ -449,7 +451,7 @@ class ProductController extends Controller
         }
 
         if (! $defaultAssigned && ! empty($keptIds)) {
-            ProductVariant::where('id', $keptIds[0])->update(['is_default' => true]);
+            AdminMutation::update(ProductVariant::where('id', $keptIds[0]), ['is_default' => true]);
         }
 
         foreach ($product->variants()->whereNotIn('id', $keptIds)->get() as $removed) {
@@ -522,10 +524,10 @@ class ProductController extends Controller
                 }
             }
 
-            $group->values()->whereNotIn('id', $keptValueIds)->delete();
+            AdminMutation::delete($group->values()->whereNotIn('id', $keptValueIds)->getQuery());
         }
 
-        $product->optionGroups()->whereNotIn('id', $keptGroupIds)->delete();
+        AdminMutation::delete($product->optionGroups()->whereNotIn('id', $keptGroupIds)->getQuery());
     }
 
     protected function deleteProduct(Product $product): void

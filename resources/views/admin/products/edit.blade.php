@@ -71,23 +71,7 @@
                     </div>
                 </div>
 
-                {{-- Specifications & Ingredients --}}
-                <div class="bg-white border border-cream-150 rounded-2xl p-6 shadow-sm space-y-4">
-                    <h3 class="font-heading font-bold text-sm text-espresso-800 border-b border-cream-100 pb-2 mb-4">Specifications</h3>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label for="ingredients" class="label-luxury">Ingredients Listing</label>
-                            <textarea id="ingredients" name="ingredients" rows="2" class="input-luxury text-sm">{{ old('ingredients', $product->ingredients) }}</textarea>
-                            @error('ingredients') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label for="allergens" class="label-luxury">Allergens (e.g. Nuts, Dairy)</label>
-                            <textarea id="allergens" name="allergens" rows="2" class="input-luxury text-sm">{{ old('allergens', $product->allergens) }}</textarea>
-                            @error('allergens') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-                </div>
+                @include('admin.products._attributes')
 
                 @php
                     $initialVariants = old('variants', $product->variants->map(fn ($v) => [

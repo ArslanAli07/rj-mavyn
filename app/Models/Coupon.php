@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
+use Mavyn\Core\CouponPricing;
 
 class Coupon extends Model
 {
@@ -17,12 +17,12 @@ class Coupon extends Model
     protected function casts(): array
     {
         return [
-            'amount'           => 'decimal:2',
-            'minimum_order'    => 'decimal:2',
+            'amount' => 'decimal:2',
+            'minimum_order' => 'decimal:2',
             'maximum_discount' => 'decimal:2',
-            'is_active'        => 'boolean',
-            'starts_at'        => 'date',
-            'expires_at'       => 'date',
+            'is_active' => 'boolean',
+            'starts_at' => 'date',
+            'expires_at' => 'date',
         ];
     }
 
@@ -33,25 +33,24 @@ class Coupon extends Model
 
     public function getIsValidAttribute(): bool
     {
-        if (!$this->is_active) return false;
-        if ($this->starts_at && $this->starts_at->isFuture()) return false;
-        if ($this->expires_at && $this->expires_at->isPast()) return false;
-        if ($this->usage_limit && $this->usage_count >= $this->usage_limit) return false;
+        if (! $this->is_active) {
+            return false;
+        }
+        if ($this->starts_at && $this->starts_at->isFuture()) {
+            return false;
+        }
+        if ($this->expires_at && $this->expires_at->isPast()) {
+            return false;
+        }
+        if ($this->usage_limit && $this->usage_count >= $this->usage_limit) {
+            return false;
+        }
+
         return true;
     }
 
-    public function calculateDiscount(float $subtotal): float
+    public function calculateDiscount(string|int|float $subtotal): string
     {
-        if ($subtotal < $this->minimum_order) return 0;
-
-        $discount = $this->type === 'percentage'
-            ? ($subtotal * $this->amount / 100)
-            : $this->amount;
-
-        if ($this->maximum_discount) {
-            $discount = min($discount, $this->maximum_discount);
-        }
-
-        return min($discount, $subtotal);
+        return (new CouponPricing)->discount($subtotal, $this->type, $this->amount, $this->minimum_order, $this->maximum_discount);
     }
 }

@@ -1,0 +1,226 @@
+{
+    "site_name": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:500"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "site_tagline": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:500"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "site_phone": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:500"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "site_whatsapp": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:500"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "site_address": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:500"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "site_email": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "email",
+            "max:254"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "facebook_url": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "url:http,https",
+            "max:2048"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "instagram_url": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "url:http,https",
+            "max:2048"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "tiktok_url": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "url:http,https",
+            "max:2048"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "email_order_confirmation": {
+        "type": "boolean",
+        "default": true,
+        "rules": [
+            "required",
+            "boolean"
+        ],
+        "group": "commerce",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "email_account_signup": {
+        "type": "boolean",
+        "default": true,
+        "rules": [
+            "required",
+            "boolean"
+        ],
+        "group": "commerce",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "email_forgot_password": {
+        "type": "boolean",
+        "default": true,
+        "rules": [
+            "required",
+            "boolean"
+        ],
+        "group": "commerce",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "email_order_update": {
+        "type": "boolean",
+        "default": true,
+        "rules": [
+            "required",
+            "boolean"
+        ],
+        "group": "commerce",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "about_text": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:20000"
+        ],
+        "group": "content",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "shipping_policy": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:20000"
+        ],
+        "group": "content",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "returns_policy": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:20000"
+        ],
+        "group": "content",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "privacy_policy": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:20000"
+        ],
+        "group": "content",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "terms_policy": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:20000"
+        ],
+        "group": "content",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "site_city": {
+        "type": "text",
+        "default": null,
+        "rules": [
+            "nullable",
+            "string",
+            "max:100"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    }
+}

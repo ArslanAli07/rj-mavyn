@@ -4,11 +4,13 @@
     <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl font-heading font-bold text-espresso-800">Categories</h1>
-            <p class="text-xs text-espresso-500 mt-1">Group your products into collections like fruit tea, milk tea, coffee, etc.</p>
+            <p class="text-xs text-espresso-500 mt-1">Group your products into collections like products, etc.</p>
         </div>
-        <a href="{{ route('admin.categories.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
+        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.categories.create'))
+<a href="{{ route('admin.categories.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
             + Add Category
         </a>
+@endif
     </div>
 
     {{-- Categories List --}}
@@ -62,7 +64,9 @@
                                 </td>
                                 <td>
                                     <div class="flex items-center gap-2 justify-end">
-                                        <a href="{{ route('admin.categories.edit', $cat->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+                                        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.categories.edit'))
+<a href="{{ route('admin.categories.edit', $cat->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+@endif
                                         
                                         <form action="{{ route('admin.categories.destroy', $cat->id) }}" method="POST"
                                               onsubmit="return confirm('Are you sure you want to delete this category?');">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\HomeSlide;
+use App\Services\AdminMutation;
 use App\Services\Media\MediaLibraryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -93,7 +94,7 @@ class HomeSlideController extends Controller
                 $this->deleteSlide($slide);
             }
         } else {
-            HomeSlide::whereIn('id', $slides->pluck('id'))->update([
+            AdminMutation::update(HomeSlide::whereIn('id', $slides->pluck('id')), [
                 'is_active' => $data['bulk_action'] === 'activate',
             ]);
         }

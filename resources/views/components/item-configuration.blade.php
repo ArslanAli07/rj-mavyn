@@ -2,13 +2,14 @@
     $variantLabel = $item->variant_label ?? null;
     $options = $item->options_snapshot ?? [];
     $specialRequest = $item->special_request ?? null;
+    $attributes = $item->attributes_snapshot ?? [];
 @endphp
 
-@if($variantLabel || !empty($options) || $specialRequest)
+@if($variantLabel || !empty($options) || $specialRequest || $attributes)
     <div class="{{ $class ?? 'mt-1 space-y-0.5' }}">
         @if($variantLabel)
             <p class="{{ $labelClass ?? 'text-xs text-espresso-600' }}">
-                <span class="font-semibold text-espresso-800">{{ $variantTitle ?? 'Size' }}:</span>
+                <span class="font-semibold text-espresso-800">{{ $variantTitle ?? 'Variant' }}:</span>
                 {{ $variantLabel }}
             </p>
         @endif
@@ -23,6 +24,14 @@
                     </span>
                 @endif
             </p>
+        @endforeach
+
+        @foreach($attributes as $providerAttributes)
+            @foreach($providerAttributes as $attribute)
+                <p class="{{ $optionClass ?? 'text-xs text-espresso-600' }}">
+                    <span class="font-semibold">{{ $attribute['label'] }}:</span> {{ $attribute['value'] }}
+                </p>
+            @endforeach
         @endforeach
 
         @if($specialRequest)

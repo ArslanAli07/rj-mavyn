@@ -15,7 +15,7 @@ class OrderItem extends Model
         'weight',
         'variant_name',
         'options_snapshot',
-        'special_request',
+        'special_request', 'attributes_snapshot',
         'product_title',
         'product_sku',
         'product_image', 'media_asset_id', 'media_snapshot',
@@ -27,7 +27,7 @@ class OrderItem extends Model
     protected function casts(): array
     {
         return [
-            'unit_price' => 'decimal:2',
+            'attributes_snapshot' => 'array',            'unit_price' => 'decimal:2',
             'total_price' => 'decimal:2',
             'options_snapshot' => 'array', 'media_snapshot' => 'array',
         ];

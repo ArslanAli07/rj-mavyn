@@ -1,14 +1,14 @@
 # Plugin Development Guide
 
-Status: Proposed developer specification  
-Date: 2026-10-07  
+Status: Implemented runtime foundation; advanced SDK proposals remain below
+Date: 2026-10-07
 Related documents: [PRD](PRD.md), [architecture](ARCHITECTURE.md), [theme development](THEME_DEVELOPMENT.md)
 
 ## 1. Read this first
 
-The plugin runtime and SDK are planned, not implemented. Platform class names, registry methods, middleware aliases, and commands in this guide are illustrative API proposals. They must be finalized and tested when the contracts package is implemented. Do not paste these examples into the current application expecting them to execute.
+The initial plugin runtime is implemented. Use [Plugin runtime 0.1](PLUGIN_RUNTIME.md) for supported manifests, contracts, commands, routes, settings, and lifecycle. Advanced examples below (domain events, UI slots, pricing pipelines, and general drain/update handling) remain API proposals and cannot be pasted into the host as working code.
 
-`mavyn/` is an illustrative package namespace. PHP version constraints are examples, not a confirmed deployment requirement. This guide describes how extensions should work once the architecture is implemented.
+`mavyn/core` and `mavyn/contracts` now exist as independent PHP 8.3+ packages. See [implemented package boundaries](CORE_PACKAGES.md). Plugin-specific namespaces, contracts, and version constraints below remain examples. This guide describes how extensions should work once the architecture is implemented.
 
 ## 2. When to build a plugin
 
@@ -119,7 +119,7 @@ Develop in the platform integration host or a standalone test host. Configure a 
 
 Require a development version matching the package's actual branch/version metadata. Repository declarations belong to the root host; see [Composer path repositories](https://getcomposer.org/doc/05-repositories.md#path).
 
-Planned convenience commands:
+Implemented convenience commands:
 
 ```text
 php artisan platform:plugin:make acme.local-delivery
@@ -128,7 +128,7 @@ php artisan platform:plugins:activate acme.local-delivery
 php artisan platform:plugins:disable acme.local-delivery
 ```
 
-These commands do not exist yet. Database migrations are applied through a controlled local/deployment migration plan before activation; activation never performs request-time schema installation.
+These commands now exist. Build discovery with `platform:extensions:build` before deployment validation. Database migrations are applied through a controlled local/deployment migration plan before activation; activation never performs request-time schema installation.
 
 ## 6. Entry point and registration
 
@@ -190,7 +190,7 @@ Do not overwrite final order totals through an unrestricted filter or bypass own
 
 Cached routes describe installed packages. Activation guards make disabled endpoints unavailable before business execution. Keep controller constructors free of side effects; framework middleware discovery must not trigger plugin operations.
 
-An illustrative protected route group may use proposed aliases `plugin.active:acme.local-delivery` and `permission:acme.local-delivery.manage`. These aliases are not present in the current application.
+An illustrative protected route group may use proposed aliases `plugin.active:acme.local-delivery` and `permission:acme.local-delivery.manage`. `plugin.active` now exists; the implemented admin capability alias is `plugin.permission`, not the illustrative `permission` alias. Installed route registration automatically wraps these guards.
 
 Register settings and pages through the shared admin; reuse its forms, validation errors, pagination, and layout. Do not fork the admin layout to add a menu item.
 
@@ -226,7 +226,7 @@ Private uploads require authorized delivery for originals and derivatives. Detac
 
 Lifecycle hooks must tolerate retries and interrupted transitions. Never rely on activation to create schema. Deactivation and data deletion are distinct, as in [WordPress lifecycle guidance](https://developer.wordpress.org/plugins/plugin-basics/activation-deactivation-hooks/).
 
-Committed events are delivered through the planned transactional outbox and queues at least once. Deduplicate by event ID and stable business keys; do not promise exactly-once delivery. Jobs carry plugin/payload version and must remain compatible until drained.
+A public committed-event subscription SDK remains planned; the existing order-email outbox is implemented separately. Future domain events will be delivered through transactional outbox and queues at least once. Deduplicate by event ID and stable business keys; do not promise exactly-once delivery. Jobs carry plugin/payload version and must remain compatible until drained.
 
 Required checkout validation/provider failures block the purchase. Optional notification failures retry without undoing a committed order. Do not catch an exception and report success for required work. Log plugin ID/version, operation/correlation ID, and safe diagnostics.
 

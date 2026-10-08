@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="{{ store_media_url('site_favicon', asset('assets/favicon-32x32.png')) }}">
 
-    <title>{{ $title ?? 'Admin Dashboard' }} — Happy Tea</title>
+    <title>{{ $title ?? 'Admin Dashboard' }} — {{ setting('site_name', 'Store') }}</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -24,11 +24,13 @@
         
         {{-- Sidebar Brand --}}
         <div class="px-6 py-4 border-b border-cream-100 flex items-center justify-between shrink-0">
-            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2">
-                <img src="{{ store_media_url('site_logo', asset('assets/Logo_Happytea.svg')) }}" alt="Happy Tea Logo" class="h-8 w-auto">
+            <a href="{{ route('admin.workspace') }}" class="flex items-center gap-2">
+                @if($logoUrl = store_media_url('site_logo', ''))
+                    <img src="{{ $logoUrl }}" alt="Store logo" class="h-8 w-auto">
+                @endif
                 <div class="flex flex-col leading-none">
-                    <span class="font-heading font-bold text-base text-espresso-800">Happy Tea <span class="text-primary-500">Admin</span></span>
-                    <span class="text-[8px] text-espresso-400 tracking-widest uppercase font-light">Café Management</span>
+                    <span class="font-heading font-bold text-base text-espresso-800">{{ setting('site_name', 'Store') }} <span class="text-primary-500">Admin</span></span>
+                    <span class="text-[8px] text-espresso-400 tracking-widest uppercase font-light">Store Management</span>
                 </div>
             </a>
             <button @click="sidebarOpen = false" class="lg:hidden p-1 text-espresso-500 hover:bg-cream-100 rounded-lg">
@@ -38,27 +40,36 @@
 
         {{-- Sidebar Navigation --}}
         <nav class="flex-1 overflow-y-auto p-4 space-y-1">
-            <a href="{{ route('admin.dashboard') }}" class="admin-nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.dashboard'))
+<a href="{{ route('admin.dashboard') }}" class="admin-nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                 Dashboard
             </a>
+@endif
 
             <div class="pt-4 pb-2 px-4 text-xs font-semibold text-espresso-400 uppercase tracking-wider">Catalog</div>
-            <a href="{{ route('admin.products.index') }}" class="admin-nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.products.index'))
+<a href="{{ route('admin.products.index') }}" class="admin-nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                 Products
             </a>
-            <a href="{{ route('admin.categories.index') }}" class="admin-nav-item {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
+@endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.categories.index'))
+<a href="{{ route('admin.categories.index') }}" class="admin-nav-item {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 Categories
             </a>
-            <a href="{{ route('admin.occasions.index') }}" class="admin-nav-item {{ request()->routeIs('admin.occasions.*') ? 'active' : '' }}">
+@endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.occasions.index'))
+<a href="{{ route('admin.occasions.index') }}" class="admin-nav-item {{ request()->routeIs('admin.occasions.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 Occasions
             </a>
+@endif
 
             <div class="pt-4 pb-2 px-4 text-xs font-semibold text-espresso-400 uppercase tracking-wider">Sales</div>
-            <a href="{{ route('admin.orders.index') }}" class="admin-nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.orders.index'))
+<a href="{{ route('admin.orders.index') }}" class="admin-nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                 <span class="flex-1">Orders</span>
                 <span id="admin-pending-orders-count"
@@ -66,54 +77,81 @@
                     {{ $pendingOrdersCount ?? 0 }}
                 </span>
             </a>
-            <a href="{{ route('admin.customers.index') }}" class="admin-nav-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+@endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.customers.index'))
+<a href="{{ route('admin.customers.index') }}" class="admin-nav-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                 Customers
             </a>
-            <a href="{{ route('admin.coupons.index') }}" class="admin-nav-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
+@endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.coupons.index'))
+<a href="{{ route('admin.coupons.index') }}" class="admin-nav-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
                 Coupons
             </a>
+@endif
 
             <div class="pt-4 pb-2 px-4 text-xs font-semibold text-espresso-400 uppercase tracking-wider">Content</div>
-            @if(auth('admin')->user()?->isSuperAdmin())
-                <a href="{{ route('admin.media.index') }}" class="admin-nav-item {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">Media Library</a>
+            @if(auth('admin')->user()?->hasPermission('media.view'))
+                @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.media.index'))
+<a href="{{ route('admin.media.index') }}" class="admin-nav-item {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">Media Library</a>
+@endif
             @endif
-            <a href="{{ route('admin.home-slides.index') }}" class="admin-nav-item {{ request()->routeIs('admin.home-slides.*') ? 'active' : '' }}">
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.home-slides.index'))
+<a href="{{ route('admin.home-slides.index') }}" class="admin-nav-item {{ request()->routeIs('admin.home-slides.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 Hero Slides
             </a>
-            <a href="{{ route('admin.testimonials.index') }}" class="admin-nav-item {{ request()->routeIs('admin.testimonials.*') ? 'active' : '' }}">
+@endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.testimonials.index'))
+<a href="{{ route('admin.testimonials.index') }}" class="admin-nav-item {{ request()->routeIs('admin.testimonials.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                 Testimonials
             </a>
-            <a href="{{ route('admin.faqs.index') }}" class="admin-nav-item {{ request()->routeIs('admin.faqs.*') ? 'active' : '' }}">
+@endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.faqs.index'))
+<a href="{{ route('admin.faqs.index') }}" class="admin-nav-item {{ request()->routeIs('admin.faqs.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 FAQs
             </a>
-            <a href="{{ route('admin.contact-messages.index') }}" class="admin-nav-item {{ request()->routeIs('admin.contact-messages.*') ? 'active' : '' }}">
+@endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.contact-messages.index'))
+<a href="{{ route('admin.contact-messages.index') }}" class="admin-nav-item {{ request()->routeIs('admin.contact-messages.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                 Messages
             </a>
-            <a href="{{ route('admin.newsletter.index') }}" class="admin-nav-item {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}">
+@endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.newsletter.index'))
+<a href="{{ route('admin.newsletter.index') }}" class="admin-nav-item {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-2.25-1.5a2 2 0 00-2.22 0l-2.25 1.5"/></svg>
                 Newsletter Subscribers
             </a>
+@endif
 
             <div class="pt-4 pb-2 px-4 text-xs font-semibold text-espresso-400 uppercase tracking-wider">Configuration</div>
-            <a href="{{ route('admin.delivery-zones.index') }}" class="admin-nav-item {{ request()->routeIs('admin.delivery-zones.*') ? 'active' : '' }}">
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.delivery-zones.index') && plugin_active('mavyn.local-delivery'))
+<a href="{{ route('admin.delivery-zones.index') }}" class="admin-nav-item {{ request()->routeIs('admin.delivery-zones.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 Delivery Zones
             </a>
-            <a href="{{ route('admin.seo.index') }}" class="admin-nav-item {{ request()->routeIs('admin.seo.*') ? 'active' : '' }}">
+@endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.seo.index'))
+<a href="{{ route('admin.seo.index') }}" class="admin-nav-item {{ request()->routeIs('admin.seo.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
                 SEO Settings
             </a>
-            <a href="{{ route('admin.settings.index') }}" class="admin-nav-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+@endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.settings.index'))
+<a href="{{ route('admin.settings.index') }}" class="admin-nav-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 General Settings
             </a>
-        </nav>
+@endif
+        @if(auth('admin')->user()->hasPermission('extensions.view'))<a class="admin-nav-item" href="{{ route('admin.extensions.index') }}">Plugins</a>@endif
+@if(auth('admin')->user()->hasPermission('themes.view'))<a class="admin-nav-item" href="{{ route('admin.themes.index') }}">Themes</a>@endif
+        @if(auth('admin')->user()->hasPermission('staff.manage'))<a class="admin-nav-item" href="{{ route('admin.staff.index') }}">Staff access</a>@endif
+@if(auth('admin')->user()->hasPermission('audit.view'))<a class="admin-nav-item" href="{{ route('admin.audit.index') }}">Audit history</a>@endif
+</nav>
 
         {{-- Sidebar Footer --}}
         <div class="p-4 border-t border-cream-100 shrink-0">
@@ -123,7 +161,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-xs font-semibold text-espresso-850 truncate">{{ auth('admin')->user()->name ?? 'Administrator' }}</p>
-                    <p class="text-[10px] text-espresso-400 truncate">{{ auth('admin')->user()->email ?? 'admin@happyteaskt.com' }}</p>
+                    <p class="text-[10px] text-espresso-400 truncate">{{ auth('admin')->user()->email ?? '' }}</p>
                 </div>
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
@@ -291,6 +329,7 @@
         })();
     </script>
 
+    @if(auth('admin')->user()->hasPermission('orders.view'))
     {{-- New-order poller: toast + sound + desktop notification --}}
     <audio id="admin-order-sound" preload="auto" playsinline webkit-playsinline>
         <source src="{{ asset('order-notification-sound.mp3') }}" type="audio/mpeg">
@@ -569,7 +608,7 @@
                     const notification = new Notification('New order ' + number, {
                         body: name + ' · Rs ' + total.toLocaleString() + extra,
                         icon: notificationIcon,
-                        tag: 'happytea-new-order',
+                        tag: 'store-new-order',
                         renotify: true,
                     });
                     notification.onclick = function () {
@@ -768,5 +807,6 @@
             poll();
         })();
     </script>
+    @endif
 </body>
 </html>

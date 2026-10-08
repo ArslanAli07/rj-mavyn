@@ -1,0 +1,46 @@
+<?php
+
+namespace Mavyn\Core;
+
+use InvalidArgumentException;
+
+/** Two-decimal currency arithmetic. Round half away from zero at input boundaries. */
+class Money
+{
+    public static function minor(string|int|float|null $amount): int
+    {
+        $value = (string) ($amount ?? '0');
+        if (! preg_match('/^([+-]?)(\d+)(?:\.(\d+))?$/D', $value, $parts)) {
+            throw new InvalidArgumentException('Invalid decimal amount.');
+        }
+        $fraction = str_pad($parts[3] ?? '', 3, '0');
+        // Supports up to ten integral digits; percentage intermediates stay within 64-bit integers.
+        if (strlen(ltrim($parts[2], '0')) > 10) {
+            throw new InvalidArgumentException('Amount exceeds supported currency range.');
+        }
+        $minor = (int) $parts[2] * 100 + (int) substr($fraction, 0, 2);
+        if ((int) $fraction[2] >= 5) {
+            $minor++;
+        }
+
+        return ($parts[1] === '-' ? -1 : 1) * $minor;
+    }
+
+    public static function decimal(int $minor): string
+    {
+        $absolute = abs($minor);
+
+        return ($minor < 0 ? '-' : '').intdiv($absolute, 100).'.'.str_pad((string) ($absolute % 100), 2, '0', STR_PAD_LEFT);
+    }
+
+    /** Percentage has two decimal places; round once on the complete subtotal. */
+    public static function percentage(int $minor, string|int|float $percent): int
+    {
+        $rate = self::minor($percent);
+        if ($rate < 0) {
+            throw new InvalidArgumentException('Percentage must be nonnegative.');
+        }
+
+        return intdiv($minor * min($rate, 10000) + 5000, 10000);
+    }
+}

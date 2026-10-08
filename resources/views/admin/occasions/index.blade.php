@@ -6,9 +6,11 @@
             <h1 class="text-2xl font-heading font-bold text-espresso-800">Occasions</h1>
             <p class="text-xs text-espresso-500 mt-1">Manage occasion collections like birthdays, weddings, baby showers, etc.</p>
         </div>
-        <a href="{{ route('admin.occasions.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
+        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.occasions.create'))
+<a href="{{ route('admin.occasions.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
             + Add Occasion
         </a>
+@endif
     </div>
 
     {{-- Occasions List --}}
@@ -53,7 +55,9 @@
                                 </td>
                                 <td>
                                     <div class="flex items-center gap-2 justify-end">
-                                        <a href="{{ route('admin.occasions.edit', $occ->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+                                        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.occasions.edit'))
+<a href="{{ route('admin.occasions.edit', $occ->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+@endif
                                         
                                         <form action="{{ route('admin.occasions.destroy', $occ->id) }}" method="POST"
                                               onsubmit="return confirm('Are you sure you want to delete this occasion?');">

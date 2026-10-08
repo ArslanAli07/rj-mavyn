@@ -1,0 +1,28 @@
+{
+    "name": "mavyn/food-products",
+    "description": "Mavyn food-products commerce plugin",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "mavyn/contracts": "^0.1",
+        "mavyn/core": "^0.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mavyn\\FoodProducts\\": "src/"
+        }
+    },
+    "extra": {
+        "mavyn": {
+            "kind": "plugin",
+            "id": "mavyn.food-products",
+            "name": "Food Products",
+            "provider": "Mavyn\\FoodProducts\\Plugin",
+            "capabilities": [
+                "product.attributes"
+            ],
+            "settings": {}
+        }
+    }
+}

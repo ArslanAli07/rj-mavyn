@@ -52,6 +52,7 @@
         @else
             <x-admin.bulk-root :action="route('admin.orders.bulk')">
                 <x-slot:actions>
+                    <label class="text-xs"><input type="checkbox" name="send_email" value="1"> Email customers when status changes</label>
                     <select name="status" class="px-3 py-1.5 border border-cream-250 rounded-lg text-xs bg-white focus:ring-primary-300 focus:border-primary-400">
                         <option value="">Set order status…</option>
                         @foreach($statuses as $key => $lbl)

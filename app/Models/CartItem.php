@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -43,9 +44,9 @@ class CartItem extends Model
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 
-    public function getLineTotalAttribute(): float
+    public function getLineTotalAttribute(): string
     {
-        return (float) $this->price * $this->quantity;
+        return Money::decimal(Money::minor($this->price) * $this->quantity);
     }
 
     public function getVariantLabelAttribute(): ?string

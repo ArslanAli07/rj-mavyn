@@ -28,21 +28,22 @@ class Order extends Model
         'delivery_country', 'delivery_city', 'delivery_area',
         'delivery_address', 'delivery_postal_code',
         'subtotal', 'delivery_fee', 'discount_amount', 'tax_amount', 'grand_total',
-        'payment_method', 'payment_receipt', 'payment_receipt_disk', 'payment_status', 'status',
+        'payment_method', 'payment_instructions_snapshot', 'payment_receipt', 'payment_receipt_disk', 'payment_status', 'status',
         'order_notes', 'admin_notes', 'delivered_at',
-        'inventory_managed',
+        'inventory_managed', 'status_revision',
     ];
 
     protected function casts(): array
     {
         return [
-            'subtotal' => 'decimal:2',
+            'payment_instructions_snapshot' => 'array',            'subtotal' => 'decimal:2',
             'delivery_fee' => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'grand_total' => 'decimal:2',
             'delivered_at' => 'datetime',
             'inventory_managed' => 'boolean',
+            'status_revision' => 'integer',
         ];
     }
 

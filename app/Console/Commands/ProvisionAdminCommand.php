@@ -3,7 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\Admin;
+use App\Models\AdminAuditLog;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -45,7 +47,12 @@ class ProvisionAdminCommand extends Command
             fclose($handle);
         }
         try {
-            Admin::create(['name' => $this->option('name'), 'email' => $email, 'password' => $password, 'role' => 'super_admin', 'is_active' => true]);
+            DB::transaction(function () use ($email, $password) {
+                $admin = Admin::create(['name' => $this->option('name'), 'email' => $email, 'password' => $password, 'role' => 'super_admin', 'is_active' => true]);
+                AdminAuditLog::create(['actor_id' => null, 'actor_name' => 'Console provisioning',
+                    'route' => 'console.admin:provision', 'action' => 'created', 'entity_type' => 'admins', 'entity_id' => (string) $admin->id,
+                    'changes' => ['role' => ['before' => null, 'after' => 'super_admin'], 'password' => ['before' => null, 'after' => '[redacted]']]]);
+            });
         } catch (\Throwable $exception) {
             if ($this->option('local-password-file')) {
                 unlink($path);

@@ -3,7 +3,17 @@
 use App\Models\Setting;
 use App\Services\CartService;
 use App\Services\Media\ContentMediaService;
-use Carbon\Carbon;
+use App\Services\Plugins\PluginRuntime;
+use App\Services\StoreAvailabilityService;
+use App\Services\Themes\ThemeRuntime;
+use Mavyn\Core\Money;
+
+if (! function_exists('plugin_active')) {
+    function plugin_active(string $id): bool
+    {
+        return app(PluginRuntime::class)->active($id);
+    }
+}
 
 if (! function_exists('format_price')) {
     /**
@@ -11,7 +21,7 @@ if (! function_exists('format_price')) {
      */
     function format_price(float|int|string $amount): string
     {
-        return 'Rs. '.number_format((float) $amount, 0);
+        return Money::format(Money::minor($amount));
     }
 }
 
@@ -31,7 +41,7 @@ if (! function_exists('ordering_manually_enabled')) {
      */
     function ordering_manually_enabled(): bool
     {
-        return (bool) setting('ordering_enabled', true);
+        return app(StoreAvailabilityService::class)->evaluate()->manuallyEnabled;
     }
 }
 
@@ -42,20 +52,7 @@ if (! function_exists('shop_is_open')) {
      */
     function shop_is_open(): bool
     {
-        $start = substr((string) setting('ordering_start_time', ''), 0, 5);
-        $end = substr((string) setting('ordering_end_time', ''), 0, 5);
-
-        if ($start === '' || $end === '') {
-            return true;
-        }
-
-        $now = now(config('site.timezone'))->format('H:i');
-
-        if ($start <= $end) {
-            return $now >= $start && $now <= $end;
-        }
-
-        return $now >= $start || $now <= $end;
+        return app(StoreAvailabilityService::class)->evaluate()->open;
     }
 }
 
@@ -65,17 +62,7 @@ if (! function_exists('ordering_hours_label')) {
      */
     function ordering_hours_label(): string
     {
-        $start = substr((string) setting('ordering_start_time', '09:00'), 0, 5) ?: '09:00';
-        $end = substr((string) setting('ordering_end_time', '21:00'), 0, 5) ?: '21:00';
-
-        try {
-            $startLabel = Carbon::createFromFormat('H:i', $start)->format('g:i A');
-            $endLabel = Carbon::createFromFormat('H:i', $end)->format('g:i A');
-
-            return $startLabel.' to '.$endLabel;
-        } catch (Throwable) {
-            return $start.' to '.$end;
-        }
+        return app(StoreAvailabilityService::class)->evaluate()->hoursLabel;
     }
 }
 
@@ -85,7 +72,7 @@ if (! function_exists('ordering_enabled')) {
      */
     function ordering_enabled(): bool
     {
-        return ordering_manually_enabled() && shop_is_open();
+        return app(StoreAvailabilityService::class)->evaluate()->allowed();
     }
 }
 
@@ -125,4 +112,16 @@ if (! function_exists('store_media_url')) {
     {
         return app(ContentMediaService::class)->branding($key)['url'] ?? $fallback;
     }
+}
+
+/** Validated, request-scoped presentation setting; preview values never become store configuration. */
+function theme_setting(string $key, mixed $default = null): mixed
+{
+    return app(ThemeRuntime::class)->state()['settings'][$key] ?? $default;
+}
+
+/** Immutable packaged asset, resolved parent before child. */
+function theme_asset(string $name): string
+{
+    return app(ThemeRuntime::class)->state()['assets']['files'][$name] ?? throw new InvalidArgumentException('Theme asset not declared.');
 }

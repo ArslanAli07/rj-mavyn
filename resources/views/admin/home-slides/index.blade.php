@@ -6,9 +6,11 @@
             <h1 class="text-2xl font-heading font-bold text-espresso-800">Homepage Hero Slides</h1>
             <p class="text-xs text-espresso-500 mt-1">Upload and manage image slides for the homepage carousel.</p>
         </div>
-        <a href="{{ route('admin.home-slides.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
+        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.home-slides.create'))
+<a href="{{ route('admin.home-slides.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
             + Add New Slide
         </a>
+@endif
     </div>
 
     {{-- Slides List --}}
@@ -57,7 +59,9 @@
                                 </td>
                                 <td>
                                     <div class="flex items-center gap-2 justify-end">
-                                        <a href="{{ route('admin.home-slides.edit', $slide->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+                                        @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.home-slides.edit'))
+<a href="{{ route('admin.home-slides.edit', $slide->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+@endif
 
                                         <form action="{{ route('admin.home-slides.destroy', $slide->id) }}" method="POST"
                                               onsubmit="return confirm('Are you sure you want to delete this hero slide?');">

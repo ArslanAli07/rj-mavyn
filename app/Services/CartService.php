@@ -6,19 +6,26 @@ use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 
 class CartService
 {
     protected string $sessionKey = 'cart_session_id';
 
     protected ?Collection $cachedItems = null;
+
     protected ?int $cachedCount = null;
-    protected ?float $cachedSubtotal = null;
+
+    protected ?string $cachedSubtotal = null;
+
     protected ?array $cachedTotals = null;
+
     protected ?Coupon $cachedCoupon = null;
+
     protected bool $couponResolved = false;
 
     public function __construct(private ProductConfigurationService $configurations) {}
@@ -35,8 +42,8 @@ class CartService
 
     protected function getSessionId(): string
     {
-        if (!Session::has($this->sessionKey)) {
-            Session::put($this->sessionKey, 'guest_' . Session::getId());
+        if (! Session::has($this->sessionKey)) {
+            Session::put($this->sessionKey, 'guest_'.Session::getId());
         }
 
         return Session::get($this->sessionKey);
@@ -111,7 +118,7 @@ class CartService
         bool $updateSpecialRequest = false
     ): void {
         $item = $this->query()->with(['product.variants', 'product.optionGroups.values'])->find($itemId);
-        if (!$item || !$item->product) {
+        if (! $item || ! $item->product) {
             return;
         }
 
@@ -162,7 +169,7 @@ class CartService
 
         $variant = $item->product->variants->firstWhere('id', $item->product_variant_id);
         if (! $variant) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['product_variant_id' => 'Choose an available variant.']);
+            throw ValidationException::withMessages(['product_variant_id' => 'Choose an available variant.']);
         }
         $this->assertCartStock($item->product, $variant, $item->quantity, [$item->id]);
         $item->save();
@@ -172,7 +179,7 @@ class CartService
     private function assertCartStock(Product $product, ProductVariant $variant, int $quantity, array $excluded): void
     {
         if ($quantity < 1 || $quantity > 20) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['quantity' => 'Each configured item must contain between 1 and 20 units.']);
+            throw ValidationException::withMessages(['quantity' => 'Each configured item must contain between 1 and 20 units.']);
         }
         $available = app(InventoryService::class)->availableQuantity($product, $variant);
         $current = $product->fresh();
@@ -181,7 +188,7 @@ class CartService
             $others->where('product_variant_id', $variant->id);
         }
         if ($available !== null && $quantity + $others->sum('quantity') > $available) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['quantity' => 'Not enough stock is available for the quantities in your cart.']);
+            throw ValidationException::withMessages(['quantity' => 'Not enough stock is available for the quantities in your cart.']);
         }
     }
 
@@ -234,40 +241,37 @@ class CartService
         return $this->cachedCount;
     }
 
-    public function subtotal(): float
+    public function subtotal(): string
     {
         if ($this->cachedSubtotal === null) {
             if ($this->cachedItems !== null) {
-                $this->cachedSubtotal = $this->cachedItems->sum(fn ($item) => $item->price * $item->quantity);
+                $this->cachedSubtotal = Money::decimal($this->cachedItems->sum(fn ($item) => Money::minor($item->price) * $item->quantity));
             } else {
-                $this->cachedSubtotal = $this->query()->get()->sum(fn ($item) => $item->price * $item->quantity);
+                $this->cachedSubtotal = Money::decimal($this->query()->get()->sum(fn ($item) => Money::minor($item->price) * $item->quantity));
             }
         }
 
-        return (float) $this->cachedSubtotal;
+        return $this->cachedSubtotal;
     }
 
-    public function applyCoupon(string $code): array
+    public function applyCoupon(string $code, ?string $email = null): array
     {
         $coupon = Coupon::where('code', strtoupper($code))->first();
 
-        if (!$coupon || !$coupon->is_valid) {
+        if (! $coupon || ! $coupon->is_valid) {
             return ['success' => false, 'message' => 'Invalid or expired coupon code.'];
         }
 
         $subtotal = $this->subtotal();
-        if ($subtotal < $coupon->minimum_order) {
+        if (Money::minor($subtotal) < Money::minor($coupon->minimum_order)) {
             return [
                 'success' => false,
-                'message' => 'Minimum order of ' . format_price($coupon->minimum_order) . ' required.',
+                'message' => 'Minimum order of '.format_price($coupon->minimum_order).' required.',
             ];
         }
 
-        if (Auth::guard('web')->check()) {
-            $used = $coupon->usages()->where('user_id', Auth::guard('web')->id())->count();
-            if ($used >= $coupon->per_user_limit) {
-                return ['success' => false, 'message' => 'You have already used this coupon.'];
-            }
+        if (app(CouponIdentityService::class)->limitReached($coupon, $email)) {
+            return ['success' => false, 'message' => 'The coupon usage limit has been reached for this customer.'];
         }
 
         Session::put('coupon_code', $coupon->code);
@@ -278,13 +282,13 @@ class CartService
             'success' => true,
             'discount' => $discount,
             'coupon' => $coupon,
-            'message' => 'Coupon applied! You saved ' . format_price($discount),
+            'message' => 'Coupon applied! You saved '.format_price($discount).(! Auth::guard('web')->check() && ! $email ? ' Eligibility will be checked against your checkout email and IP address.' : ''),
         ];
     }
 
     public function getAppliedCoupon(): ?Coupon
     {
-        if (!$this->couponResolved) {
+        if (! $this->couponResolved) {
             $code = Session::get('coupon_code');
             $this->cachedCoupon = $code ? Coupon::where('code', $code)->first() : null;
             $this->couponResolved = true;
@@ -304,8 +308,8 @@ class CartService
         if ($this->cachedTotals === null) {
             $subtotal = $this->subtotal();
             $coupon = $this->getAppliedCoupon();
-            $discount = $coupon && $coupon->is_valid ? $coupon->calculateDiscount($subtotal) : 0;
-            $grandTotal = max(0, $subtotal - $discount);
+            $discount = $coupon && $coupon->is_valid ? $coupon->calculateDiscount($subtotal) : '0.00';
+            $grandTotal = Money::decimal(max(0, Money::minor($subtotal) - Money::minor($discount)));
 
             $this->cachedTotals = [
                 'subtotal' => $subtotal,

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ContactMessageController as AdminContactMessageController;
@@ -13,21 +14,40 @@ use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\OccasionController as AdminOccasionController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\PluginController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\SeoController as AdminSeoController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
+use App\Http\Controllers\Admin\ThemeController;
 use Illuminate\Support\Facades\Route;
 
 // ── Admin Auth (no middleware) ─────────────────────────────────────────────────
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AdminAuthController::class, 'login'])->name('login.post');
+    Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
 
 // ── Admin Protected Routes ─────────────────────────────────────────────────────
-Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['admin', 'admin.permissions'])->group(function () {
+
+    Route::get('themes', [ThemeController::class, 'index'])->name('themes.index');
+    Route::post('themes/{theme}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
+    Route::put('themes/{theme}/settings', [ThemeController::class, 'settings'])->name('themes.settings');
+    Route::post('themes/{theme}/preview', [ThemeController::class, 'preview'])->name('themes.preview');
+
+    Route::get('extensions', [PluginController::class, 'index'])->name('extensions.index');
+    Route::put('extensions/{plugin}', [PluginController::class, 'update'])->name('extensions.update');
+    Route::put('extensions/{plugin}/settings', [PluginController::class, 'settings'])->name('extensions.settings');
+
+    Route::view('workspace', 'admin.workspace')->name('workspace');
+
+    Route::get('staff', [StaffController::class, 'index'])->name('staff.index');
+    Route::post('staff', [StaffController::class, 'store'])->name('staff.store');
+    Route::put('staff/{staff}', [StaffController::class, 'update'])->name('staff.update');
+    Route::get('audit', [AuditController::class, 'index'])->name('audit.index');
 
     // Dashboard
     Route::get('media/picker', [MediaController::class, 'picker'])->name('media.picker');
@@ -61,8 +81,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     Route::resource('home-slides', AdminHomeSlideController::class);
 
     // Delivery Zones
-    Route::post('delivery-zones/bulk', [AdminDeliveryZoneController::class, 'bulk'])->name('delivery-zones.bulk');
-    Route::resource('delivery-zones', AdminDeliveryZoneController::class);
+    Route::post('delivery-zones/bulk', [AdminDeliveryZoneController::class, 'bulk'])->middleware('plugin.active:mavyn.local-delivery')->name('delivery-zones.bulk');
+    Route::resource('delivery-zones', AdminDeliveryZoneController::class)->middleware('plugin.active:mavyn.local-delivery');
 
     // Orders
     Route::get('orders/poll', [AdminOrderController::class, 'poll'])->name('orders.poll');

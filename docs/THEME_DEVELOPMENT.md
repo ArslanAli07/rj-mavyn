@@ -1,14 +1,14 @@
 # Theme Development Guide
 
-Status: Proposed developer specification  
-Date: 2026-10-07  
+Status: Target developer specification; runtime foundation implemented
+Date: 2026-10-07
 Related documents: [PRD](PRD.md), [architecture](ARCHITECTURE.md), [plugin development](PLUGIN_DEVELOPMENT.md)
 
 ## 1. Read this first
 
-The theme manager, resolver, SDK, page DTOs, Blade helpers, and CLI commands described here are planned interfaces. They have not been implemented in the current application. Examples describe the target developer experience and must be finalized with executable contract tests before use.
+The installed runtime now implements Composer manifests, one-level inheritance/default fallback, theme settings/assets, admin preview/activation and initial Happy Tea extraction. Use [Implemented theme runtime](THEME_RUNTIME.md) for the executable 0.1 API and its compatibility boundaries.
 
-`mavyn/` is an illustrative package namespace. The current beverage storefront will become an initial theme after embedded business rules are extracted.
+The examples below describe the broader target experience. Their manifest schema, immutable page DTOs, slots, scaffold and preview CLI are not all implemented. The installed runtime's actual schema and commands take precedence.
 
 ## 2. Theme responsibilities
 

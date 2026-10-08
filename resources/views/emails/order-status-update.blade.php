@@ -46,14 +46,6 @@
         </div>
     @endif
 
-    {{-- Notes from Admin if provided --}}
-    @if($order->admin_notes)
-        <div class="admin-note">
-            <strong>Note from Happy Tea Team:</strong><br>
-            "{{ $order->admin_notes }}"
-        </div>
-    @endif
-
     {{-- Summary details --}}
     <div class="summary-box">
         <div class="summary-row">

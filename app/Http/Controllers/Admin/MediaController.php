@@ -18,11 +18,11 @@ class MediaController extends Controller
 
     public function index(Request $request)
     {
-        Gate::forUser($request->user('admin'))->authorize('manage-media');
+        Gate::forUser($request->user('admin'))->authorize('view-media');
         $filters = $request->validate([
             'q' => 'nullable|string|max:100', 'visibility' => 'nullable|in:public,private',
         ]);
-        $assets = MediaAsset::where('status', '!=', 'uploading')->with('media')->withCount(['usages', 'retentionHolds'])
+        $assets = MediaAsset::where('status', '!=', 'uploading')->when(! $request->user('admin')->hasPermission('media.private'), fn ($q) => $q->where('visibility', 'public'))->with('media')->withCount(['usages', 'retentionHolds'])
             ->when($filters['q'] ?? null, fn ($query, $term) => $query->where('title', 'like', '%'.$term.'%'))
             ->when($filters['visibility'] ?? null, fn ($query, $visibility) => $query->where('visibility', $visibility))
             ->latest()->paginate(24)->withQueryString();
@@ -32,7 +32,7 @@ class MediaController extends Controller
 
     public function picker(Request $request)
     {
-        Gate::forUser($request->user('admin'))->authorize('manage-media');
+        Gate::forUser($request->user('admin'))->authorize('view-media');
         $filters = $request->validate(['q' => 'nullable|string|max:100', 'type' => 'nullable|in:image']);
         $assets = MediaAsset::where('status', 'active')->where('visibility', 'public')->with('media')->latest()
             ->when(($filters['type'] ?? null) === 'image', fn ($query) => $query->whereHas('media', fn ($media) => $media->whereIn('mime_type', ['image/jpeg', 'image/png', 'image/webp', 'image/gif'])))
@@ -60,7 +60,7 @@ class MediaController extends Controller
 
     public function show(Request $request, MediaAsset $asset)
     {
-        Gate::forUser($request->user('admin'))->authorize('manage-media');
+        Gate::forUser($request->user('admin'))->authorize('view-media');
 
         return view('admin.media.show', ['asset' => $asset->load(['media', 'usages', 'retentionHolds'])]);
     }
@@ -104,7 +104,7 @@ class MediaController extends Controller
 
     public function file(Request $request, MediaAsset $asset)
     {
-        Gate::forUser($request->user('admin'))->authorize('manage-media');
+        Gate::forUser($request->user('admin'))->authorize('view-media');
         abort_unless($asset->status === 'active', 404);
         $media = $asset->getFirstMedia('original');
         abort_unless($media, 404);

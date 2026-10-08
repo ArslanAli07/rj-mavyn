@@ -8,10 +8,12 @@ use App\Models\Category;
 use App\Models\DeliveryZone;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\CartService;
 use App\Services\ProductConfigurationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ProductOptionsTest extends TestCase
@@ -22,9 +24,9 @@ class ProductOptionsTest extends TestCase
     {
         parent::setUp();
 
-        \App\Models\Setting::set('ordering_enabled', '1', 'ordering', 'boolean');
-        \App\Models\Setting::set('ordering_start_time', '00:00', 'ordering', 'text');
-        \App\Models\Setting::set('ordering_end_time', '23:59', 'ordering', 'text');
+        Setting::set('ordering_enabled', '1', 'ordering', 'boolean');
+        Setting::set('ordering_start_time', '00:00', 'ordering', 'text');
+        Setting::set('ordering_end_time', '23:59', 'ordering', 'text');
     }
 
     protected function createConfiguredProduct(): array
@@ -112,6 +114,17 @@ class ProductOptionsTest extends TestCase
         return compact('product', 'regular', 'large', 'toppings', 'berries', 'iceGroup', 'extraIce', 'noIce');
     }
 
+    public function test_fractional_option_adjustments_use_exact_minor_units(): void
+    {
+        extract($this->createConfiguredProduct());
+        $large->update(['price' => '0.10', 'discount_price' => null]);
+        $berries->update(['price_adjustment' => '0.20']);
+        $extraIce->update(['price_adjustment' => '-0.05']);
+        $config = app(ProductConfigurationService::class)->resolve($product->fresh(), $large->id, [$berries->id, $extraIce->id]);
+        $this->assertSame('0.25', $config['unit_price']);
+        $this->assertSame(['0.20', '-0.05'], array_column($config['options_snapshot'], 'price_adjustment'));
+    }
+
     public function test_configuration_service_prices_variant_plus_options_and_enforces_rules(): void
     {
         extract($this->createConfiguredProduct());
@@ -119,11 +132,11 @@ class ProductOptionsTest extends TestCase
 
         $config = $service->resolve($product, $large->id, [$berries->id, $extraIce->id]);
 
-        $this->assertSame(700.0, $config['unit_price']);
+        $this->assertSame('700.00', $config['unit_price']);
         $this->assertSame('Large', $config['variant_name']);
         $this->assertCount(2, $config['options_snapshot']);
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
         $service->resolve($product, $large->id, [$berries->id]); // missing required ice
     }
 

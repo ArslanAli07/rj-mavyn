@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\CartService;
+use App\Services\CheckoutAttemptService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -10,7 +12,12 @@ class EnsureOrderingEnabled
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (ordering_enabled()) {
+        // A completed checkout is a read of an existing order, even after ordering closes.
+        $recovering = $request->routeIs('checkout.place-order')
+            ? app(CheckoutAttemptService::class)->completedForOwner($request->input('idempotency_key'))
+            : ($request->routeIs('checkout.index') && app(CartService::class)->count() === 0
+                && app(CheckoutAttemptService::class)->completedForOwner(session('checkout_key')));
+        if (ordering_enabled() || $recovering) {
             return $next($request);
         }
 

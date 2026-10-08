@@ -13,6 +13,7 @@ use App\Services\Media\MediaLibraryService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -24,27 +25,43 @@ class OrderPlacementService
         private CartService $cart,
         private ProductConfigurationService $configurations,
         private PaymentMethodService $payments,
+        private InventoryService $inventory,
+        private CheckoutAttemptService $attempts,
     ) {}
 
-    public function place(array $data, ?UploadedFile $receipt = null): Order
+    public function place(array $data, ?UploadedFile $receipt = null): OrderPlacementResult
     {
         $receiptPath = null;
 
         try {
-            $order = DB::transaction(function () use ($data, $receipt, &$receiptPath) {
+            $placement = DB::transaction(function () use ($data, $receipt, &$receiptPath) {
+                $attempt = $this->attempts->lock($data['idempotency_key'] ?? '');
+                $receiptHash = $this->attempts->receiptHash($receipt);
+                $requestHash = $this->attempts->requestHash($data, $receiptHash ?? ($attempt->committed_at ? $attempt->receipt_hash : null));
+                if ($attempt->committed_at) {
+                    abort_unless(hash_equals($attempt->request_hash, $requestHash), 409,
+                        'This checkout has already placed an order with different details. Review your orders before starting another checkout.');
+                    $existing = $attempt->order()->useWritePdo()->first();
+                    abort_unless($existing, 410, 'The order for this checkout is no longer available. This checkout cannot be reused.');
+
+                    return new OrderPlacementResult($existing, true);
+                }
                 if (! in_array($data['payment_method'], $this->payments->enabled(), true)) {
                     throw ValidationException::withMessages(['payment_method' => 'This payment method is unavailable.']);
+                }
+                if ($data['payment_method'] !== 'cod' && ! $receipt) {
+                    throw ValidationException::withMessages(['payment_receipt' => 'Please attach your payment receipt.']);
                 }
 
                 $items = $this->cart->lockedItems();
                 if ($items->isEmpty()) {
                     throw ValidationException::withMessages(['cart' => 'Your cart is empty.']);
                 }
+                $this->attempts->assertCart($attempt, $items);
 
                 $changedPrices = false;
                 // Stable lock order avoids opposing product lock order between carts.
-                $products = Product::whereIn('id', $items->pluck('product_id')->unique())
-                    ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+                $products = $this->inventory->lockProducts($items->pluck('product_id')->unique()->all());
 
                 foreach ($items as $item) {
                     $product = $products->get($item->product_id);
@@ -69,6 +86,8 @@ class OrderPlacementService
                     $item->weight = $configuration['variant_name'];
                     $item->options_snapshot = $configuration['options_snapshot'];
                     $item->setRelation('product', $product);
+                    $item->setRelation('variant', $configuration['variant']);
+                    $item->product_variant_id = $configuration['variant']->id;
                 }
 
                 if ($changedPrices) {
@@ -76,22 +95,29 @@ class OrderPlacementService
                     foreach ($items as $item) {
                         $item->save();
                     }
+                    $attempt->update(['cart_hash' => $this->attempts->cartHash($items)]);
 
                     return null;
                 }
 
+                $this->inventory->assertAvailable($items);
                 $subtotal = round($items->sum(fn ($item) => (float) $item->price * $item->quantity), 2);
                 $coupon = $this->validatedCoupon($subtotal);
                 $discount = $coupon ? round($coupon->calculateDiscount($subtotal), 2) : 0;
-                $zone = DeliveryZone::active()->lockForUpdate()->findOrFail($data['delivery_zone_id']);
+                $zone = DeliveryZone::active()->lockForUpdate()->find($data['delivery_zone_id']);
+                if (! $zone) {
+                    throw ValidationException::withMessages(['delivery_zone_id' => 'Choose an available delivery zone.']);
+                }
                 $address = $data['address_line'];
                 if (! empty($data['map_link'])) {
                     $address .= "\nMap Link: ".$data['map_link'];
                 }
 
                 if ($receipt) {
-                    $receiptPath = $receipt->store('receipts', 'local');
-                    if (! $receiptPath) {
+                    // A retry also replaces an interrupted pre-commit write at the same path.
+                    // The protected receipt endpoint detects MIME from the bytes, not an extension.
+                    $receiptPath = 'receipts/checkout-'.$attempt->key_hash;
+                    if (! $receipt->storeAs('receipts', basename($receiptPath), 'local')) {
                         throw ValidationException::withMessages(['payment_receipt' => 'The receipt could not be stored. Please try again.']);
                     }
                 }
@@ -119,6 +145,7 @@ class OrderPlacementService
                     'payment_status' => 'pending',
                     'status' => 'pending',
                     'order_notes' => $data['order_notes'] ?? null,
+                    'inventory_managed' => true,
                 ]);
 
                 foreach ($items as $item) {
@@ -137,6 +164,7 @@ class OrderPlacementService
                         'quantity' => $item->quantity,
                         'total_price' => $item->line_total,
                     ]);
+                    $this->inventory->reserve($orderItem, $item->product, $item->variant);
                     app(MediaLibraryService::class)->retainOrderImage($orderItem, $item->product);
                     $item->product->increment('sales_count', $item->quantity);
                 }
@@ -152,27 +180,39 @@ class OrderPlacementService
 
                 // Delete precisely the locked rows; leave concurrently added items intact.
                 CartItem::whereIn('id', $items->pluck('id'))->delete();
+                $attempt->update(['request_hash' => $requestHash, 'receipt_hash' => $receiptHash,
+                    'order_id' => $order->id, 'committed_at' => now()]);
 
-                return $order;
+                return new OrderPlacementResult($order, false);
             });
         } catch (Throwable $exception) {
             if ($receiptPath) {
-                Storage::disk('local')->delete($receiptPath);
+                // A lost connection or after-commit exception may mask a successful commit.
+                // Delete only when the durable record confirms this checkout did not commit.
+                try {
+                    if (! $this->attempts->completedForOwner($data['idempotency_key'] ?? null)) {
+                        Storage::disk('local')->delete($receiptPath);
+                    }
+                } catch (Throwable $cleanupException) {
+                    Log::warning('Checkout receipt retained because commit state could not be verified.', ['path' => $receiptPath]);
+                }
             }
             throw $exception;
         } finally {
             $this->cart->forgetCachedState();
         }
 
-        if (! $order) {
+        if (! $placement) {
             throw ValidationException::withMessages(['cart' => 'Prices have changed. Review your updated cart and submit again to accept the new prices.']);
         }
 
-        $this->cart->removeCoupon();
-        Cache::forget('admin_dashboard_stats');
-        Cache::forget('admin_orders_poll_snapshot');
+        if (! $placement->replayed) {
+            $this->cart->removeCoupon();
+            Cache::forget('admin_dashboard_stats');
+            Cache::forget('admin_orders_poll_snapshot');
+        }
 
-        return $order;
+        return $placement;
     }
 
     private function validatedCoupon(float $subtotal): ?Coupon

@@ -74,6 +74,12 @@
                                 <p class="font-bold text-espresso-800 text-sm truncate">{{ $item->product_title }}</p>
                                 @include('components.item-configuration', ['item' => $item, 'class' => 'mt-0.5 space-y-0.5', 'labelClass' => 'text-[10px] text-espresso-600', 'optionClass' => 'text-[10px] text-espresso-600'])
                                 <p class="text-espresso-450 mt-0.5">SKU: {{ $item->product_sku }} · Qty: {{ $item->quantity }} @ {{ format_price($item->unit_price) }}</p>
+                                @if($allocation = $item->inventoryReservation)
+                                    <p class="text-xs text-espresso-600 mt-1">Stock: {{ match($allocation->state) {
+                                        'reserved' => 'Reserved pending staff confirmation', 'consumed' => 'Deducted from on-hand stock',
+                                        'released' => 'Reservation released', 'restocked' => 'Restored after cancellation', default => 'Review required',
+                                    } }}</p>
+                                @endif
                             </div>
                             <span class="font-bold text-espresso-800 shrink-0">{{ format_price($item->total_price) }}</span>
                         </div>

@@ -30,6 +30,13 @@ return [
 
     'disks' => [
 
+        // Read-only source adapter for legacy merchant references in the document root.
+        'legacy_assets' => [
+            'driver' => 'local',
+            'root' => public_path(),
+            'throw' => true,
+        ],
+
         'media_public' => [
             'driver' => 'local',
             'root' => storage_path('app/public/media'),

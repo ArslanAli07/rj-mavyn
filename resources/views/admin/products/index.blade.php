@@ -89,9 +89,16 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="font-semibold {{ $p->stock_quantity <= 5 ? 'text-red-600 font-bold' : 'text-espresso-700' }}">
-                                        {{ $p->stock_quantity }}
-                                    </span>
+                                    @if($p->inventory_mode === 'untracked')
+                                        <span class="text-espresso-600">Untracked</span>
+                                    @elseif($p->inventory_mode === 'variant')
+                                        <span class="text-espresso-600">Per variant</span>
+                                    @else
+                                        <span class="font-semibold {{ $p->stock_quantity - $p->reserved_quantity <= 5 ? 'text-red-600' : 'text-espresso-700' }}">
+                                            {{ $p->stock_quantity - $p->reserved_quantity }} available
+                                        </span>
+                                        <span class="text-xs text-espresso-500">{{ $p->reserved_quantity }} reserved</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <span class="badge text-[9px] uppercase px-2 py-0.5 rounded-full font-bold

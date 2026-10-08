@@ -19,6 +19,7 @@
                 },
                 
                 orderSubmitted: false,
+                idempotencyKey: @js($checkoutKey),
                 isSubmitting: false,
                 errorMessage: '',
                 errors: {},
@@ -33,6 +34,7 @@
                 isApplyingCoupon: false,
 
                 async applyCoupon() {
+                    if (this.isSubmitting || this.isApplyingCoupon) return;
                     if (!this.couponCode.trim()) return;
                     this.isApplyingCoupon = true;
                     this.couponError = '';
@@ -45,10 +47,11 @@
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             },
-                            body: JSON.stringify({ code: this.couponCode })
+                            body: JSON.stringify({ code: this.couponCode, idempotency_key: this.idempotencyKey })
                         });
                         const data = await response.json();
                         if (response.ok && data.success) {
+                            if (data.idempotency_key) this.idempotencyKey = data.idempotency_key;
                             this.couponSuccess = data.message;
                             this.appliedCouponCode = data.coupon.code;
                             this.discount = parseFloat(data.totals.discount);
@@ -64,6 +67,7 @@
                 },
 
                 async removeCoupon() {
+                    if (this.isSubmitting || this.isApplyingCoupon) return;
                     this.isApplyingCoupon = true;
                     this.couponError = '';
                     this.couponSuccess = '';
@@ -74,10 +78,12 @@
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            }
+                            },
+                            body: JSON.stringify({ idempotency_key: this.idempotencyKey })
                         });
                         const data = await response.json();
                         if (response.ok && data.success) {
+                            if (data.idempotency_key) this.idempotencyKey = data.idempotency_key;
                             this.couponSuccess = 'Coupon removed.';
                             this.appliedCouponCode = '';
                             this.couponCode = '';
@@ -179,7 +185,7 @@
                 },
 
                 async submitForm(e) {
-                    if (this.isSubmitting) return;
+                    if (this.isSubmitting || this.isApplyingCoupon) return;
 
                     this.errorMessage = '';
                     if (!this.validateFields(e.target)) {
@@ -306,11 +312,12 @@
         <form action="{{ route('checkout.place-order') }}" method="POST" enctype="multipart/form-data" novalidate @submit.prevent="submitForm" x-show="!orderSubmitted"
               :aria-busy="isSubmitting" :class="isSubmitting && 'pointer-events-none'">
             @csrf
+            <input type="hidden" name="idempotency_key" value="{{ $checkoutKey }}" :value="idempotencyKey">
             <x-honeypot />
 
             <div x-ref="formError" x-show="errorMessage" x-cloak x-text="errorMessage"
                  class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"></div>
-            <a x-show="errors.cart || errors.coupon" x-cloak href="{{ route('cart.index') }}"
+            <a x-show="errors.cart || errors.coupon || errors.idempotency_key" x-cloak href="{{ route('cart.index') }}"
                class="block mb-6 text-sm font-semibold text-primary-600 underline">Review your cart</a>
             @if($enabledPaymentMethods->isEmpty())
                 <p role="alert" class="mb-6 text-sm font-semibold text-red-700">No payment methods are available. Please contact the store before ordering.</p>
@@ -660,7 +667,7 @@
 
                         {{-- Submit Order --}}
                         <button type="submit"
-                                :disabled="isSubmitting || {{ $enabledPaymentMethods->isEmpty() ? 'true' : 'false' }}"
+                                :disabled="isSubmitting || isApplyingCoupon || {{ $enabledPaymentMethods->isEmpty() ? 'true' : 'false' }}"
                                 :aria-busy="isSubmitting"
                                 class="btn-gold w-full py-3.5 text-sm font-semibold tracking-wide"
                                 :class="isSubmitting && 'cursor-wait opacity-90'">
@@ -684,4 +691,3 @@
     </div>
 
 </x-app-layout>
-

@@ -44,11 +44,18 @@ class CartService
 
     protected function query()
     {
-        if (Auth::check()) {
-            return CartItem::where('user_id', Auth::id());
+        if (Auth::guard('web')->check()) {
+            return CartItem::where('user_id', Auth::guard('web')->id());
         }
 
         return CartItem::where('session_id', $this->getSessionId());
+    }
+
+    public function checkoutOwner(): string
+    {
+        return Auth::guard('web')->check()
+            ? 'user:'.Auth::guard('web')->id()
+            : 'guest:'.$this->getSessionId();
     }
 
     /**
@@ -73,8 +80,8 @@ class CartService
             'configuration_signature' => $config['configuration_signature'],
         ];
 
-        if (Auth::check()) {
-            $lookup['user_id'] = Auth::id();
+        if (Auth::guard('web')->check()) {
+            $lookup['user_id'] = Auth::guard('web')->id();
         } else {
             $lookup['session_id'] = $this->getSessionId();
         }
@@ -87,6 +94,7 @@ class CartService
         $item->special_request = $config['special_request'];
         $item->price = $config['unit_price'];
         $item->quantity = ($item->exists ? $item->quantity : 0) + $quantity;
+        $this->assertCartStock($product, $config['variant'], $item->quantity, $item->exists ? [$item->id] : []);
         $item->save();
         $this->resetCache();
     }
@@ -135,6 +143,7 @@ class CartService
                 ->first();
 
             if ($existing) {
+                $this->assertCartStock($item->product, $config['variant'], $existing->quantity + $item->quantity, [$existing->id, $item->id]);
                 $existing->quantity += $item->quantity;
                 $existing->save();
                 $item->delete();
@@ -151,8 +160,29 @@ class CartService
             $item->price = $config['unit_price'];
         }
 
+        $variant = $item->product->variants->firstWhere('id', $item->product_variant_id);
+        if (! $variant) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['product_variant_id' => 'Choose an available variant.']);
+        }
+        $this->assertCartStock($item->product, $variant, $item->quantity, [$item->id]);
         $item->save();
         $this->resetCache();
+    }
+
+    private function assertCartStock(Product $product, ProductVariant $variant, int $quantity, array $excluded): void
+    {
+        if ($quantity < 1 || $quantity > 20) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['quantity' => 'Each configured item must contain between 1 and 20 units.']);
+        }
+        $available = app(InventoryService::class)->availableQuantity($product, $variant);
+        $current = $product->fresh();
+        $others = $this->query()->where('product_id', $product->id)->whereNotIn('id', $excluded);
+        if ($current->inventory_mode !== 'shared') {
+            $others->where('product_variant_id', $variant->id);
+        }
+        if ($available !== null && $quantity + $others->sum('quantity') > $available) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['quantity' => 'Not enough stock is available for the quantities in your cart.']);
+        }
     }
 
     public function remove(int $itemId): void
@@ -233,8 +263,8 @@ class CartService
             ];
         }
 
-        if (Auth::check()) {
-            $used = $coupon->usages()->where('user_id', Auth::id())->count();
+        if (Auth::guard('web')->check()) {
+            $used = $coupon->usages()->where('user_id', Auth::guard('web')->id())->count();
             if ($used >= $coupon->per_user_limit) {
                 return ['success' => false, 'message' => 'You have already used this coupon.'];
             }
@@ -304,7 +334,7 @@ class CartService
                     $guestItem->special_request
                 );
 
-            $existing = CartItem::where('user_id', Auth::id())
+            $existing = CartItem::where('user_id', Auth::guard('web')->id())
                 ->where('product_id', $guestItem->product_id)
                 ->where('configuration_signature', $signature)
                 ->first();
@@ -314,7 +344,7 @@ class CartService
                 $guestItem->delete();
             } else {
                 $guestItem->update([
-                    'user_id' => Auth::id(),
+                    'user_id' => Auth::guard('web')->id(),
                     'session_id' => null,
                     'configuration_signature' => $signature,
                 ]);

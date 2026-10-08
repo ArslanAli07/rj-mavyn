@@ -42,9 +42,7 @@
                             @error('category_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="stock_quantity" class="label-luxury">Stock Quantity *</label>
-                            <input type="number" id="stock_quantity" name="stock_quantity" value="{{ old('stock_quantity', $product->stock_quantity) }}" required class="input-luxury text-sm">
-                            @error('stock_quantity') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            @include('admin.products._inventory')
                         </div>
                         <div>
                             <label for="display_order" class="label-luxury">Category Priority *</label>
@@ -100,6 +98,11 @@
                         'servings' => $v->servings ?? '',
                         'is_default' => (bool) $v->is_default,
                         'is_active' => (bool) $v->is_active,
+                        'in_stock' => (bool) $v->in_stock,
+                        'track_inventory' => (bool) $v->track_inventory,
+                        'stock_quantity' => $v->stock_quantity,
+                        'reserved_quantity' => $v->reserved_quantity,
+                        'inventory_version' => $v->inventory_version,
                     ])->values()->all());
 
                     $initialOptionGroups = old('option_groups', $product->optionGroups->map(fn ($g) => [
@@ -115,10 +118,16 @@
                             'name' => $v->name,
                             'price_adjustment' => (float) $v->price_adjustment,
                             'is_active' => (bool) $v->is_active,
+                        'in_stock' => (bool) $v->in_stock,
+                        'track_inventory' => (bool) $v->track_inventory,
+                        'stock_quantity' => $v->stock_quantity,
+                        'reserved_quantity' => $v->reserved_quantity,
+                        'inventory_version' => $v->inventory_version,
                         ])->values()->all(),
                     ])->values()->all());
                 @endphp
                 @include('admin.products._options-editor')
+                @include('admin.products._stock-history')
 
                 {{-- Images --}}
                 <div class="bg-white border border-cream-150 rounded-2xl p-6 shadow-sm space-y-6">

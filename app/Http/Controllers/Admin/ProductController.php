@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\InventoryMovement;
 use App\Models\Occasion;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
+use App\Services\InventoryService;
 use App\Services\Media\MediaLibraryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +28,7 @@ class ProductController extends Controller
 {
     use Concerns\HandlesBulkActions;
 
-    public function __construct(private MediaLibraryService $mediaLibrary) {}
+    public function __construct(private MediaLibraryService $mediaLibrary, private InventoryService $inventory) {}
 
     public function index(Request $request): View
     {
@@ -75,8 +77,10 @@ class ProductController extends Controller
             $data['in_stock'] = $request->boolean('in_stock', true);
             $data['is_active'] = $request->boolean('is_active', true);
 
-            unset($data['main_image_asset_id'], $data['gallery_asset_ids'], $data['gallery_asset_ids_present']);
+            $quantity = (int) $data['stock_quantity'];
+            unset($data['main_image_asset_id'], $data['gallery_asset_ids'], $data['gallery_asset_ids_present'], $data['stock_quantity'], $data['inventory_mode'], $data['inventory_version']);
             $product = Product::create($data);
+            $this->inventory->configureProduct($product, $request->input('inventory_mode', 'untracked'), $quantity, 0, $request->user('admin'));
             if ($request->exists('main_image_asset_id')) {
                 $this->mediaLibrary->setProductMainImage($product, $request->integer('main_image_asset_id') ?: null, $request->user('admin'));
             }
@@ -113,7 +117,12 @@ class ProductController extends Controller
         $categories = Category::active()->orderBy('display_order')->get();
         $occasions = Occasion::active()->orderBy('display_order')->get();
 
-        return view('admin.products.edit', compact('product', 'categories', 'occasions'));
+        $stockMovements = InventoryMovement::where(function ($query) use ($product) {
+            $query->where(fn ($q) => $q->where('stock_type', 'product')->where('stock_id', $product->id))
+                ->orWhere(fn ($q) => $q->where('stock_type', 'variant')->whereIn('stock_id', $product->variants->pluck('id')));
+        })->with('admin')->latest('id')->limit(20)->get();
+
+        return view('admin.products.edit', compact('product', 'categories', 'occasions', 'stockMovements'));
     }
 
     public function update(Request $request, Product $product): RedirectResponse
@@ -122,6 +131,9 @@ class ProductController extends Controller
         $data = $this->validateProduct($request, $product);
 
         DB::transaction(function () use ($request, $product, $data) {
+            $product = $this->inventory->lockProducts([$product->id])->get($product->id);
+            $this->inventory->configureProduct($product, $request->input('inventory_mode', $product->inventory_mode), (int) $data['stock_quantity'],
+                $request->has('inventory_version') ? $request->integer('inventory_version') : null, $request->user('admin'));
             if ($request->hasFile('main_image')) {
                 if ($product->main_image) {
                     Storage::disk('public')->delete($product->main_image);
@@ -135,7 +147,7 @@ class ProductController extends Controller
             $data['in_stock'] = $request->boolean('in_stock');
             $data['is_active'] = $request->boolean('is_active');
 
-            unset($data['main_image_asset_id'], $data['gallery_asset_ids'], $data['gallery_asset_ids_present']);
+            unset($data['main_image_asset_id'], $data['gallery_asset_ids'], $data['gallery_asset_ids_present'], $data['stock_quantity'], $data['inventory_mode'], $data['inventory_version']);
             $product->update($data);
             if ($request->exists('main_image_asset_id') || $request->hasFile('main_image')) {
                 $this->mediaLibrary->setProductMainImage($product, $request->integer('main_image_asset_id') ?: null, $request->user('admin'));
@@ -242,7 +254,9 @@ class ProductController extends Controller
             'allergens' => 'nullable|string',
             'weight' => 'nullable|string|max:50',
             'servings' => 'nullable|string|max:50',
-            'stock_quantity' => 'required|integer|min:0',
+            'stock_quantity' => 'required|integer|min:0|max:2147483647',
+            'inventory_mode' => 'sometimes|in:untracked,shared,variant',
+            'inventory_version' => 'sometimes|integer|min:0',
             'main_image_asset_id' => $this->mediaLibrary->imageRules('main_image'),
             'gallery_asset_ids_present' => 'sometimes|in:1',
             'gallery_asset_ids' => 'sometimes|array|max:30',
@@ -293,6 +307,10 @@ class ProductController extends Controller
             'variants.*.sort_order' => 'nullable|integer|min:0',
             'variants.*.is_default' => 'nullable|boolean',
             'variants.*.is_active' => 'nullable|boolean',
+            'variants.*.in_stock' => 'sometimes|boolean',
+            'variants.*.track_inventory' => 'sometimes|boolean',
+            'variants.*.stock_quantity' => 'sometimes|integer|min:0|max:2147483647',
+            'variants.*.inventory_version' => 'sometimes|integer|min:0',
 
             'option_groups' => 'nullable|array',
             'option_groups.*.id' => [
@@ -421,13 +439,22 @@ class ProductController extends Controller
                 $variant = $product->variants()->create($attributes);
                 $keptIds[] = $variant->id;
             }
+            $this->inventory->configureVariant($variant, array_key_exists('track_inventory', $payload)
+                ? filter_var($payload['track_inventory'], FILTER_VALIDATE_BOOLEAN) : $variant->track_inventory,
+                (int) ($payload['stock_quantity'] ?? $variant->stock_quantity),
+                isset($payload['inventory_version']) ? (int) $payload['inventory_version'] : null, auth('admin')->user());
+            if (array_key_exists('in_stock', $payload)) {
+                $variant->update(['in_stock' => filter_var($payload['in_stock'], FILTER_VALIDATE_BOOLEAN)]);
+            }
         }
 
         if (! $defaultAssigned && ! empty($keptIds)) {
             ProductVariant::where('id', $keptIds[0])->update(['is_default' => true]);
         }
 
-        $product->variants()->whereNotIn('id', $keptIds)->delete();
+        foreach ($product->variants()->whereNotIn('id', $keptIds)->get() as $removed) {
+            $removed->delete();
+        }
     }
 
     protected function syncOptionGroups(Product $product, array $groups): void
@@ -503,13 +530,12 @@ class ProductController extends Controller
 
     protected function deleteProduct(Product $product): void
     {
-        if ($product->main_image) {
-            Storage::disk('public')->delete($product->main_image);
-        }
-        foreach ($product->images as $img) {
-            Storage::disk('public')->delete($img->image);
-        }
-        $product->delete();
+        DB::transaction(function () use ($product) {
+            $this->inventory->lockProducts([$product->id]);
+            $this->inventory->assertCanDeleteProduct($product);
+            $product->delete();
+            // Legacy originals may still be historical/external references; preserve them.
+        });
         Cache::forget("product_{$product->slug}");
         Cache::forget("related_{$product->category_id}_{$product->id}");
     }

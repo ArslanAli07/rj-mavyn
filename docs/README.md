@@ -10,6 +10,8 @@ These documents define the proposed platform. They do not indicate that its exte
 | [Theme development](THEME_DEVELOPMENT.md) | Storefront packages, child themes, templates, settings, and assets |
 | [Central media management](MEDIA_MANAGEMENT.md) | Shared library/picker, polymorphic usage, Spatie integration, optimization, privacy, and migration |
 | [Media operations](MEDIA_OPERATIONS.md) | Processing profiles, order retention, durable cleanup, and recovery commands |
+| [Inventory operations](INVENTORY_OPERATIONS.md) | Stock policies, reservations, staff adjustments, order transitions, and concurrency checks |
+| [Checkout operations](CHECKOUT_OPERATIONS.md) | Checkout keys, duplicate prevention, receipt recovery, ownership, and retry checks |
 | [Local browser testing](LOCAL_TESTING.md) | Admin setup, media worker, and product-image checks |
 | [Implementation progress](progress.md) | Completed increments, verification, setup requirements, and remaining work |
 

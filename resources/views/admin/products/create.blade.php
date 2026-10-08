@@ -41,9 +41,7 @@
                             @error('category_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="stock_quantity" class="label-luxury">Stock Quantity *</label>
-                            <input type="number" id="stock_quantity" name="stock_quantity" value="{{ old('stock_quantity', 10) }}" required class="input-luxury text-sm">
-                            @error('stock_quantity') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            @include('admin.products._inventory')
                         </div>
                         <div>
                             <label for="display_order" class="label-luxury">Category Priority *</label>

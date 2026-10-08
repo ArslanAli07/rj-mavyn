@@ -1,5 +1,5 @@
 {{-- Shared admin product variants + option groups editor (expects Alpine productOptionsManager) --}}
-<div class="bg-white border border-cream-150 rounded-2xl p-6 shadow-sm space-y-4" x-data="productOptionsManager">
+<div class="bg-white border border-cream-150 rounded-2xl p-6 shadow-sm space-y-4" x-data="productOptionsManager" @inventory-mode-changed.window="inventoryMode = $event.detail.mode">
     <div class="flex items-center justify-between border-b border-cream-100 pb-3">
         <div>
             <h3 class="font-heading font-bold text-sm text-espresso-800">Base Variants *</h3>
@@ -18,6 +18,21 @@
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end bg-cream-50/40 p-4 rounded-xl border border-cream-100 relative">
                 <input type="hidden" :name="'variants[' + index + '][id]'" :value="variant.id || ''">
                 <input type="hidden" :name="'variants[' + index + '][sort_order]'" :value="index">
+                <input type="hidden" :name="'variants[' + index + '][inventory_version]'" :value="variant.inventory_version">
+
+                <div class="sm:col-span-12 flex flex-wrap items-center gap-3 text-xs">
+                    <label><input type="checkbox" x-model="variant.in_stock"> Available</label>
+                    <input type="hidden" :name="'variants[' + index + '][in_stock]'" :value="variant.in_stock ? 1 : 0">
+                    <div x-show="inventoryMode === 'variant'" class="flex flex-wrap items-center gap-3" x-cloak>
+                        <label><input type="checkbox" x-model="variant.track_inventory"> Track stock</label>
+                        <input type="hidden" :name="'variants[' + index + '][track_inventory]'" :value="variant.track_inventory ? 1 : 0" :disabled="inventoryMode !== 'variant'">
+                        <label x-show="variant.track_inventory">Units on hand
+                            <input type="number" min="0" max="2147483647" :name="'variants[' + index + '][stock_quantity]'" x-model="variant.stock_quantity" :disabled="inventoryMode !== 'variant' || !variant.track_inventory" class="input-luxury text-xs w-24">
+                        </label>
+                        <span x-show="variant.track_inventory"><span x-text="variant.reserved_quantity"></span> reserved</span>
+                        <span x-show="!variant.track_inventory">Untracked / made to order</span>
+                    </div>
+                </div>
 
                 <div class="sm:col-span-3">
                     <label class="label-luxury text-[11px]">Name *</label>

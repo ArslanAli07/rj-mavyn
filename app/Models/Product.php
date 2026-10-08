@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasLibraryMedia;
+use App\Services\InventoryService;
 use App\Services\Media\MediaLibraryService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -10,17 +11,30 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Product extends Model
 {
     use HasLibraryMedia;
 
+    protected $attributes = ['inventory_mode' => 'untracked', 'stock_quantity' => 0, 'reserved_quantity' => 0, 'inventory_version' => 0];
+
+    public function delete()
+    {
+        return DB::transaction(function () {
+            app(InventoryService::class)->lockProducts([$this->id]);
+
+            return parent::delete();
+        });
+    }
+
     protected $fillable = [
         'category_id', 'title', 'slug', 'sku', 'short_description', 'description',
         'meta_title', 'meta_description', 'meta_keywords',
         'ingredients', 'allergens', 'price', 'discount_price', 'weight', 'servings',
         'stock_quantity', 'in_stock', 'is_featured', 'is_bestseller', 'is_new_arrival',
+        'inventory_mode',
         'is_active', 'main_image', 'sales_count', 'display_order',
     ];
 
@@ -35,6 +49,7 @@ class Product extends Model
             'is_new_arrival' => 'boolean',
             'is_active' => 'boolean',
             'display_order' => 'integer',
+            'stock_quantity' => 'integer', 'reserved_quantity' => 'integer', 'inventory_version' => 'integer',
         ];
     }
 
@@ -48,6 +63,7 @@ class Product extends Model
                 $product->sku = 'SKU-'.strtoupper(Str::random(12));
             }
         });
+        static::deleting(fn (Product $product) => app(InventoryService::class)->detachProduct($product));
     }
 
     // ── Relationships ──────────────────────────────────────────────────────────
@@ -75,6 +91,11 @@ class Product extends Model
     public function getMainImageAssetIdAttribute(): ?int
     {
         return $this->mainImageUsages()->value('media_asset_id');
+    }
+
+    public function getAvailableForSaleAttribute(): bool
+    {
+        return app(InventoryService::class)->available($this);
     }
 
     public function getMainImageSrcsetAttribute(): string

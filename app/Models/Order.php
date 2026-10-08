@@ -2,12 +2,26 @@
 
 namespace App\Models;
 
+use App\Services\InventoryService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class Order extends Model
 {
+    public function delete()
+    {
+        return DB::transaction(function () {
+            $ids = InventoryReservation::where('order_id', $this->id)->whereNotNull('product_id')->pluck('product_id')->all();
+            app(InventoryService::class)->lockProducts($ids);
+            static::whereKey($this->id)->lockForUpdate()->first();
+
+            return parent::delete();
+        });
+    }
+
     protected $fillable = [
         'order_number', 'tracking_token', 'user_id', 'coupon_id', 'delivery_zone_id',
         'customer_name', 'customer_email', 'customer_phone',
@@ -16,17 +30,19 @@ class Order extends Model
         'subtotal', 'delivery_fee', 'discount_amount', 'tax_amount', 'grand_total',
         'payment_method', 'payment_receipt', 'payment_receipt_disk', 'payment_status', 'status',
         'order_notes', 'admin_notes', 'delivered_at',
+        'inventory_managed',
     ];
 
     protected function casts(): array
     {
         return [
-            'subtotal'        => 'decimal:2',
-            'delivery_fee'    => 'decimal:2',
+            'subtotal' => 'decimal:2',
+            'delivery_fee' => 'decimal:2',
             'discount_amount' => 'decimal:2',
-            'tax_amount'      => 'decimal:2',
-            'grand_total'     => 'decimal:2',
-            'delivered_at'    => 'datetime',
+            'tax_amount' => 'decimal:2',
+            'grand_total' => 'decimal:2',
+            'delivered_at' => 'datetime',
+            'inventory_managed' => 'boolean',
         ];
     }
 
@@ -34,24 +50,25 @@ class Order extends Model
     {
         static::creating(function ($order) {
             if (empty($order->tracking_token)) {
-                $order->tracking_token = \Illuminate\Support\Str::random(32);
+                $order->tracking_token = Str::random(32);
             }
         });
+        static::deleting(fn (Order $order) => app(InventoryService::class)->detachOrder($order));
     }
 
     public const STATUSES = [
-        'pending'          => 'Pending',
-        'confirmed'        => 'Confirmed',
-        'preparing'        => 'Processing',
+        'pending' => 'Pending',
+        'confirmed' => 'Confirmed',
+        'preparing' => 'Processing',
         'out_for_delivery' => 'Out for Delivery',
-        'delivered'        => 'Delivered',
-        'cancelled'        => 'Cancelled',
+        'delivered' => 'Delivered',
+        'cancelled' => 'Cancelled',
     ];
 
     public const PAYMENT_METHODS = [
-        'cod'           => 'Cash on Delivery',
-        'easypaisa'     => 'Easypaisa',
-        'jazzcash'      => 'JazzCash',
+        'cod' => 'Cash on Delivery',
+        'easypaisa' => 'Easypaisa',
+        'jazzcash' => 'JazzCash',
         'bank_transfer' => 'Bank Transfer',
     ];
 
@@ -88,13 +105,13 @@ class Order extends Model
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
-            'pending'          => 'yellow',
-            'confirmed'        => 'blue',
-            'preparing'        => 'purple',
+            'pending' => 'yellow',
+            'confirmed' => 'blue',
+            'preparing' => 'purple',
             'out_for_delivery' => 'orange',
-            'delivered'        => 'green',
-            'cancelled'        => 'red',
-            default            => 'gray',
+            'delivered' => 'green',
+            'cancelled' => 'red',
+            default => 'gray',
         };
     }
 
@@ -110,6 +127,6 @@ class Order extends Model
     {
         // Do not derive identifiers by locking a possibly empty set of prior orders.
         // Existing identifiers are preserved; only newly placed orders use this format.
-        return 'ORD-'.\Illuminate\Support\Str::ulid();
+        return 'ORD-'.Str::ulid();
     }
 }

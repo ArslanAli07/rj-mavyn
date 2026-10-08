@@ -1,6 +1,6 @@
 # Media operations
 
-Implemented in the media lifecycle increment. Legacy file/history backfill remains the next item in [progress](progress.md).
+Media lifecycle and resumable legacy-import tooling are implemented. Existing-store backfill requires its source records and files; see [progress](progress.md) for the current local inventory.
 
 ## Policies and presentation
 
@@ -14,7 +14,7 @@ Private originals, conversions, and responsive files stay on `media_private`. Au
 
 ## Historical retention
 
-New checkout order items snapshot the selected library main image and its metadata within the checkout transaction. An independent retention hold blocks deletion even after the product or order is deleted. Order views use the retained original; changing the product selection or asset title does not rewrite the order snapshot. Holds have no automatic expiry or release endpoint. Historical legacy orders require the next migration step.
+New checkout order items snapshot the selected library main image and its metadata within the checkout transaction. An independent retention hold blocks deletion even after the product or order is deleted. Order views use the retained original; changing the product selection or asset title does not rewrite the order snapshot. Holds have no automatic expiry or release endpoint. Legacy migration follows the order item's saved image path, including when its product has changed or been deleted, and creates an independent hold. Existing snapshots are preserved; missing holds can be repaired.
 
 ## Processing and cleanup
 
@@ -43,4 +43,32 @@ The first command reports only. `--apply` queues uploads interrupted for more th
 
 The apply command is scheduled hourly with overlap protection. A production scheduler must invoke `php artisan schedule:run` every minute; starting a queue worker alone does not run scheduled reconciliation. The local worker was started for browser testing; no production supervisor or cron was installed.
 
-Back up media disks together with database records, usages, retention holds, and cleanup journals. Investigate unknown folders before deleting them manually. Existing public receipts and legacy uploads remain unchanged until the migration milestone.
+Back up media disks together with database records, usages, retention holds, cleanup journals, and legacy import journals. Investigate unknown folders before deleting them manually. Legacy migration preserves public image source files; verified public receipt copies are removed after their private replacements and order references are committed.
+
+## Legacy import and receipt privacy
+
+Back up the database, public/private storage, and referenced merchant images in the document root before migrating an existing store. Keep backups outside public storage. Coordinate merchant edits during import: the command detects changed references, but its command lock does not suspend application writers. Apply schema migrations and run media preflight first, then:
+
+```sh
+php artisan media:migrate-legacy
+php artisan media:migrate-legacy --apply
+php artisan media:migrate-legacy
+```
+
+The default command inventories and verifies without changing files or business records. Both modes return a failure exit code for missing originals, unsafe paths, checksum mismatches, unsupported files, privacy conflicts, or unfinished recovery. Independent targets continue after a failure. A shared cache lock prevents concurrent commands; it expires after 24 hours if the process crashes. Clear a stale lock only after confirming that the prior process has stopped.
+
+Sources include product main/gallery images, categories, desktop/mobile slides, logo/favicon settings, homepage galleries, saved order images, and public receipts. `images/` and `assets/` references resolve through the document-root `legacy_assets` adapter; product gallery rows use the public disk. A `storage/` prefix explicitly selects the public disk. Remote URLs, traversal, symlinks, and generated media folders require manual reconciliation. Raster images must meet the existing type, size, and dimension policies; packaged SVG artwork stays outside this import.
+
+`legacy_media_imports` records source identity, SHA-256 checksum, visibility, destination, asset ID when applicable, state, and import/copy errors. Compatible public images with identical bytes share one library original. Receipts have a separate private identity and never merge into a public image. Changed sources and conflicting destination bytes require manual reconciliation.
+
+Content imports retain current library selections and their legacy fallbacks. Successful imports create ordered usages and clear legacy columns/rows atomically. Galleries verify every member before replacing their visible legacy representation; a missing member leaves the whole gallery available. Duplicate images collapse in first-occurrence order, matching the distinct-image slot policy. Per-usage alt text is retained. Public source originals remain available for recovery and external links. Unreferenced public-disk files are reported and preserved; the document root is read only for referenced merchant images.
+
+Historical imports use saved order-item paths and permanent holds. Legacy path strings remain as provenance. Import journals protect interrupted image copies from ordinary stale-upload cleanup. Rerunning migration resumes their original copy and processing generation without creating another asset.
+
+Receipt migration verifies a staged private copy in `storage/app/private/receipts/legacy`, commits all orders sharing the old path to that private destination, then removes the public copy. A failed unlink leaves a `copied` journal that a later apply run finishes even though order references are already private. Partial staging copies are retryable. Private storage must reside outside public roots. Paths shared between receipts and public content are reported as privacy conflicts requiring manual resolution.
+
+Receipt delivery requires admin authentication and sends `Cache-Control: no-store, private` with `nosniff`. Receipts remain outside public pickers. Existing private receipts are checked for missing originals and file-policy violations. Migrated receipt originals remain retained by their journal after order deletion; other shared receipts remain while another order references them. No automatic historical receipt expiry is implemented.
+
+After importing, process queued conversions, inspect processing status, verify representative storefront images and authorized receipts, and verify that old public receipt URLs no longer serve their bytes. Restore missing private originals from the coordinated backup. For a full rollback, restore the database and files together while preserving private receipt access/storage rules.
+
+Local audit on 2026-10-08: the journal schema is applied, but there are no products, categories, orders, or media assets. Three default slides reference missing `images/hero_cakes.jpg`, `images/hero_pastries.jpg`, and `images/hero_brownies.jpg`. Both report and apply preserve these unresolved references. Isolated fixtures validate migration behavior; existing-store backfill remains outstanding.

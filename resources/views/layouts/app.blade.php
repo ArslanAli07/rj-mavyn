@@ -889,7 +889,7 @@
                     this.selectedOptionIds[group.id] = current;
                 },
                 configurationValid() {
-                    if (!this.selectedVariantId) return false;
+                    if (!this.selectedVariantId || this.variants.find(v => v.id === this.selectedVariantId)?.available_quantity === 0) return false;
                     return this.optionGroups.every(group => {
                         const selected = this.selectedOptionIds[group.id];
                         const count = group.selection_type === 'single'

@@ -4,6 +4,16 @@
             variants: @json($initialVariants),
             optionGroups: @json($initialOptionGroups),
             errors: @json($errors->toArray()),
+            inventoryMode: document.getElementById('inventory_mode')?.value || 'untracked',
+            init() {
+                this.variants.forEach(variant => {
+                    variant.track_inventory ??= false;
+                    variant.in_stock ??= true;
+                    variant.stock_quantity ??= 0;
+                    variant.reserved_quantity ??= 0;
+                    variant.inventory_version ??= 0;
+                });
+            },
 
             addVariant() {
                 this.variants.push({
@@ -14,6 +24,11 @@
                     servings: '',
                     is_default: this.variants.length === 0,
                     is_active: true,
+                    in_stock: true,
+                    track_inventory: false,
+                    stock_quantity: 0,
+                    reserved_quantity: 0,
+                    inventory_version: 0,
                 });
             },
             removeVariant(index) {

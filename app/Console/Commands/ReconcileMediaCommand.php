@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\LegacyMediaImport;
 use App\Models\MediaAsset;
 use App\Models\MediaCleanupTask;
 use App\Services\Media\MediaLibraryService;
@@ -20,7 +21,9 @@ class ReconcileMediaCommand extends Command
     public function handle(MediaLifecycleService $lifecycle, MediaLibraryService $library): int
     {
         $apply = $this->option('apply');
-        $staleUploads = MediaAsset::where('status', 'uploading')->where('created_at', '<', now()->subHours(24))->get();
+        // Import journals own interrupted copies; migration must recover them, not delete them.
+        $staleUploads = MediaAsset::where('status', 'uploading')->where('created_at', '<', now()->subHours(24))
+            ->whereNotIn('id', LegacyMediaImport::where('status', 'pending')->whereNotNull('media_asset_id')->select('media_asset_id'))->get();
         $tasks = MediaCleanupTask::whereIn('status', ['queued', 'processing', 'failed'])->where('updated_at', '<', now()->subMinutes(10))->get();
         $stalled = MediaAsset::where('status', 'active')->whereIn('processing_status', ['pending', 'processing'])
             ->where('updated_at', '<', now()->subMinutes(10))->with('media')->get();

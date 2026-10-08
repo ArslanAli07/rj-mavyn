@@ -3,6 +3,7 @@
 namespace App\Services\Media;
 
 use App\Jobs\Media\CleanupMedia;
+use App\Models\LegacyMediaImport;
 use App\Models\MediaAsset;
 use App\Models\MediaCleanupTask;
 use App\Models\OrderItem;
@@ -41,7 +42,8 @@ class MediaLifecycleService
 
     public function assertUnreferenced(MediaAsset $asset): void
     {
-        if ($asset->usages()->exists() || $asset->retentionHolds()->exists() || OrderItem::where('media_asset_id', $asset->id)->exists()) {
+        if ($asset->usages()->exists() || $asset->retentionHolds()->exists() || OrderItem::where('media_asset_id', $asset->id)->exists()
+            || LegacyMediaImport::where('media_asset_id', $asset->id)->where('status', 'pending')->exists()) {
             throw ValidationException::withMessages(['media' => 'This file is in use or retained for order history. It cannot be deleted.']);
         }
     }

@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Services\CheckoutAttemptService;
 use App\Services\SitemapService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Crypt;
@@ -44,10 +45,13 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Merge valid honeypot fields into form data for protected routes.
+     * Merge valid honeypot fields; checkout payloads also obtain a server-issued key.
      */
     protected function withHoneypot(array $data = [], bool $filled = false, ?int $startedSecondsAgo = null): array
     {
+        if (array_key_exists('payment_method', $data) && ! array_key_exists('idempotency_key', $data)) {
+            $data['idempotency_key'] = app(CheckoutAttemptService::class)->issue();
+        }
         $nameField = config('honeypot.name_field', 'website');
         $timeField = config('honeypot.valid_from_field', '_form_started_at');
         $startedAt = now()->subSeconds($startedSecondsAgo ?? max(1, (int) config('honeypot.min_seconds', 2)))->timestamp;

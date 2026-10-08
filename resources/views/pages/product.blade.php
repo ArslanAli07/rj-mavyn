@@ -14,7 +14,8 @@
     @php
         $activeVariants = $product->variants->where('is_active', true)->values();
         $activeOptionGroups = $product->optionGroups->where('is_active', true)->values();
-        $defaultVariant = $activeVariants->firstWhere('is_default', true) ?? $activeVariants->first();
+        $availableVariants = $activeVariants->filter(fn ($v) => app(\App\Services\InventoryService::class)->availableQuantity($product, $v) !== 0);
+        $defaultVariant = $availableVariants->firstWhere('is_default', true) ?? $availableVariants->first();
         $currencySymbol = setting('currency_symbol', 'Rs.');
     @endphp
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16"
@@ -27,6 +28,7 @@
             currencySymbol: @js($currencySymbol),
             variants: {{ json_encode($activeVariants->map(fn ($v) => [
                 'id' => $v->id,
+                'available_quantity' => app(\App\Services\InventoryService::class)->availableQuantity($product, $v),
                 'name' => $v->display_name,
                 'price' => (float) $v->price,
                 'discount_price' => $v->discount_price ? (float) $v->discount_price : null,
@@ -130,6 +132,8 @@
                 this.selectedOptionIds[group.id] = current;
             },
             configurationValid() {
+                if (!this.selectedVariant || this.selectedVariant.available_quantity === 0) return false;
+                if (Number(this.quantity) > Math.min(20, this.selectedVariant.available_quantity ?? 20)) return false;
                 return this.optionGroups.every(group => {
                     const selected = this.selectedOptionIds[group.id];
                     const count = group.selection_type === 'single'
@@ -181,7 +185,7 @@
                 {{-- Category and badges --}}
                 <div class="flex items-center justify-between gap-4">
                     <span class="text-xs font-semibold text-primary-600 tracking-widest uppercase">{{ $product->category?->name }}</span>
-                    @if($product->in_stock)
+                    @if($product->available_for_sale)
                         <span class="badge bg-green-100 text-green-700 text-xs px-2.5 py-0.5">In Stock</span>
                     @else
                         <span class="badge bg-red-100 text-red-700 text-xs px-2.5 py-0.5">Out of Stock</span>
@@ -225,7 +229,7 @@
                             <div class="flex flex-wrap gap-3">
                                 <template x-for="v in variants" :key="v.id">
                                     <button type="button"
-                                            @click="selectedVariantId = v.id"
+                                            @click="selectedVariantId = v.id; quantity = Math.min(quantity, v.available_quantity ?? 20)" :disabled="v.available_quantity === 0"
                                             :class="selectedVariantId === v.id ? 'border-primary-500 bg-primary-50 text-primary-900 ring-2 ring-primary-500/20' : 'border-cream-300 bg-white text-espresso-700 hover:border-cream-400'"
                                             class="px-4 py-2 text-sm font-semibold border rounded-xl transition-all duration-200 focus:outline-none">
                                         <span x-text="v.name"></span>
@@ -286,7 +290,7 @@
                         <p class="text-sm font-semibold text-espresso-800">The shop is currently closed</p>
                         <p class="text-xs text-espresso-500 mt-1 leading-relaxed">Online ordering is available from {{ ordering_hours_label() }}. You can still browse the menu in the meantime.</p>
                     </div>
-                @elseif($product->in_stock)
+                @elseif($product->available_for_sale)
                     <form action="{{ route('cart.add') }}" method="POST" class="space-y-6" @submit="if (!configurationValid()) { $event.preventDefault(); window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Please complete the required options.', type: 'error' } })); }">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
@@ -306,7 +310,7 @@
                             <div class="flex items-center border border-cream-300 rounded-full bg-cream-50 p-1 shrink-0">
                                 <button type="button" @click="if(quantity > 1) quantity--" class="w-8 h-8 rounded-full flex items-center justify-center text-espresso-700 hover:bg-cream-200 transition-colors font-bold text-lg select-none">-</button>
                                 <input type="number" name="quantity" x-model="quantity" readonly class="w-12 text-center bg-transparent border-0 text-sm font-bold text-espresso-800 focus:ring-0 p-0">
-                                <button type="button" @click="quantity++" class="w-8 h-8 rounded-full flex items-center justify-center text-espresso-700 hover:bg-cream-200 transition-colors font-bold text-lg select-none">+</button>
+                                <button type="button" @click="if(quantity < Math.min(20, selectedVariant?.available_quantity ?? 20)) quantity++" class="w-8 h-8 rounded-full flex items-center justify-center text-espresso-700 hover:bg-cream-200 transition-colors font-bold text-lg select-none">+</button>
                             </div>
 
                             <button type="submit" class="btn-gold flex-1 py-3 justify-center text-sm font-semibold tracking-wide" :disabled="!configurationValid()" :class="!configurationValid() ? 'opacity-60 cursor-not-allowed' : ''">

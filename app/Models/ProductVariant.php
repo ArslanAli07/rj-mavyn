@@ -2,12 +2,25 @@
 
 namespace App\Models;
 
+use App\Services\InventoryService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class ProductVariant extends Model
 {
+    protected $attributes = ['track_inventory' => false, 'in_stock' => true, 'stock_quantity' => 0, 'reserved_quantity' => 0, 'inventory_version' => 0];
+
+    public function delete()
+    {
+        return DB::transaction(function () {
+            app(InventoryService::class)->lockProducts([$this->product_id]);
+
+            return parent::delete();
+        });
+    }
+
     protected $fillable = [
         'product_id',
         'name',
@@ -18,6 +31,7 @@ class ProductVariant extends Model
         'sort_order',
         'is_default',
         'is_active',
+        'track_inventory', 'in_stock', 'stock_quantity',
     ];
 
     protected function casts(): array
@@ -28,7 +42,14 @@ class ProductVariant extends Model
             'sort_order' => 'integer',
             'is_default' => 'boolean',
             'is_active' => 'boolean',
+            'track_inventory' => 'boolean', 'in_stock' => 'boolean', 'stock_quantity' => 'integer',
+            'reserved_quantity' => 'integer', 'inventory_version' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(fn (ProductVariant $variant) => app(InventoryService::class)->detachVariant($variant));
     }
 
     public function product(): BelongsTo
@@ -63,7 +84,7 @@ class ProductVariant extends Model
 
     public function getDiscountPercentageAttribute(): int
     {
-        if (!$this->is_on_sale) {
+        if (! $this->is_on_sale) {
             return 0;
         }
 

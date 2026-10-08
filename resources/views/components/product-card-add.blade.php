@@ -1,6 +1,6 @@
 @props(['product'])
 
-@if (ordering_enabled())
+@if (ordering_enabled() && $product->available_for_sale)
 @php
     $activeVariants = $product->relationLoaded('variants')
         ? $product->variants->where('is_active', true)->values()
@@ -10,7 +10,8 @@
         ? $product->optionGroups->where('is_active', true)->values()
         : $product->optionGroups()->where('is_active', true)->with('values')->orderBy('sort_order')->orderBy('id')->get();
 
-    $defaultVariant = $activeVariants->firstWhere('is_default', true) ?? $activeVariants->first();
+    $availableVariants = $activeVariants->filter(fn ($v) => app(\App\Services\InventoryService::class)->availableQuantity($product, $v) !== 0);
+    $defaultVariant = $availableVariants->firstWhere('is_default', true) ?? $availableVariants->first();
     $needsConfiguration = $product->needsCardConfiguration();
     $showSizePicker = $activeVariants->count() > 1;
 
@@ -22,9 +23,10 @@
         return $values->count() > 1 || $group->effectiveMinSelections() > 0;
     })->values();
 
-    $variantsPayload = $activeVariants->map(function ($v) {
+    $variantsPayload = $activeVariants->map(function ($v) use ($product) {
         return [
             'id' => (int) $v->id,
+            'available_quantity' => app(\App\Services\InventoryService::class)->availableQuantity($product, $v),
             'name' => $v->display_name,
             'effective_price' => (float) $v->effective_price,
             'formatted_price' => format_price($v->effective_price),
@@ -145,7 +147,7 @@
                                 <template x-for="v in variants" :key="v.id">
                                     <button
                                         type="button"
-                                        @click="selectedVariantId = v.id"
+                                        @click="selectedVariantId = v.id" :disabled="v.available_quantity === 0"
                                         :class="selectedVariantId === v.id
                                             ? 'border-primary bg-primary/15 text-ink'
                                             : 'border-border bg-bg text-text hover:border-ink/40'"

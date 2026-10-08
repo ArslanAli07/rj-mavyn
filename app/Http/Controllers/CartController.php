@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Services\CartService;
+use App\Services\CheckoutAttemptService;
 use App\Services\ProductConfigurationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +16,8 @@ class CartController extends Controller
 {
     public function __construct(
         private CartService $cart,
-        private ProductConfigurationService $configurations
+        private ProductConfigurationService $configurations,
+        private CheckoutAttemptService $attempts,
     ) {}
 
     public function index(): View
@@ -43,7 +45,7 @@ class CartController extends Controller
             ->with(['variants', 'optionGroups.values'])
             ->findOrFail($request->product_id);
 
-        if (!$product->in_stock) {
+        if (! $product->in_stock) {
             $msg = 'This product is currently out of stock.';
 
             return $request->expectsJson()
@@ -147,6 +149,9 @@ class CartController extends Controller
 
         if ($request->expectsJson()) {
             $result['totals'] = $this->cart->totals();
+            if ($result['success']) {
+                $result['idempotency_key'] = $this->attempts->refreshDraft($request->input('idempotency_key'));
+            }
         }
 
         return $request->expectsJson()
@@ -162,6 +167,7 @@ class CartController extends Controller
             return response()->json([
                 'success' => true,
                 'totals' => $this->cart->totals(),
+                'idempotency_key' => $this->attempts->refreshDraft($request->input('idempotency_key')),
             ]);
         }
 

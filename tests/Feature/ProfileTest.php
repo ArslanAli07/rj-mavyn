@@ -42,4 +42,19 @@ class ProfileTest extends TestCase
         $this->assertSame('Test User', $user->name);
         $this->assertSame('test@example.com', $user->email);
     }
+
+    public function test_email_changes_clear_the_previous_verification(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user)->put('/account/profile', ['name' => $user->name, 'email' => 'new@example.com'])->assertSessionHasNoErrors();
+        $this->assertNull($user->fresh()->email_verified_at);
+    }
+
+    public function test_unchanged_email_preserves_verification(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $verifiedAt = $user->email_verified_at->toDateTimeString();
+        $this->actingAs($user)->put('/account/profile', ['name' => 'Updated name', 'email' => $user->email])->assertSessionHasNoErrors();
+        $this->assertSame($verifiedAt, $user->fresh()->email_verified_at->toDateTimeString());
+    }
 }

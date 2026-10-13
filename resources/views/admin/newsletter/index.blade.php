@@ -1,77 +1,76 @@
-<x-admin-layout title="Manage Newsletter Subscribers">
+<x-admin-layout title="Manage newsletter subscribers">
 
     {{-- Header Actions --}}
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-4 mb-5">
         <div>
-            <h1 class="text-2xl font-heading font-bold text-espresso-800">Newsletter Subscribers</h1>
-            <p class="text-xs text-espresso-500 mt-1">Export email listings, manage subscriptions, or remove subscribers.</p>
+            <h1 class="text-body admin-page-title">Newsletter subscribers</h1>
+            <p class="small text-body-secondary mt-1">Export email listings, manage subscriptions, or remove subscribers.</p>
         </div>
-        <a href="{{ route('admin.newsletter.export') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
+        <a href="{{ route('admin.newsletter.export') }}" class="btn btn-primary py-2 px-4 small fw-semibold">
             Export CSV
         </a>
     </div>
 
     {{-- Stats Banner --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-        <div class="bg-white border border-cream-150 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center text-xl">📧</div>
+    <div class="d-grid admin-cols-1 admin-cols-sm-2 gap-4 mb-5">
+        <div class="card bg-white border border-light-subtle rounded-2 p-4 shadow-sm d-flex align-items-center gap-4 flex-row">
+            <div class="admin-width-12 admin-height-12 rounded-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center fs-4">📧</div>
             <div>
-                <span class="text-espresso-400 text-[10px] font-bold uppercase tracking-wider">Total Subscribers</span>
-                <span class="text-xl sm:text-2xl font-bold text-espresso-800 block mt-0.5">{{ $total }}</span>
+                <span class="text-body-secondary small fw-semibold admin-letter-spacing">Total subscribers</span>
+                <span class="fs-4 admin-font-sm-2xl fw-semibold text-body d-block mt-1">{{ $total }}</span>
             </div>
         </div>
 
-        <div class="bg-white border border-cream-150 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center text-xl">✓</div>
+        <div class="card bg-white border border-light-subtle rounded-2 p-4 shadow-sm d-flex align-items-center gap-4 flex-row">
+            <div class="admin-width-12 admin-height-12 rounded-2 bg-success-subtle text-success d-flex align-items-center justify-content-center fs-4">✓</div>
             <div>
-                <span class="text-espresso-400 text-[10px] font-bold uppercase tracking-wider">Active Subscriptions</span>
-                <span class="text-xl sm:text-2xl font-bold text-espresso-800 block mt-0.5">{{ $active }}</span>
+                <span class="text-body-secondary small fw-semibold admin-letter-spacing">Active subscriptions</span>
+                <span class="fs-4 admin-font-sm-2xl fw-semibold text-body d-block mt-1">{{ $active }}</span>
             </div>
         </div>
     </div>
 
     {{-- Subscribers Table --}}
-    <div class="bg-white border border-cream-150 rounded-2xl p-6 shadow-sm">
+    <div class="card bg-white border border-light-subtle rounded-2 p-4 shadow-sm">
         @if($subscribers->isEmpty())
-            <p class="text-xs text-espresso-400 text-center py-8">No subscribers found.</p>
+            <p class="small text-body-secondary text-center py-5">No subscribers found.</p>
         @else
             <x-admin.bulk-root :action="route('admin.newsletter.bulk')">
                 <x-slot:actions>
-                    <button type="submit" name="bulk_action" value="activate" class="px-2.5 py-1.5 bg-cream-100 hover:bg-espresso-800 hover:text-white rounded-lg transition-colors font-bold text-[10px] uppercase">Activate</button>
-                    <button type="submit" name="bulk_action" value="unsubscribe" class="px-2.5 py-1.5 bg-cream-100 hover:bg-espresso-800 hover:text-white rounded-lg transition-colors font-bold text-[10px] uppercase">Unsubscribe</button>
-                    <button type="submit" name="bulk_action" value="delete" data-bulk-confirm="Remove :count selected subscriber(s)?" class="px-2.5 py-1.5 bg-red-50 text-red-650 hover:bg-red-600 hover:text-white rounded-lg transition-colors font-bold text-[10px] uppercase">Delete</button>
+                    <button type="submit" name="bulk_action" value="activate" class="btn btn-sm btn-outline-secondary px-2 py-2 bg-body-tertiary rounded-2 fw-semibold small">Activate</button>
+                    <button type="submit" name="bulk_action" value="unsubscribe" class="btn btn-sm btn-outline-secondary px-2 py-2 bg-body-tertiary rounded-2 fw-semibold small">Unsubscribe</button>
+                    <button type="submit" name="bulk_action" value="delete" data-bulk-confirm="Remove :count selected subscriber(s)?" class="btn btn-sm btn-outline-danger px-2 py-2 bg-danger-subtle text-danger rounded-2 fw-semibold small">Delete</button>
                 </x-slot:actions>
-            <div class="overflow-x-auto">
-                <table class="admin-table text-xs">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle admin-table small">
                     <thead>
                         <tr>
                             <th class="admin-bulk-col"><x-admin.bulk-checkbox all /></th>
-                            <th>Email Address</th>
+                            <th>Email address</th>
                             <th>Name</th>
-                            <th>Subscribed At</th>
+                            <th>Subscribed at</th>
                             <th>Status</th>
-                            <th class="text-right">Actions</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($subscribers as $s)
                             <tr>
                                 <td class="admin-bulk-col"><x-admin.bulk-checkbox :value="$s->id" :label="'Select ' . $s->email" /></td>
-                                <td class="font-bold text-espresso-800 font-mono text-sm">{{ $s->email }}</td>
-                                <td class="text-espresso-750 font-semibold">{{ $s->name ?? 'N/A' }}</td>
-                                <td class="text-espresso-500">{{ $s->subscribed_at ? $s->subscribed_at->format('Y-m-d H:i') : $s->created_at->format('Y-m-d H:i') }}</td>
+                                <td class="fw-semibold text-body font-monospace small">{{ $s->email }}</td>
+                                <td class="text-body fw-semibold">{{ $s->name ?? 'N/A' }}</td>
+                                <td class="text-body-secondary">{{ $s->subscribed_at ? $s->subscribed_at->format('Y-m-d H:i') : $s->created_at->format('Y-m-d H:i') }}</td>
                                 <td>
-                                    <span class="badge text-[9px] uppercase px-2 py-0.5 rounded-full font-bold
-                                                 {{ $s->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-750' }}">
+                                    <span class="badge small px-2 py-1 rounded-pill fw-semibold {{ $s->is_active ? 'bg-success-subtle text-success' : 'bg-body-secondary text-body-secondary' }}">
                                         {{ $s->is_active ? 'Active' : 'Unsubscribed' }}
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="flex items-center gap-2 justify-end">
+                                    <div class="d-flex align-items-center gap-2 justify-content-end">
                                         <form action="{{ route('admin.newsletter.destroy', $s->id) }}" method="POST"
                                               onsubmit="return confirm('Are you sure you want to delete this subscriber?');">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="px-2.5 py-1.5 bg-red-50 text-red-650 hover:bg-red-600 hover:text-white rounded-lg transition-colors font-bold">Remove</button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-2 bg-danger-subtle text-danger rounded-2 fw-semibold">Remove</button>
                                         </form>
                                     </div>
                                 </td>
@@ -82,7 +81,7 @@
             </div>
 
             {{-- Pagination --}}
-            {{ $subscribers->links('components.pagination') }}
+            {{ $subscribers->links('pagination::bootstrap-5') }}
             </x-admin.bulk-root>
         @endif
     </div>

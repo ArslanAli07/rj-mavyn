@@ -12,7 +12,8 @@ class SearchController extends Controller
 {
     public function index(Request $request): View
     {
-        $q = $request->get('q', '');
+        $request->validate(['q' => 'nullable|string|max:255']);
+        $q = $request->input('q') ?? '';
 
         $products = collect();
         if (strlen($q) >= 2) {
@@ -45,7 +46,8 @@ class SearchController extends Controller
 
     public function suggestions(Request $request): JsonResponse
     {
-        $q = $request->get('q', '');
+        $request->validate(['q' => 'nullable|string|max:255']);
+        $q = $request->input('q') ?? '';
         if (strlen($q) < 2) {
             return response()->json([]);
         }

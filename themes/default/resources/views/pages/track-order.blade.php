@@ -80,7 +80,7 @@
                 <div class="divide-y divide-cream-50 mb-6">
                     @foreach($order->items as $item)
                         <div class="flex items-center gap-4 py-3.5 text-xs sm:text-sm">
-                            <img src="{{ $item->product_image ? asset('storage/' . $item->product_image) : asset('images/placeholder.jpg') }}" 
+                            <img src="{{ $item->product_image ? asset('storage/' . $item->product_image) : asset('images/placeholder.svg') }}"
                                  alt="{{ $item->product_title }}" 
                                  class="w-12 h-12 rounded-xl object-cover border border-cream-100 shrink-0">
                             <div class="flex-1 min-w-0">

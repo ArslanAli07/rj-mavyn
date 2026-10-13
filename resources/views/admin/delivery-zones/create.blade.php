@@ -1,48 +1,48 @@
-<x-admin-layout title="Create Delivery Zone">
+<x-admin-layout title="Create delivery zone">
 
     {{-- Header --}}
-    <div class="mb-8 flex items-center justify-between border-b border-cream-100 pb-4">
+    <div class="mb-5 d-flex align-items-center justify-content-between border-bottom border-light-subtle pb-3">
         <div>
-            <h1 class="text-2xl font-heading font-bold text-espresso-800">Add New Delivery Zone</h1>
-            <p class="text-xs text-espresso-500 mt-1">Specify shipping zone name, delivery fee, and display order.</p>
+            <h1 class="text-body admin-page-title">Add new delivery zone</h1>
+            <p class="small text-body-secondary mt-1">Specify shipping zone name, delivery fee, and display order.</p>
         </div>
-        <a href="{{ route('admin.delivery-zones.index') }}" class="btn-secondary py-2 px-4 text-xs">
-            ← Back to Zones
+        <a href="{{ route('admin.delivery-zones.index') }}" class="btn btn-outline-secondary py-2 px-3 small">
+            ← Back to zones
         </a>
     </div>
 
-    <form action="{{ route('admin.delivery-zones.store') }}" method="POST" class="bg-white border border-cream-150 rounded-2xl p-6 shadow-sm max-w-2xl space-y-4">
+    <form action="{{ route('admin.delivery-zones.store') }}" method="POST" class="bg-white border border-light-subtle rounded-2 p-4 shadow-sm admin-max-width-2xl admin-stack-4">
         @csrf
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="d-grid admin-cols-1 admin-cols-sm-2 gap-4">
             <div>
-                <label for="name" class="label-luxury">Zone Name *</label>
-                <input type="text" id="name" name="name" value="{{ old('name') }}" placeholder="e.g. Model Town" required class="input-luxury text-sm">
-                @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                <label for="name" class="form-label">Zone name *</label>
+                <input type="text" id="name" name="name" value="{{ old('name') }}" placeholder="e.g. Model Town" required class="form-control small">
+                @error('name') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label for="delivery_fee" class="label-luxury">Delivery Fee (PKR) *</label>
-                <input type="number" step="0.01" id="delivery_fee" name="delivery_fee" value="{{ old('delivery_fee', 0) }}" placeholder="e.g. 150" required class="input-luxury text-sm">
-                @error('delivery_fee') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                <label for="delivery_fee" class="form-label">Delivery fee (PKR) *</label>
+                <input type="number" step="0.01" id="delivery_fee" name="delivery_fee" value="{{ old('delivery_fee', 0) }}" placeholder="e.g. 150" required class="form-control small num">
+                @error('delivery_fee') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
             </div>
         </div>
 
         <div>
-            <label for="display_order" class="label-luxury">Display Order (Sorting)</label>
-            <input type="number" id="display_order" name="display_order" value="{{ old('display_order', 0) }}" required class="input-luxury text-sm">
-            @error('display_order') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            <label for="display_order" class="form-label">Display order (sorting)</label>
+            <input type="number" id="display_order" name="display_order" value="{{ old('display_order', 0) }}" required class="form-control small num">
+            @error('display_order') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div class="pt-2">
-            <label class="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-espresso-750">
-                <input type="checkbox" name="is_active" value="1" checked class="rounded border-cream-300 text-primary-500 focus:ring-primary-300">
+            <label class="d-flex align-items-center gap-2 admin-clickable user-select-none small fw-semibold text-body">
+                <input type="checkbox" name="is_active" value="1" checked class="form-check-input">
                 <span>Active (Available for checkout)</span>
             </label>
         </div>
 
-        <div class="flex gap-3 pt-4 border-t border-cream-100 justify-end">
-            <a href="{{ route('admin.delivery-zones.index') }}" class="btn-secondary py-2 px-5 text-xs">Cancel</a>
-            <button type="submit" class="btn-gold py-2 px-5 text-xs font-semibold">Save Zone</button>
+        <div class="d-flex gap-3 pt-3 border-top border-light-subtle justify-content-end">
+            <a href="{{ route('admin.delivery-zones.index') }}" class="btn btn-outline-secondary py-2 px-4 small">Cancel</a>
+            <button type="submit" class="btn btn-primary py-2 px-4 small fw-semibold">Save zone</button>
         </div>
     </form>
 

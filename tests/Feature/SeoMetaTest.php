@@ -59,4 +59,13 @@ class SeoMetaTest extends TestCase
             ->assertSee('content="shop tea, boba menu"', false)
             ->assertSee('content="https://example.com/share.jpg"', false);
     }
+
+    public function test_page_identity_cannot_be_overridden_by_unvalidated_nested_fields(): void
+    {
+        $admin = Admin::create(['name' => 'Owner', 'email' => 'owner@example.com', 'password' => 'password', 'role' => 'super_admin', 'is_active' => true]);
+        SeoMeta::create(['page_key' => 'home', 'meta_title' => 'Original home']);
+        $this->actingAs($admin, 'admin')->putJson(route('admin.seo.update'), ['pages' => ['home' => ['page_key' => 'shop', 'meta_title' => 'Changed home']]])->assertUnprocessable()->assertJsonValidationErrors('pages.home');
+        $this->assertDatabaseHas('seo_meta', ['page_key' => 'home', 'meta_title' => 'Original home']);
+        $this->assertDatabaseMissing('seo_meta', ['page_key' => 'shop']);
+    }
 }

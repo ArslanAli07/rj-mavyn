@@ -72,7 +72,7 @@
 
                 {{-- Welcome Banner --}}
                 <div class="bg-espresso-800 text-cream-100 rounded-3xl p-6 relative overflow-hidden shadow-md">
-                    <div class="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-overlay" style="background-image: url('{{ asset('images/placeholder.jpg') }}')"></div>
+                    <div class="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-overlay" style="background-image: url('{{ asset('images/placeholder.svg') }}')"></div>
                     <div class="relative z-10 space-y-1">
                         <h2 class="font-heading font-bold text-xl sm:text-2xl text-white">Hello, {{ $user->name }}!</h2>
                         <p class="text-xs sm:text-sm text-cream-200 font-light leading-relaxed">

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Services\AdminMutation;
+use App\Services\CatalogSlugService;
 use App\Services\Media\MediaLibraryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,17 +46,20 @@ class CategoryController extends Controller
             'show_on_homepage' => 'boolean',
         ]);
 
-        DB::transaction(function () use ($request, $data) {
+        $slugField = $request->filled('slug') ? 'slug' : 'name';
+        $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
+        app(CatalogSlugService::class)->validate(Category::class, $data['slug'], $slugField, 100);
+
+        DB::transaction(function () use ($request, $data, $slugField) {
             unset($data['image_asset_id']);
             if ($request->hasFile('image')) {
                 $data['image'] = $request->file('image')->store('categories', 'public');
             }
 
-            $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
             $data['is_active'] = $request->boolean('is_active', true);
             $data['show_on_homepage'] = $request->boolean('show_on_homepage', true);
 
-            $category = Category::create($data);
+            $category = app(CatalogSlugService::class)->create(Category::class, $data, $slugField);
             if ($request->exists('image_asset_id') || $request->hasFile('image')) {
                 $this->mediaLibrary->syncImages($category, 'catalog.category.hero', $request->filled('image_asset_id') ? [$request->integer('image_asset_id')] : [], $request->user('admin'), 'image_asset_id');
             }
@@ -87,9 +91,13 @@ class CategoryController extends Controller
 
         DB::transaction(function () use ($request, $data, $category) {
             unset($data['image_asset_id']);
+            if (($data['slug'] ?? null) === null) {
+                unset($data['slug']);
+            }
             if ($request->hasFile('image')) {
                 if ($category->image) {
-                    Storage::disk('public')->delete($category->image);
+                    $oldImage = $category->image;
+                    DB::afterCommit(fn () => Storage::disk('public')->delete($oldImage));
                 }
                 $data['image'] = $request->file('image')->store('categories', 'public');
             }
@@ -162,7 +170,8 @@ class CategoryController extends Controller
     protected function deleteCategory(Category $category): void
     {
         if ($category->image) {
-            Storage::disk('public')->delete($category->image);
+            $image = $category->image;
+            DB::afterCommit(fn () => Storage::disk('public')->delete($image));
         }
         $category->delete();
     }

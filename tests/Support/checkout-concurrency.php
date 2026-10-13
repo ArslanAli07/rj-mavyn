@@ -17,6 +17,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\CheckoutAttemptService;
+use App\Services\CartService;
 use App\Services\InventoryService;
 use App\Services\NotificationOutboxService;
 use App\Services\OrderPlacementService;
@@ -76,11 +77,20 @@ if ($worker) {
     $operation = $argv[4];
     $id = (int) $argv[5];
     $slot = $argv[6];
-    $app->instance(InventoryService::class, new class extends InventoryService
+    $app->instance(InventoryService::class, new class($operation, $slot, $directory) extends InventoryService
     {
+        public function __construct(private string $operation, private string $slot, private string $directory) {}
+
         public function lockProducts(array $ids): Collection
         {
             $products = parent::lockProducts($ids);
+            if ($this->operation === 'cart-checkout-add' && str_ends_with($this->slot, '-0')) {
+                file_put_contents($this->directory.'/checkout-holds-cart', 'ready');
+                $deadline = microtime(true) + 1;
+                while (! is_file($this->directory.'/add-read-cart') && microtime(true) < $deadline) {
+                    usleep(10000);
+                }
+            }
             usleep(300000); // Hold the row locks so the competing process must contend.
 
             return $products;
@@ -90,6 +100,44 @@ if ($worker) {
     $deadline = microtime(true) + 15;
     while (! is_file($directory.'/go-'.$operation) && microtime(true) < $deadline) {
         usleep(10000);
+    }
+    if (in_array($operation, ['cart-add-empty', 'cart-add-existing', 'cart-guest-add', 'cart-reconfigure'], true)
+        || ($operation === 'cart-checkout-add' && str_ends_with($slot, '-1'))) {
+        if ($operation === 'cart-guest-add') {
+            session(['cart_session_id' => 'guest_race_'.$argv[7]]);
+        } else {
+            auth('web')->loginUsingId($id);
+        }
+        if ($operation === 'cart-checkout-add') {
+            $deadline = microtime(true) + 10;
+            while (! is_file($directory.'/checkout-holds-cart') && microtime(true) < $deadline) {
+                usleep(10000);
+            }
+            if (! is_file($directory.'/checkout-holds-cart')) {
+                throw new RuntimeException('Checkout did not reach the cart barrier.');
+            }
+            CartItem::saving(fn () => file_put_contents($directory.'/add-read-cart', 'ready'));
+            app(CartService::class)->add(Product::findOrFail((int) $argv[7]));
+        } else {
+            // Before the fix, both workers reach saving after reading the same state.
+            // With owner locking, the first waits at most one second, then commits;
+            // the second reads that committed state after acquiring the owner lock.
+            CartItem::saving(function () use ($operation, $slot, $directory) {
+                file_put_contents($directory.'/read-'.$slot, 'ready');
+                $other = $operation.'-'.(str_ends_with($slot, '-0') ? '1' : '0');
+                $deadline = microtime(true) + 1;
+                while (! is_file($directory.'/read-'.$other) && microtime(true) < $deadline) {
+                    usleep(10000);
+                }
+            });
+            if ($operation === 'cart-reconfigure') {
+                app(CartService::class)->update((int) $argv[7], specialRequest: null, updateSpecialRequest: true);
+            } else {
+                app(CartService::class)->add(Product::findOrFail((int) $argv[7]));
+            }
+        }
+        echo json_encode(['mutated' => true], JSON_THROW_ON_ERROR);
+        exit(0);
     }
     if (in_array($operation, ['outbox-delivery', 'outbox-status-delivery'], true)) {
         Mail::swap(new class(app('mail.manager'), $directory) extends MailFake
@@ -196,8 +244,7 @@ try {
         $user = User::create(['name' => 'Fixture', 'email' => $phase.'@example.com', 'password' => 'temporary-fixture-password']);
         auth('web')->login($user);
         session(['coupon_code' => 'SAVE']);
-        CartItem::create(['user_id' => $user->id, 'product_id' => $product->id, 'product_variant_id' => $variant->id,
-            'quantity' => 2, 'price' => 500, 'weight' => 'Standard']);
+        app(CartService::class)->add($product, 2, $variant);
 
         return [$product, $user, app(CheckoutAttemptService::class)->issue()];
     };
@@ -285,13 +332,43 @@ try {
     $race('outbox-status-delivery', ['', ''], $statusEntry->id);
     $check(file($directory.'/mail-sends', FILE_IGNORE_NEW_LINES) === [$entry->message_id, $statusEntry->message_id], 'Duplicate status workers sent multiple status updates.');
     $check($statusEntry->fresh()->attempts === 1 && $statusEntry->fresh()->sent_at !== null, 'Status outbox delivery marker was not saved.');
+
+    foreach (['cart-add-empty', 'cart-add-existing', 'cart-guest-add'] as $phase) {
+        [$product, $customer] = $fixture($phase);
+        if ($phase !== 'cart-add-existing') {
+            CartItem::where('user_id', $customer->id)->delete();
+        }
+        $race($phase, [(string) $product->id, (string) $product->id], $customer->id);
+        $items = $phase === 'cart-guest-add'
+            ? CartItem::where('session_id', 'guest_race_'.$product->id)->get()
+            : CartItem::where('user_id', $customer->id)->get();
+        $check($items->count() === 1, 'Concurrent additions created duplicate configured rows: '.$phase);
+        $check($items->sole()->quantity === ($phase === 'cart-add-existing' ? 4 : 2), 'Concurrent additions lost a quantity update: '.$phase);
+    }
+    [$product, $customer] = $fixture('cart-reconfigure');
+    CartItem::where('user_id', $customer->id)->delete();
+    $cart = app(CartService::class);
+    $cart->add($product, specialRequest: 'First note');
+    $cart->add($product, specialRequest: 'Second note');
+    $ids = CartItem::where('user_id', $customer->id)->orderBy('id')->pluck('id')->map(fn ($id) => (string) $id)->all();
+    $race('cart-reconfigure', $ids, $customer->id);
+    $check(CartItem::where('user_id', $customer->id)->count() === 1 && CartItem::where('user_id', $customer->id)->sole()->quantity === 2, 'Concurrent reconfiguration failed to merge quantities atomically.');
+
+    [$product, $customer, $key] = $fixture('cart-checkout-add');
+    $race('cart-checkout-add', [$key, (string) $product->id], $customer->id);
+    $check(Order::where('user_id', $customer->id)->count() === 1, 'Checkout during cart addition did not place one order.');
+    $check(CartItem::where('user_id', $customer->id)->count() === 1 && CartItem::where('user_id', $customer->id)->sole()->quantity === 1, 'An addition while checkout consumed the cart was lost.');
+    $check(Order::where('user_id', $customer->id)->sole()->items()->sole()->quantity === 2, 'Concurrent addition changed the reviewed order quantity.');
     echo json_encode(['result' => 'passed', 'database' => 'disposable MySQL', 'scenarios' => [
         'simultaneous requests using the same checkout key', 'different keys competing for one cart',
         'exception after commit preserves receipt, outbox, and original order',
         'concurrent duplicate outbox workers send one confirmation',
         'concurrent same-status mutations create one revision, audit, and notification',
         'concurrent duplicate status workers send one update',
-        'separate carts with the same checkout email/IP pair contend for one coupon allowance'],
+        'separate carts with the same checkout email/IP pair contend for one coupon allowance',
+        'simultaneous first additions create one configured row', 'simultaneous additions preserve both quantity increments',
+        'guest cart additions serialize across sessions', 'simultaneous reconfiguration merges quantities atomically',
+        'an addition during checkout survives in the remaining cart'],
     ], JSON_THROW_ON_ERROR).PHP_EOL;
 } catch (Throwable $exception) {
     $exitCode = 1;

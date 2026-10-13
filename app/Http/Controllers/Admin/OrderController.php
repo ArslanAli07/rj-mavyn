@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -123,7 +124,7 @@ class OrderController extends Controller
             'payment_status' => $request->payment_status,
         ];
 
-        if ($request->filled('admin_notes')) {
+        if ($request->exists('admin_notes')) {
             $data['admin_notes'] = $request->admin_notes;
         }
 
@@ -162,7 +163,9 @@ class OrderController extends Controller
                     ->where('destination_disk', $order->payment_receipt_disk)->where('destination_path', $order->payment_receipt)->exists()
                     && ! Order::where('id', '!=', $order->id)
                         ->where('payment_receipt_disk', $order->payment_receipt_disk)->where('payment_receipt', $order->payment_receipt)->exists()) {
-                    Storage::disk($order->payment_receipt_disk)->delete($order->payment_receipt);
+                    $disk = $order->payment_receipt_disk;
+                    $receipt = $order->payment_receipt;
+                    DB::afterCommit(fn () => Storage::disk($disk)->delete($receipt));
                 }
                 $order->delete();
             }

@@ -1,39 +1,39 @@
-<x-admin-layout title="Manage Hero Slides">
+<x-admin-layout title="Manage hero slides">
 
     {{-- Header --}}
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-4 mb-5">
         <div>
-            <h1 class="text-2xl font-heading font-bold text-espresso-800">Homepage Hero Slides</h1>
-            <p class="text-xs text-espresso-500 mt-1">Upload and manage image slides for the homepage carousel.</p>
+            <h1 class="text-body admin-page-title">Homepage hero slides</h1>
+            <p class="small text-body-secondary mt-1">Upload and manage image slides for the homepage carousel.</p>
         </div>
         @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.home-slides.create'))
-<a href="{{ route('admin.home-slides.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
-            + Add New Slide
+<a href="{{ route('admin.home-slides.create') }}" class="btn btn-primary py-2 px-4 small fw-semibold">
+            + Add new slide
         </a>
 @endif
     </div>
 
     {{-- Slides List --}}
-    <div class="bg-white border border-cream-150 rounded-2xl p-6 shadow-sm">
+    <div class="card bg-white border border-light-subtle rounded-2 p-4 shadow-sm">
         @if($slides->isEmpty())
-            <p class="text-xs text-espresso-400 text-center py-8">No hero slides defined yet.</p>
+            <p class="small text-body-secondary text-center py-5">No hero slides defined yet.</p>
         @else
             <x-admin.bulk-root :action="route('admin.home-slides.bulk')">
                 <x-slot:actions>
-                    <button type="submit" name="bulk_action" value="activate" class="px-2.5 py-1.5 bg-cream-100 hover:bg-espresso-800 hover:text-white rounded-lg transition-colors font-bold text-[10px] uppercase">Activate</button>
-                    <button type="submit" name="bulk_action" value="deactivate" class="px-2.5 py-1.5 bg-cream-100 hover:bg-espresso-800 hover:text-white rounded-lg transition-colors font-bold text-[10px] uppercase">Deactivate</button>
-                    <button type="submit" name="bulk_action" value="delete" data-bulk-confirm="Delete :count selected slide(s)?" class="px-2.5 py-1.5 bg-red-50 text-red-650 hover:bg-red-600 hover:text-white rounded-lg transition-colors font-bold text-[10px] uppercase">Delete</button>
+                    <button type="submit" name="bulk_action" value="activate" class="btn btn-sm btn-outline-secondary px-2 py-2 bg-body-tertiary rounded-2 fw-semibold small">Activate</button>
+                    <button type="submit" name="bulk_action" value="deactivate" class="btn btn-sm btn-outline-secondary px-2 py-2 bg-body-tertiary rounded-2 fw-semibold small">Deactivate</button>
+                    <button type="submit" name="bulk_action" value="delete" data-bulk-confirm="Delete :count selected slide(s)?" class="btn btn-sm btn-outline-danger px-2 py-2 bg-danger-subtle text-danger rounded-2 fw-semibold small">Delete</button>
                 </x-slot:actions>
-            <div class="overflow-x-auto">
-                <table class="admin-table text-xs">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle admin-table admin-table-with-thumbnails small">
                     <thead>
                         <tr>
                             <th class="admin-bulk-col"><x-admin.bulk-checkbox all /></th>
-                            <th>Desktop Image</th>
-                            <th>Mobile Image</th>
-                            <th>Display Order</th>
+                            <th>Desktop image</th>
+                            <th>Mobile image</th>
+                            <th>Display order</th>
                             <th>Status</th>
-                            <th class="text-right">Actions</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -41,32 +41,31 @@
                             <tr>
                                 <td class="admin-bulk-col"><x-admin.bulk-checkbox :value="$slide->id" label="Select slide" /></td>
                                 <td>
-                                    <img src="{{ $slide->image_url }}" alt="Hero slide" class="w-24 h-auto rounded-lg border border-cream-100">
+                                    <img src="{{ $slide->image_url }}" alt="Hero slide" class="admin-width-24 h-auto rounded-2 border border-light-subtle">
                                 </td>
                                 <td>
                                     @if($slide->mobile_image_path || $slide->mobile_image_asset_id)
-                                        <img src="{{ $slide->mobile_image_url }}" alt="Mobile slide" class="w-16 h-auto rounded-lg border border-cream-100">
+                                        <img src="{{ $slide->mobile_image_url }}" alt="Mobile slide" class="admin-width-16 h-auto rounded-2 border border-light-subtle">
                                     @else
-                                        <span class="text-espresso-400 italic">Uses desktop</span>
+                                        <span class="text-body-secondary fst-italic">Uses desktop</span>
                                     @endif
                                 </td>
-                                <td class="text-espresso-600 font-semibold">{{ $slide->display_order }}</td>
+                                <td class="text-body-secondary fw-semibold">{{ $slide->display_order }}</td>
                                 <td>
-                                    <span class="badge text-[9px] uppercase px-2 py-0.5 rounded-full font-bold
-                                                 {{ $slide->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-750' }}">
+                                    <span class="badge small px-2 py-1 rounded-pill fw-semibold {{ $slide->is_active ? 'bg-success-subtle text-success' : 'bg-body-secondary text-body-secondary' }}">
                                         {{ $slide->is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="flex items-center gap-2 justify-end">
+                                    <div class="d-flex align-items-center gap-2 justify-content-end">
                                         @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.home-slides.edit'))
-<a href="{{ route('admin.home-slides.edit', $slide->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+<a href="{{ route('admin.home-slides.edit', $slide->id) }}" class="px-2 py-2 bg-body-tertiary rounded-2 fw-semibold">Edit</a>
 @endif
 
                                         <form action="{{ route('admin.home-slides.destroy', $slide->id) }}" method="POST"
                                               onsubmit="return confirm('Are you sure you want to delete this hero slide?');">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="px-2.5 py-1.5 bg-red-50 text-red-650 hover:bg-red-600 hover:text-white rounded-lg transition-colors font-bold">Delete</button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-2 bg-danger-subtle text-danger rounded-2 fw-semibold">Delete</button>
                                         </form>
                                     </div>
                                 </td>

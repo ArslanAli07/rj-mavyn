@@ -91,9 +91,11 @@ if ($worker) {
             echo 'cancelled';
         }
     } catch (ValidationException $exception) {
-        if ($operation !== 'checkout' || ! isset($exception->errors()['cart'])) {
+        if ($operation !== 'checkout' || ! isset($exception->errors()['cart'])
+            || ! str_contains(strtolower(implode(' ', $exception->errors()['cart'])), 'stock')) {
             throw $exception;
         }
+        fwrite(STDERR, json_encode($exception->errors(), JSON_THROW_ON_ERROR).PHP_EOL);
         echo 'stock_rejected';
     }
     exit(0);
@@ -144,6 +146,9 @@ try {
     $category = Category::create(['name' => 'Concurrency fixture']);
     DeliveryZone::create(['name' => 'Test zone', 'delivery_fee' => 0, 'is_active' => true]);
     Setting::set('email_order_confirmation', '0', 'email', 'boolean');
+    Setting::set('ordering_enabled', true);
+    Setting::set('ordering_start_time', '00:00');
+    Setting::set('ordering_end_time', '23:59');
     foreach (['shared', 'variant'] as $mode) {
         $product = Product::create(['category_id' => $category->id, 'title' => 'Last unit '.$mode, 'price' => 500,
             'inventory_mode' => $mode, 'stock_quantity' => 1, 'is_active' => true, 'in_stock' => true]);
@@ -156,7 +161,8 @@ try {
             CartItem::create(['user_id' => $user->id, 'product_id' => $product->id, 'product_variant_id' => $variant->id,
                 'quantity' => 1, 'price' => 500, 'weight' => 'Standard']);
         }
-        $check($race('checkout', $ids, $mode.'-buy') === ['placed', 'stock_rejected'], 'Exactly one purchase must win the last unit.');
+        $results = $race('checkout', $ids, $mode.'-buy');
+        $check($results === ['placed', 'stock_rejected'], 'Exactly one purchase must win the last unit. Got: '.json_encode($results).'. Worker diagnostics: '.implode(' ', array_map(fn ($process) => $process->getErrorOutput(), $processes)));
         $order = Order::whereHas('items', fn ($items) => $items->where('product_id', $product->id))->firstOrFail();
         $source = $mode === 'shared' ? $product->fresh() : $variant->fresh();
         $check($source->stock_quantity === 1 && $source->reserved_quantity === 1, 'Last-unit stock counters are incorrect.');

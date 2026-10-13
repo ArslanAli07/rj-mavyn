@@ -87,7 +87,7 @@ class HomeSlide extends Model
     private function resolvePublicOrStorageUrl(?string $path): string
     {
         if (empty($path)) {
-            return asset('images/placeholder.jpg');
+            return asset('images/placeholder.svg');
         }
 
         if (str_starts_with($path, 'images/') || str_starts_with($path, 'assets/')) {

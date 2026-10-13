@@ -12,7 +12,7 @@ final class ReleaseManifest
 {
     private const TREES = ['app', 'config', 'database/migrations', 'packages', 'plugins', 'themes', 'resources', 'routes', 'public/build'];
 
-    private const FILES = ['artisan', 'bootstrap/app.php', 'bootstrap/providers.php', 'composer.json', 'composer.lock', 'package.json', 'package-lock.json', 'vite.config.js', 'tailwind.config.js', 'postcss.config.js', 'public/index.php', 'public/.htaccess'];
+    private const FILES = ['artisan', 'bootstrap/app.php', 'bootstrap/providers.php', 'composer.json', 'composer.lock', 'package.json', 'package-lock.json', 'vite.config.js', 'tailwind.config.js', 'postcss.config.js', 'public/index.php', 'public/.htaccess', 'public/images/placeholder.svg'];
 
     public function inventory(): array
     {

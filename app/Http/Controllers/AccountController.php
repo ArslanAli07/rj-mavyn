@@ -41,12 +41,17 @@ class AccountController extends Controller
 
     public function updateProfile(Request $request): RedirectResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'email' => 'required|email|unique:users,email,'.auth()->id(),
+            'email' => 'required|string|email|max:255|unique:users,email,'.auth()->id(),
         ]);
-        auth()->user()->update($request->only('name', 'email', 'phone'));
+        $user = $request->user('web');
+        $user->fill($data);
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+        $user->save();
 
         return back()->with('success', 'Profile updated successfully!');
     }

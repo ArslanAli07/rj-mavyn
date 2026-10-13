@@ -5,9 +5,9 @@
 <div data-bulk-root {{ $attributes }}>
     <form method="POST" action="{{ $action }}" data-bulk-form>
         @csrf
-        <div data-bulk-toolbar class="hidden mb-4 flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-cream-50 border border-cream-200 rounded-xl">
-            <p data-bulk-count class="text-xs font-semibold text-espresso-800 shrink-0">0 selected</p>
-            <div class="flex flex-wrap items-center gap-2">
+        <div data-bulk-toolbar class="d-none mb-3 d-flex flex-column flex-sm-row align-items-sm-center gap-3 p-3 bg-body-tertiary border border-light-subtle rounded-2">
+            <p data-bulk-count class="fw-semibold text-body flex-shrink-0">0 selected</p>
+            <div class="d-flex flex-wrap align-items-center gap-2">
                 {{ $actions }}
             </div>
         </div>

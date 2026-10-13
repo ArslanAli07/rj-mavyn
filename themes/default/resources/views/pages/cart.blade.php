@@ -38,7 +38,7 @@
                                 <div class="grid grid-cols-12 gap-4 items-center px-6 py-6 text-sm">
                                     {{-- Product info --}}
                                     <div class="col-span-12 sm:col-span-6 flex gap-4">
-                                        <img src="{{ $item->product?->main_image_url ?? asset('images/placeholder.jpg') }}" 
+                                        <img src="{{ $item->product?->main_image_url ?? asset('images/placeholder.svg') }}"
                                              alt="{{ $item->product?->title }}" 
                                              class="w-16 h-16 rounded-xl object-cover border border-cream-150 shrink-0">
                                         <div class="min-w-0">

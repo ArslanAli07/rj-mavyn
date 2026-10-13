@@ -16,8 +16,9 @@ class WishlistController extends Controller
         if (auth()->check()) {
             $wishlist = auth()->user()->wishlists()->with('product.category', 'product.variants', 'product.optionGroups.values')->latest()->get();
         } else {
+            $request->validate(['ids' => 'nullable|string|max:2000']);
             $ids = $request->query('ids') ? explode(',', $request->query('ids')) : [];
-            $products = Product::whereIn('id', $ids)->with(['category', 'variants', 'optionGroups.values'])->get();
+            $products = Product::active()->whereIn('id', $ids)->with(['category', 'variants', 'optionGroups.values'])->get();
             $wishlist = $products->map(function ($product) {
                 return (object)[
                     'id' => 'guest-' . $product->id,

@@ -58,7 +58,7 @@ class OrderItem extends Model
         if ($this->media_asset_id) {
             $asset = MediaAsset::with('media')->find($this->media_asset_id);
             if ($asset && $asset->status === 'active' && $asset->visibility === 'public') {
-                return $asset->getFirstMedia('original')?->getUrl() ?? asset('images/placeholder.jpg');
+                return $asset->getFirstMedia('original')?->getUrl() ?? asset('images/placeholder.svg');
             }
         }
         if ($this->product_image && (str_starts_with($this->product_image, 'assets/') || str_starts_with($this->product_image, 'images/'))) {
@@ -67,7 +67,7 @@ class OrderItem extends Model
 
         return $this->product_image
             ? asset('storage/'.$this->product_image)
-            : asset('images/placeholder.jpg');
+            : asset('images/placeholder.svg');
     }
 
     public function getVariantLabelAttribute(): ?string

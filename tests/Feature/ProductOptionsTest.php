@@ -140,6 +140,14 @@ class ProductOptionsTest extends TestCase
         $service->resolve($product, $large->id, [$berries->id]); // missing required ice
     }
 
+    public function test_option_reductions_cannot_produce_a_negative_unit_price(): void
+    {
+        extract($this->createConfiguredProduct());
+        $berries->update(['price_adjustment' => '-1000.00']);
+        $this->expectException(ValidationException::class);
+        app(ProductConfigurationService::class)->resolve($product->fresh(), $large->id, [$berries->id, $extraIce->id]);
+    }
+
     public function test_cart_keeps_different_configurations_separate_and_merges_identical_ones(): void
     {
         extract($this->createConfiguredProduct());

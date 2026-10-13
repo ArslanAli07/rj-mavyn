@@ -14,6 +14,6 @@
         value="{{ $value }}"
         aria-label="{{ $label }}"
     @endif
-    class="w-4 h-4 rounded border-cream-300 text-primary-500 focus:ring-primary-300 cursor-pointer"
+    class="form-check-input admin-clickable"
     {{ $attributes }}
 >

@@ -44,7 +44,7 @@ class Category extends Model
             return $image['url'];
         }
         if (empty($this->image)) {
-            return asset('images/placeholder.jpg');
+            return asset('images/placeholder.svg');
         }
 
         if (str_starts_with($this->image, 'assets/') || str_starts_with($this->image, 'images/')) {

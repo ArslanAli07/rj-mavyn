@@ -39,7 +39,7 @@ class Coupon extends Model
         if ($this->starts_at && $this->starts_at->isFuture()) {
             return false;
         }
-        if ($this->expires_at && $this->expires_at->isPast()) {
+        if ($this->expires_at && $this->expires_at->endOfDay()->isPast()) {
             return false;
         }
         if ($this->usage_limit && $this->usage_count >= $this->usage_limit) {

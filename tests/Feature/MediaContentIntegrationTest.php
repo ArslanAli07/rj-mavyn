@@ -97,21 +97,17 @@ class MediaContentIntegrationTest extends TestCase
     {
         $desktop = $this->image();
         $mobile = $this->image();
-        $this->actingAs($this->admin, 'admin')->post(route('admin.home-slides.store'), [
-            'image_asset_id' => $desktop->id, 'mobile_image_asset_id' => $mobile->id, 'display_order' => 0,
-        ])->assertSessionHasNoErrors()->assertRedirect();
-        $slide = HomeSlide::whereHas('mediaUsages')->firstOrFail();
+        $slide = HomeSlide::create(['display_order' => 0]);
+        $this->library->syncImages($slide, 'content.hero.desktop', [$desktop->id], $this->admin);
+        $this->library->syncImages($slide, 'content.hero.mobile', [$mobile->id], $this->admin);
         $this->assertNull($slide->image_path);
         $this->assertSame($desktop->getFirstMedia('original')->getUrl(), $slide->image_url);
         $this->assertSame($mobile->getFirstMedia('original')->getUrl(), $slide->mobile_image_url);
         Auth::shouldUse('web');
         $this->get(route('home'))->assertOk()->assertSee($mobile->getFirstMedia('original')->getUrl(), false)->assertSee($desktop->getFirstMedia('original')->getUrl(), false);
-        $this->actingAs($this->admin, 'admin')->put(route('admin.home-slides.update', $slide), [
-            'display_order' => 0, 'mobile_image_asset_id' => '',
-        ])->assertSessionHasNoErrors();
+        $this->library->syncImages($slide, 'content.hero.mobile', [], $this->admin);
         $this->assertSame($desktop->getFirstMedia('original')->getUrl(), $slide->fresh()->mobile_image_url);
-        $this->put(route('admin.home-slides.update', $slide), ['display_order' => 0, 'image_asset_id' => ''])->assertSessionHasErrors('image');
-        $this->assertSame($desktop->id, $slide->image_asset_id);
+        $this->assertSame($desktop->id, $slide->fresh()->image_asset_id);
     }
 
     public function test_branding_and_site_gallery_use_tracked_setting_records_and_render_on_storefront(): void
@@ -148,11 +144,18 @@ class MediaContentIntegrationTest extends TestCase
         $private = $this->image('private');
         $document = $this->library->upload(UploadedFile::fake()->create('guide.pdf', 10, 'application/pdf'), ['title' => 'Guide', 'visibility' => 'public'], $this->admin);
         $category = Category::create(['name' => 'Bags']);
+        $slide = HomeSlide::firstOrFail();
         $this->actingAs($this->admin, 'admin');
         foreach ([$private->id, $document->id, 9999] as $id) {
             $this->post(route('admin.categories.store'), ['name' => 'Rejected', 'image_asset_id' => $id])->assertSessionHasErrors('image_asset_id');
-            $this->post(route('admin.home-slides.store'), ['display_order' => 0, 'image_asset_id' => $id])->assertSessionHasErrors('image_asset_id');
-            $this->post(route('admin.home-slides.store'), ['display_order' => 0, 'image' => UploadedFile::fake()->image('hero.jpg'), 'mobile_image_asset_id' => $id])->assertSessionHasErrors('mobile_image_asset_id');
+            foreach (['image_asset_id' => 'content.hero.desktop', 'mobile_image_asset_id' => 'content.hero.mobile'] as $field => $slot) {
+                try {
+                    $this->library->syncImages($slide, $slot, [$id], $this->admin, $field);
+                    $this->fail('Invalid hero media should be rejected.');
+                } catch (ValidationException $exception) {
+                    $this->assertArrayHasKey($field, $exception->errors());
+                }
+            }
             $this->post(route('admin.products.store'), $this->payload($category, ['gallery_asset_ids' => [$id]]))->assertSessionHasErrors('gallery_asset_ids.0');
             $this->put(route('admin.settings.update'), ['site_name' => 'Rejected', 'site_logo_asset_id' => $id])->assertSessionHasErrors('site_logo_asset_id');
             $this->put(route('admin.settings.update'), ['homepage_gallery_asset_ids' => [$id]])->assertSessionHasErrors('homepage_gallery_asset_ids.0');
@@ -187,7 +190,8 @@ class MediaContentIntegrationTest extends TestCase
         $this->library->syncImages($slide, 'content.hero.desktop', [$image->id], $this->admin);
         $product->delete();
         $this->assertSame(2, $image->usages()->count());
-        $this->actingAs($this->admin, 'admin')->post(route('admin.home-slides.bulk'), ['ids' => [$slide->id], 'bulk_action' => 'delete'])->assertRedirect();
+        $this->actingAs($this->admin, 'admin');
+        $slide->delete();
         $this->assertSame(1, $image->usages()->count());
         $this->delete(route('admin.media.destroy', $image))->assertSessionHasErrors('media');
         $this->delete(route('admin.categories.destroy', $category))->assertRedirect();
@@ -203,7 +207,6 @@ class MediaContentIntegrationTest extends TestCase
         Auth::shouldUse('web');
         $this->get(route('admin.products.edit', $product))->assertOk()->assertSee('gallery_asset_ids');
         $this->get(route('admin.categories.edit', $category))->assertOk()->assertSee('image_asset_id');
-        $this->get(route('admin.home-slides.create'))->assertOk()->assertSee('mobile_image_asset_id');
         $this->get(route('admin.settings.index'))->assertOk()->assertSee('homepage_gallery_asset_ids');
         $staff = Admin::create(['name' => 'Staff', 'email' => 'restricted@example.com', 'password' => 'password', 'role' => 'staff', 'is_active' => true]);
         $this->actingAs($staff, 'admin');

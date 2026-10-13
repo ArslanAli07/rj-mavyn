@@ -26,9 +26,22 @@ class NewsletterController extends Controller
     {
         $subscribers = NewsletterSubscriber::active()->get(['email', 'name', 'subscribed_at']);
 
-        $csv = "Email,Name,Subscribed At\n";
-        foreach ($subscribers as $s) {
-            $csv .= "\"{$s->email}\",\"{$s->name}\",\"{$s->subscribed_at}\"\n";
+        $stream = fopen('php://temp', 'w+');
+        try {
+            fputcsv($stream, ['Email', 'Name', 'Subscribed At'], escape: '');
+            foreach ($subscribers as $subscriber) {
+                $row = array_map(function ($value) {
+                    $value = (string) $value;
+
+                    // Keep untrusted cells as text when opened in a spreadsheet.
+                    return preg_match('/^\s*[=+\-@]|^[\t\r\n]/u', $value) ? "'".$value : $value;
+                }, [$subscriber->email, $subscriber->name, $subscriber->subscribed_at]);
+                fputcsv($stream, $row, escape: '');
+            }
+            rewind($stream);
+            $csv = stream_get_contents($stream);
+        } finally {
+            fclose($stream);
         }
 
         return response($csv, 200, [

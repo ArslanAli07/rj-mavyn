@@ -14,33 +14,36 @@ class ShopController extends Controller
 {
     public function index(Request $request): View
     {
+        $request->validate([
+            'category' => 'nullable|string|max:255',
+            'occasion' => 'nullable|string|max:255',
+            'min_price' => 'nullable|numeric|min:0',
+            'max_price' => 'nullable|numeric|min:0',
+            'in_stock' => 'nullable|boolean',
+        ]);
         $query = Product::active()->with(['category', 'variants', 'optionGroups.values']);
 
         // Category filter: resolve slug → id first, then filter on FK (uses index)
         // instead of whereHas which generates a correlated subquery.
         if ($request->filled('category')) {
-            $catId = Category::where('slug', $request->category)->value('id');
-            if ($catId) {
-                $query->where('category_id', $catId);
-            }
+            $catId = Category::active()->where('slug', $request->category)->value('id');
+            $query->where('category_id', $catId);
         }
 
         // Occasion filter: resolve slug → id, then join pivot table by ID.
         if ($request->filled('occasion')) {
-            $occasionId = Occasion::where('slug', $request->occasion)->value('id');
-            if ($occasionId) {
-                $query->whereIn('id', DB::table('product_occasion')
-                    ->where('occasion_id', $occasionId)
-                    ->pluck('product_id'));
-            }
+            $occasionId = Occasion::active()->where('slug', $request->occasion)->value('id');
+            $query->whereIn('id', DB::table('product_occasion')
+                ->where('occasion_id', $occasionId)
+                ->select('product_id'));
         }
 
         if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
+            $query->whereRaw('COALESCE(discount_price, price) >= ?', [$request->min_price]);
         }
 
         if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
+            $query->whereRaw('COALESCE(discount_price, price) <= ?', [$request->max_price]);
         }
 
         if ($request->boolean('in_stock')) {

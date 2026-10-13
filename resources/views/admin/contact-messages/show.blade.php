@@ -1,63 +1,62 @@
-<x-admin-layout title="Inquiry Detail">
+<x-admin-layout title="Inquiry detail">
 
     {{-- Header --}}
-    <div class="mb-8 flex items-center justify-between border-b border-cream-100 pb-4">
+    <div class="mb-5 d-flex align-items-center justify-content-between border-bottom border-light-subtle pb-3">
         <div>
-            <h1 class="text-2xl font-heading font-bold text-espresso-800">Inquiry Detail</h1>
-            <p class="text-xs text-espresso-500 mt-1">Review full message received from {{ $message->name }}.</p>
+            <h1 class="text-body admin-page-title">Inquiry detail</h1>
+            <p class="small text-body-secondary mt-1">Review full message received from {{ $message->name }}.</p>
         </div>
-        <a href="{{ route('admin.contact-messages.index') }}" class="btn-secondary py-2 px-4 text-xs">
-            ← Back to Messages
+        <a href="{{ route('admin.contact-messages.index') }}" class="btn btn-outline-secondary py-2 px-3 small">
+            ← Back to messages
         </a>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div class="d-grid admin-cols-1 admin-cols-lg-12 gap-5 align-items-start">
         
         {{-- Message Body --}}
-        <div class="lg:col-span-8 bg-white border border-cream-150 rounded-2xl p-6 sm:p-8 shadow-sm space-y-4 text-sm">
-            <div class="border-b border-cream-100 pb-4 mb-4">
-                <span class="text-xs text-espresso-400 font-semibold uppercase">Subject</span>
-                <h2 class="font-heading font-bold text-espresso-800 text-lg mt-0.5">{{ $message->subject }}</h2>
+        <div class="card admin-span-lg-8 bg-white border border-light-subtle rounded-2 p-4 p-sm-5 shadow-sm admin-stack-4">
+            <div class="border-bottom border-light-subtle pb-3 mb-3">
+                <span class="small text-body-secondary fw-semibold">Subject</span>
+                <h2 class="text-body mt-1 admin-section-title">{{ $message->subject }}</h2>
             </div>
 
             <div>
-                <span class="text-xs text-espresso-400 font-semibold uppercase block mb-2">Message Content</span>
-                <div class="bg-cream-50/50 rounded-2xl p-5 border border-cream-100 leading-relaxed font-light text-espresso-750">
+                <span class="small text-body-secondary fw-semibold d-block mb-2">Message Content</span>
+                <div class="bg-body-tertiary rounded-2 p-4 border border-light-subtle lh-lg fw-normal text-body">
                     {!! nl2br(e($message->message)) !!}
                 </div>
             </div>
         </div>
 
         {{-- Sidebar information / Actions --}}
-        <div class="lg:col-span-4 bg-white border border-cream-150 rounded-2xl p-6 shadow-sm space-y-4 text-xs">
-            <h3 class="font-heading font-bold text-sm text-espresso-800 border-b border-cream-100 pb-2 mb-4">Sender Profile</h3>
+        <div class="card admin-span-lg-4 bg-white border border-light-subtle rounded-2 p-4 shadow-sm admin-stack-4">
+            <h3 class="text-body border-bottom border-light-subtle pb-2 mb-3 admin-section-title">Sender profile</h3>
             
-            <div class="space-y-3 font-medium text-espresso-705">
-                <div class="flex justify-between border-b border-cream-50 pb-2">
+            <div class="admin-stack-3 fw-medium text-body">
+                <div class="d-flex justify-content-between border-bottom border-light-subtle pb-2">
                     <span>Name:</span>
-                    <span class="font-bold text-espresso-850">{{ $message->name }}</span>
+                    <span class="fw-semibold text-body">{{ $message->name }}</span>
                 </div>
-                <div class="flex justify-between border-b border-cream-50 pb-2">
+                <div class="d-flex justify-content-between border-bottom border-light-subtle pb-2">
                     <span>Email:</span>
-                    <a href="mailto:{{ $message->email }}" class="font-bold text-primary-600 hover:underline">{{ $message->email }}</a>
+                    <a href="mailto:{{ $message->email }}" class="fw-semibold text-primary link-underline-opacity-100-hover">{{ $message->email }}</a>
                 </div>
-                <div class="flex justify-between border-b border-cream-50 pb-2">
+                <div class="d-flex justify-content-between border-bottom border-light-subtle pb-2">
                     <span>Phone:</span>
-                    <span class="font-bold text-espresso-850">{{ $message->phone ?? 'N/A' }}</span>
+                    <span class="fw-semibold text-body">{{ $message->phone ?? 'N/A' }}</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="d-flex justify-content-between">
                     <span>Date:</span>
-                    <span class="font-bold text-espresso-850">{{ $message->created_at->format('Y-m-d H:i') }}</span>
+                    <span class="fw-semibold text-body">{{ $message->created_at->format('Y-m-d H:i') }}</span>
                 </div>
             </div>
 
-            <hr class="border-cream-100">
+            <hr class="border-light-subtle">
 
-            <div class="space-y-2">
+            <div class="admin-stack-2">
                 <form action="{{ route('admin.contact-messages.resolve', $message->id) }}" method="POST">
                     @csrf @method('PATCH')
-                    <button type="submit" class="btn-gold w-full justify-center py-2.5 text-xs font-semibold
-                                                 {{ $message->is_resolved ? 'bg-espresso-805 hover:bg-espresso-700' : '' }}">
+                    <button type="submit" class="btn btn-primary w-100 justify-content-center py-2 small fw-semibold {{ $message->is_resolved ? 'bg-body-tertiary ' : '' }}">
                         {{ $message->is_resolved ? 'Mark as Unresolved' : 'Mark as Resolved' }}
                     </button>
                 </form>

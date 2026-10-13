@@ -8,8 +8,6 @@ use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DeliveryZoneController as AdminDeliveryZoneController;
-use App\Http\Controllers\Admin\FaqController as AdminFaqController;
-use App\Http\Controllers\Admin\HomeSlideController as AdminHomeSlideController;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\OccasionController as AdminOccasionController;
@@ -19,7 +17,6 @@ use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\SeoController as AdminSeoController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\StaffController;
-use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
 use App\Http\Controllers\Admin\ThemeController;
 use Illuminate\Support\Facades\Route;
 
@@ -76,10 +73,6 @@ Route::prefix('admin')->name('admin.')->middleware(['admin', 'admin.permissions'
     Route::post('occasions/bulk', [AdminOccasionController::class, 'bulk'])->name('occasions.bulk');
     Route::resource('occasions', AdminOccasionController::class);
 
-    // Home Slides
-    Route::post('home-slides/bulk', [AdminHomeSlideController::class, 'bulk'])->name('home-slides.bulk');
-    Route::resource('home-slides', AdminHomeSlideController::class);
-
     // Delivery Zones
     Route::post('delivery-zones/bulk', [AdminDeliveryZoneController::class, 'bulk'])->middleware('plugin.active:mavyn.local-delivery')->name('delivery-zones.bulk');
     Route::resource('delivery-zones', AdminDeliveryZoneController::class)->middleware('plugin.active:mavyn.local-delivery');
@@ -102,20 +95,11 @@ Route::prefix('admin')->name('admin.')->middleware(['admin', 'admin.permissions'
     Route::post('coupons/bulk', [AdminCouponController::class, 'bulk'])->name('coupons.bulk');
     Route::resource('coupons', AdminCouponController::class);
 
-    // Testimonials
-    Route::post('testimonials/bulk', [AdminTestimonialController::class, 'bulk'])->name('testimonials.bulk');
-    Route::resource('testimonials', AdminTestimonialController::class);
-    Route::patch('testimonials/{testimonial}/approve', [AdminTestimonialController::class, 'approve'])->name('testimonials.approve');
-
     // Newsletter
     Route::get('newsletter', [AdminNewsletterController::class, 'index'])->name('newsletter.index');
     Route::get('newsletter/export', [AdminNewsletterController::class, 'export'])->name('newsletter.export');
     Route::post('newsletter/bulk', [AdminNewsletterController::class, 'bulk'])->name('newsletter.bulk');
     Route::delete('newsletter/{subscriber}', [AdminNewsletterController::class, 'destroy'])->name('newsletter.destroy');
-
-    // FAQs
-    Route::post('faqs/bulk', [AdminFaqController::class, 'bulk'])->name('faqs.bulk');
-    Route::resource('faqs', AdminFaqController::class);
 
     // Contact Messages
     Route::get('contact-messages', [AdminContactMessageController::class, 'index'])->name('contact-messages.index');

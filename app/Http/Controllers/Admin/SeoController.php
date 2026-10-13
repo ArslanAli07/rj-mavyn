@@ -49,7 +49,9 @@ class SeoController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
-        $request->validate([
+        $data = $request->validate([
+            'pages' => 'sometimes|array:'.implode(',', array_keys($this->pages)),
+            'pages.*' => 'array:meta_title,meta_description,meta_keywords,og_image',
             'pages.*.meta_title' => 'nullable|string|max:255',
             'pages.*.meta_description' => 'nullable|string|max:500',
             'pages.*.meta_keywords' => 'nullable|string|max:1000',
@@ -57,10 +59,10 @@ class SeoController extends Controller
         ]);
 
         foreach ($this->pages as $key => $label) {
-            if ($request->has("pages.{$key}")) {
+            if (array_key_exists($key, $data['pages'] ?? [])) {
                 SeoMeta::updateOrCreate(
                     ['page_key' => $key],
-                    $request->input("pages.{$key}", [])
+                    $data['pages'][$key]
                 );
             }
         }

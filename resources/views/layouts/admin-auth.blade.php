@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-cream-50">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-100 bg-body-tertiary">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,29 +8,30 @@
 
     <title>{{ $title ?? 'Welcome' }} — {{ setting('site_name', 'Store') }}</title>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/admin.css', 'resources/js/admin.js'])
 
     @stack('head')
 </head>
-<body class="h-full font-sans antialiased text-espresso-900 flex items-center justify-center p-4 bg-gradient-luxury relative overflow-hidden">
+<body class="h-100 text-body d-flex align-items-center justify-content-center p-3 admin-auth-background position-relative overflow-hidden">
 
-    {{-- Luxury Decorative Elements --}}
-    <div class="absolute -top-40 -left-40 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-60"></div>
-    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-espresso-200 rounded-full blur-3xl opacity-30"></div>
+    <div class="position-fixed top-0 bottom-0 start-0 end-0 overflow-hidden pe-none" aria-hidden="true">
+        <div class="position-absolute admin-width-96 admin-height-96 bg-primary-subtle rounded-pill admin-decoration opacity-50"></div>
+        <div class="position-absolute admin-width-96 admin-height-96 bg-body-tertiary rounded-pill admin-decoration opacity-25"></div>
+    </div>
 
-    <div class="w-full max-w-md bg-white rounded-3xl shadow-luxury border border-cream-100 overflow-hidden relative z-10 animate-fade-up">
+    <div class="card w-100 admin-max-width-md bg-white rounded-2 shadow border border-light-subtle overflow-hidden position-relative z-1">
         
         {{-- Card Header --}}
-        <div class="px-8 pt-8 pb-4 text-center shrink-0">
-            <a href="{{ route('home') }}" class="inline-flex flex-col leading-none mb-4">
-                <span class="font-heading font-bold text-2xl text-espresso-800 tracking-tight">{{ setting('site_name', 'Store') }}</span>
-                <span class="text-[10px] text-espresso-400 tracking-widest uppercase font-light mt-1">{{ setting('site_tagline', '') }}</span>
+        <div class="px-5 pt-5 pb-3 text-center flex-shrink-0">
+            <a href="{{ route('home') }}" class="d-inline-flex flex-column lh-1 mb-3">
+                <span class="admin-heading fw-semibold fs-3 text-body">{{ setting('site_name', 'Store') }}</span>
+                <span class="small text-body-secondary admin-letter-spacing fw-normal mt-1">{{ setting('site_tagline', '') }}</span>
             </a>
-            <div class="h-0.5 bg-gradient-to-r from-transparent via-primary-300 to-transparent w-24 mx-auto mb-2"></div>
+            <div class="admin-height-0-5 admin-brand-divider admin-width-24 mx-auto mb-2"></div>
         </div>
 
         {{-- Slot content --}}
-        <div class="px-8 pb-8 pt-2">
+        <div class="px-5 pb-5 pt-2">
             {{ $slot }}
         </div>
     </div>

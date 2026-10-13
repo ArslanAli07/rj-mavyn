@@ -648,7 +648,7 @@
                 @forelse($cartItems as $item)
                 <div class="border-b border-cream-100 last:border-0 py-3">
                     <div class="flex gap-3">
-                        <img src="{{ $item->product?->main_image_url ?? asset('images/placeholder.jpg') }}" alt="{{ $item->product?->title }}"
+                        <img src="{{ $item->product?->main_image_url ?? asset('images/placeholder.svg') }}" alt="{{ $item->product?->title }}"
                              class="w-16 h-16 rounded-xl object-cover shrink-0">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-espresso-800 truncate">{{ $item->product?->title ?? 'Product' }}</p>

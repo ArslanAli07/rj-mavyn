@@ -4,7 +4,7 @@ import laravel from 'laravel-vite-plugin';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/css/admin.css', 'resources/js/admin.js'],
             refresh: true,
         }),
     ],
@@ -18,6 +18,9 @@ export default defineConfig({
                 // Separate vendor libraries (Alpine.js) into their own chunk
                 // so browser caches them independently from app code.
                 manualChunks(id) {
+                    if (id.includes('node_modules/bootstrap/')) {
+                        return 'bootstrap';
+                    }
                     if (id.includes('node_modules')) {
                         return 'vendor';
                     }

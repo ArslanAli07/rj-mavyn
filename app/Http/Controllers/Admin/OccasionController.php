@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Occasion;
 use App\Services\AdminMutation;
+use App\Services\CatalogSlugService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -30,15 +31,17 @@ class OccasionController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:100',
-            'slug' => 'nullable|unique:occasions,slug',
+            'slug' => 'nullable|string|max:255|unique:occasions,slug',
             'description' => 'nullable|string',
             'icon' => 'nullable|string|max:10',
             'display_order' => 'integer|min:0',
             'is_active' => 'boolean',
         ]);
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
+        $slugField = $request->filled('slug') ? 'slug' : 'name';
+        app(CatalogSlugService::class)->validate(Occasion::class, $data['slug'], $slugField);
         $data['is_active'] = $request->boolean('is_active', true);
-        Occasion::create($data);
+        app(CatalogSlugService::class)->create(Occasion::class, $data, $slugField);
 
         return redirect()->route('admin.occasions.index')->with('success', 'Occasion created!');
     }

@@ -56,7 +56,11 @@ class ProductConfigurationService
             ->all();
 
         $optionsTotal = collect($optionsSnapshot)->sum(fn ($option) => Money::minor($option['price_adjustment']));
-        $unitPrice = Money::decimal(Money::minor($variant->discount_price ?? $variant->price) + $optionsTotal);
+        $unitMinor = Money::minor($variant->discount_price ?? $variant->price) + $optionsTotal;
+        if ($unitMinor < 0) {
+            throw ValidationException::withMessages(['option_value_ids' => 'These options would produce a negative price. Choose another configuration.']);
+        }
+        $unitPrice = Money::decimal($unitMinor);
         $specialRequest = $this->normalizeSpecialRequest($specialRequest);
         $variantName = $variant->display_name;
 

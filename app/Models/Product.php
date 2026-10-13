@@ -208,7 +208,7 @@ class Product extends Model
             return app(MediaLibraryService::class)->present($asset, 'product-card')['url'];
         }
         if (empty($this->main_image)) {
-            return asset('images/placeholder.jpg');
+            return asset('images/placeholder.svg');
         }
 
         return $this->publicAssetUrl($this->main_image);

@@ -63,6 +63,15 @@ class OrderStatusOutboxTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_staff_can_clear_notes_without_creating_a_status_notification(): void
+    {
+        $this->order->update(['admin_notes' => 'Obsolete note']);
+        $this->patch(route('admin.orders.status', $this->order), ['status' => 'pending', 'payment_status' => 'pending', 'admin_notes' => '', 'send_email' => true])->assertSessionHasNoErrors();
+        $this->assertNull($this->order->fresh()->admin_notes);
+        $this->assertSame(0, $this->order->fresh()->status_revision);
+        $this->assertDatabaseCount('notification_outbox', 0);
+    }
+
     public function test_bulk_status_changes_notify_each_changed_order_once_and_repeated_submission_is_noop(): void
     {
         $other = $this->makeOrder();

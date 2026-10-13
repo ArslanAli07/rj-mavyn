@@ -50,6 +50,8 @@ return new class extends Migration
             $table->dropColumn('media_snapshot');
         });
         Schema::table('media_assets', function (Blueprint $table) {
+            $table->dropIndex(['status']);
+            $table->dropIndex(['processing_status']);
             $table->dropColumn(['status', 'processing_status', 'processing_error', 'processing_generation', 'processing_attempts', 'processing_started_at']);
         });
     }

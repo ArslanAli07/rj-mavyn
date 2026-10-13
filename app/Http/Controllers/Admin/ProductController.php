@@ -11,6 +11,7 @@ use App\Models\ProductImage;
 use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
 use App\Services\AdminMutation;
+use App\Services\CatalogSlugService;
 use App\Services\InventoryService;
 use App\Services\Media\MediaLibraryService;
 use App\Services\ProductAttributesService;
@@ -66,13 +67,14 @@ class ProductController extends Controller
     {
         $this->mergeLegacyPricingFromVariants($request);
         $data = $this->validateProduct($request);
+        $data['slug'] = Str::slug($data['title']);
+        app(CatalogSlugService::class)->validate(Product::class, $data['slug'], 'title');
 
         DB::transaction(function () use ($request, $data) {
             if ($request->hasFile('main_image')) {
                 $data['main_image'] = $this->storeProductImage($request->file('main_image'), 800);
             }
 
-            $data['slug'] = Str::slug($data['title']);
             $data['is_featured'] = $request->boolean('is_featured');
             $data['is_bestseller'] = $request->boolean('is_bestseller');
             $data['is_new_arrival'] = $request->boolean('is_new_arrival');
@@ -81,7 +83,7 @@ class ProductController extends Controller
 
             $quantity = (int) $data['stock_quantity'];
             unset($data['main_image_asset_id'], $data['gallery_asset_ids'], $data['gallery_asset_ids_present'], $data['stock_quantity'], $data['inventory_mode'], $data['inventory_version']);
-            $product = Product::create($data);
+            $product = app(CatalogSlugService::class)->create(Product::class, $data, 'title');
             $this->inventory->configureProduct($product, $request->input('inventory_mode', 'untracked'), $quantity, 0, $request->user('admin'));
             if ($request->exists('main_image_asset_id')) {
                 $this->mediaLibrary->setProductMainImage($product, $request->integer('main_image_asset_id') ?: null, $request->user('admin'));
@@ -137,9 +139,7 @@ class ProductController extends Controller
             $this->inventory->configureProduct($product, $request->input('inventory_mode', $product->inventory_mode), (int) $data['stock_quantity'],
                 $request->has('inventory_version') ? $request->integer('inventory_version') : null, $request->user('admin'));
             if ($request->hasFile('main_image')) {
-                if ($product->main_image) {
-                    Storage::disk('public')->delete($product->main_image);
-                }
+                // Legacy originals may still be referenced by historical orders.
                 $data['main_image'] = $this->storeProductImage($request->file('main_image'), 800);
             }
 
@@ -214,7 +214,8 @@ class ProductController extends Controller
         if ($image->product_id !== $product->id) {
             abort(403);
         }
-        Storage::disk('public')->delete($image->image);
+        $path = $image->image;
+        DB::afterCommit(fn () => Storage::disk('public')->delete($path));
         $image->delete();
 
         return back()->with('success', 'Image deleted.');
@@ -222,6 +223,7 @@ class ProductController extends Controller
 
     protected function mergeLegacyPricingFromVariants(Request $request): void
     {
+        $request->validate(['variants' => 'required|array|list|min:1', 'variants.*' => 'array']);
         if (! $request->has('variants') || ! is_array($request->variants) || count($request->variants) === 0) {
             return;
         }
@@ -275,10 +277,12 @@ class ProductController extends Controller
             'occasions' => 'nullable|array',
             'occasions.*' => 'exists:occasions,id',
 
-            'variants' => 'required|array|min:1',
+            'variants' => 'required|array|list|min:1',
+            'variants.*' => 'array',
             'variants.*.id' => [
                 'nullable',
                 'integer',
+                'distinct',
                 Rule::exists('product_variants', 'id')->where(fn ($q) => $product
                     ? $q->where('product_id', $product->id)
                     : $q->whereRaw('1 = 0')),
@@ -311,10 +315,12 @@ class ProductController extends Controller
             'variants.*.stock_quantity' => 'sometimes|integer|min:0|max:2147483647',
             'variants.*.inventory_version' => 'sometimes|integer|min:0',
 
-            'option_groups' => 'nullable|array',
+            'option_groups' => 'nullable|array|list',
+            'option_groups.*' => 'array',
             'option_groups.*.id' => [
                 'nullable',
                 'integer',
+                'distinct',
                 Rule::exists('product_option_groups', 'id')->where(fn ($q) => $product
                     ? $q->where('product_id', $product->id)
                     : $q->whereRaw('1 = 0')),
@@ -326,11 +332,21 @@ class ProductController extends Controller
             'option_groups.*.is_required' => 'nullable|boolean',
             'option_groups.*.is_active' => 'nullable|boolean',
             'option_groups.*.sort_order' => 'nullable|integer|min:0',
-            'option_groups.*.values' => 'required_with:option_groups.*.name|array|min:1',
+            'option_groups.*.values' => 'required_with:option_groups.*.name|array|list|min:1',
+            'option_groups.*.values.*' => 'array',
             'option_groups.*.values.*.id' => [
                 'nullable',
                 'integer',
-                'exists:product_option_values,id',
+                'distinct',
+                function ($attribute, $value, $fail) use ($request, $product) {
+                    $parts = explode('.', $attribute);
+                    $groupId = $request->input('option_groups.'.$parts[1].'.id');
+                    if (! $product || ! $groupId || ! ProductOptionValue::whereKey($value)
+                        ->where('product_option_group_id', $groupId)
+                        ->whereHas('group', fn ($query) => $query->where('product_id', $product->id))->exists()) {
+                        $fail('The selected option value does not belong to this product and group.');
+                    }
+                },
             ],
             'option_groups.*.values.*.name' => 'required|string|max:100',
             'option_groups.*.values.*.price_adjustment' => 'nullable|numeric',

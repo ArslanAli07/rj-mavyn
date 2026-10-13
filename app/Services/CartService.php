@@ -28,7 +28,7 @@ class CartService
 
     protected bool $couponResolved = false;
 
-    public function __construct(private ProductConfigurationService $configurations) {}
+    public function __construct(private ProductConfigurationService $configurations, private CartOwnerLockService $ownerLocks) {}
 
     protected function resetCache(): void
     {
@@ -55,7 +55,7 @@ class CartService
             return CartItem::where('user_id', Auth::guard('web')->id());
         }
 
-        return CartItem::where('session_id', $this->getSessionId());
+        return CartItem::whereNull('user_id')->where('session_id', $this->getSessionId());
     }
 
     public function checkoutOwner(): string
@@ -75,6 +75,13 @@ class CartService
         array $optionValueIds = [],
         ?string $specialRequest = null
     ): void {
+        $this->ownerLocks->synchronized([$this->checkoutOwner()], function () use ($product, $quantity, $variant, $optionValueIds, $specialRequest) {
+            $this->addItem($product, $quantity, $variant, $optionValueIds, $specialRequest);
+        });
+    }
+
+    private function addItem(Product $product, int $quantity, ?ProductVariant $variant, array $optionValueIds, ?string $specialRequest): void
+    {
         $config = $this->configurations->resolve(
             $product,
             $variant?->id,
@@ -90,10 +97,11 @@ class CartService
         if (Auth::guard('web')->check()) {
             $lookup['user_id'] = Auth::guard('web')->id();
         } else {
+            $lookup['user_id'] = null;
             $lookup['session_id'] = $this->getSessionId();
         }
 
-        $item = CartItem::firstOrNew($lookup);
+        $item = CartItem::where($lookup)->lockForUpdate()->first() ?? new CartItem($lookup);
         $item->configuration_signature = $config['configuration_signature'];
         $item->product_variant_id = $config['variant']->id;
         $item->weight = $config['weight'];
@@ -117,7 +125,14 @@ class CartService
         ?string $specialRequest = null,
         bool $updateSpecialRequest = false
     ): void {
-        $item = $this->query()->with(['product.variants', 'product.optionGroups.values'])->find($itemId);
+        $this->ownerLocks->synchronized([$this->checkoutOwner()], function () use ($itemId, $quantity, $variantId, $optionValueIds, $specialRequest, $updateSpecialRequest) {
+            $this->updateItem($itemId, $quantity, $variantId, $optionValueIds, $specialRequest, $updateSpecialRequest);
+        });
+    }
+
+    private function updateItem(int $itemId, ?int $quantity, ?int $variantId, ?array $optionValueIds, ?string $specialRequest, bool $updateSpecialRequest): void
+    {
+        $item = $this->query()->with(['product.variants', 'product.optionGroups.values'])->lockForUpdate()->find($itemId);
         if (! $item || ! $item->product) {
             return;
         }
@@ -147,11 +162,16 @@ class CartService
                 ->where('product_id', $item->product_id)
                 ->where('configuration_signature', $config['configuration_signature'])
                 ->where('id', '!=', $item->id)
+                ->lockForUpdate()
                 ->first();
 
             if ($existing) {
                 $this->assertCartStock($item->product, $config['variant'], $existing->quantity + $item->quantity, [$existing->id, $item->id]);
                 $existing->quantity += $item->quantity;
+                $existing->price = $config['unit_price'];
+                $existing->weight = $config['weight'];
+                $existing->options_snapshot = $config['options_snapshot'];
+                $existing->special_request = $config['special_request'];
                 $existing->save();
                 $item->delete();
                 $this->resetCache();
@@ -194,13 +214,15 @@ class CartService
 
     public function remove(int $itemId): void
     {
-        $this->query()->find($itemId)?->delete();
+        $this->ownerLocks->synchronized([$this->checkoutOwner()], function () use ($itemId) {
+            $this->query()->lockForUpdate()->find($itemId)?->delete();
+        });
         $this->resetCache();
     }
 
     public function clear(): void
     {
-        $this->query()->delete();
+        $this->ownerLocks->synchronized([$this->checkoutOwner()], fn () => $this->query()->delete());
         $this->resetCache();
     }
 
@@ -218,6 +240,7 @@ class CartService
     /** Fresh rows locked by the caller's checkout transaction. */
     public function lockedItems(): Collection
     {
+        $this->ownerLocks->lock([$this->checkoutOwner()]);
         $this->resetCache();
 
         return $this->query()->orderBy('id')->lockForUpdate()->get();
@@ -326,34 +349,45 @@ class CartService
 
     public function mergeGuestCart(): void
     {
-        $sessionId = $this->getSessionId();
-        $guestItems = CartItem::where('session_id', $sessionId)->get();
-
-        foreach ($guestItems as $guestItem) {
-            $signature = $guestItem->configuration_signature
-                ?: $this->configurations->signature(
-                    $guestItem->product_id,
-                    $guestItem->product_variant_id,
-                    collect($guestItem->options_snapshot ?? [])->pluck('value_id')->all(),
-                    $guestItem->special_request
-                );
-
-            $existing = CartItem::where('user_id', Auth::guard('web')->id())
-                ->where('product_id', $guestItem->product_id)
-                ->where('configuration_signature', $signature)
-                ->first();
-
-            if ($existing) {
-                $existing->increment('quantity', $guestItem->quantity);
-                $guestItem->delete();
-            } else {
-                $guestItem->update([
-                    'user_id' => Auth::guard('web')->id(),
-                    'session_id' => null,
-                    'configuration_signature' => $signature,
-                ]);
-            }
+        if (! Auth::guard('web')->check()) {
+            return;
         }
+
+        $sessionId = $this->getSessionId();
+        $this->ownerLocks->synchronized([$this->checkoutOwner(), 'guest:'.$sessionId], function () use ($sessionId) {
+            $guestItems = CartItem::whereNull('user_id')->where('session_id', $sessionId)->orderBy('id')->lockForUpdate()->get();
+
+            foreach ($guestItems as $guestItem) {
+                $signature = $guestItem->configuration_signature
+                    ?: $this->configurations->signature(
+                        $guestItem->product_id,
+                        $guestItem->product_variant_id,
+                        collect($guestItem->options_snapshot ?? [])->pluck('value_id')->all(),
+                        $guestItem->special_request
+                    );
+
+                $existing = CartItem::where('user_id', Auth::guard('web')->id())
+                    ->where('product_id', $guestItem->product_id)
+                    ->where('configuration_signature', $signature)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing) {
+                    $quantity = $existing->quantity + $guestItem->quantity;
+                    if ($quantity > 20) {
+                        Session::flash('error', 'Matching cart items were limited to 20 units. Review your cart before checkout.');
+                    }
+                    $existing->update(['quantity' => min(20, $quantity)]);
+                    $guestItem->delete();
+                } else {
+                    $guestItem->update([
+                        'user_id' => Auth::guard('web')->id(),
+                        'session_id' => null,
+                        'configuration_signature' => $signature,
+                    ]);
+                }
+            }
+        });
 
         $this->resetCache();
     }

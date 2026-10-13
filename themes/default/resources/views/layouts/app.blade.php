@@ -195,7 +195,7 @@
 
                 <a href="{{ route('home') }}" class="flex items-center gap-2.5 shrink-0 hover-trigger group tracking-tight md:gap-3">
                     <div class="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden transition-all duration-300 group-hover:scale-105 shadow-sm">
-                        <img src="{{ store_media_url('site_logo', asset('images/placeholder.jpg')) }}" alt="our store" class="w-full h-full object-cover" width="40" height="40">
+                        <img src="{{ store_media_url('site_logo', asset('images/placeholder.svg')) }}" alt="our store" class="w-full h-full object-cover" width="40" height="40">
                     </div>
                     <span class="text-base font-bold font-fraunces text-ink leading-none md:text-lg">{{ setting('site_name', config('site.name', 'Store')) }}</span>
                 </a>
@@ -498,7 +498,7 @@
                 <div>
                     <div class="flex items-center gap-3 mb-4">
                         <div class="w-10 h-10 rounded-full overflow-hidden bg-bg">
-                            <img src="{{ store_media_url('site_logo', asset('images/placeholder.jpg')) }}" alt="our store" class="w-full h-full object-cover">
+                            <img src="{{ store_media_url('site_logo', asset('images/placeholder.svg')) }}" alt="our store" class="w-full h-full object-cover">
                         </div>
                         <span class="font-fraunces font-bold text-xl text-bg">{{ setting('site_name', config('site.name', 'Store')) }}</span>
                     </div>
@@ -631,7 +631,7 @@
                 @forelse($cartItems as $item)
                 <div class="border-b border-cream-100 last:border-0 py-3">
                     <div class="flex gap-3">
-                        <img src="{{ $item->product?->main_image_url ?? asset('images/placeholder.jpg') }}" alt="{{ $item->product?->title }}"
+                        <img src="{{ $item->product?->main_image_url ?? asset('images/placeholder.svg') }}" alt="{{ $item->product?->title }}"
                              class="w-16 h-16 rounded-xl object-cover shrink-0">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-espresso-800 truncate">{{ $item->product?->title ?? 'Product' }}</p>

@@ -40,6 +40,6 @@ class Occasion extends Model
     {
         return $this->image
             ? asset('storage/' . $this->image)
-            : asset('images/placeholder.jpg');
+            : asset('images/placeholder.svg');
     }
 }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Services\Plugins\PluginRuntime;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 use Mavyn\Contracts\Plugins\ProductDisplay;
 
@@ -12,8 +11,8 @@ class ProductController extends Controller
 {
     public function show(string $slug): View
     {
-        // Cache the full product for 10 minutes — cache is busted by admin on update/delete.
-        $product = Cache::remember("product_{$slug}", 600, fn () => Product::active()
+        // Read current catalog state, including independently edited variants/options.
+        $product = Product::active()
             ->with([
                 'category',
                 'images',
@@ -23,11 +22,9 @@ class ProductController extends Controller
                     ->with(['values' => fn ($vq) => $vq->where('is_active', true)->orderBy('sort_order')->orderBy('id')]),
             ])
             ->where('slug', $slug)
-            ->firstOrFail()
-        );
+            ->firstOrFail();
 
-        // Cache related products for the same TTL.
-        $related = Cache::remember("related_{$product->category_id}_{$product->id}", 600, fn () => Product::active()
+        $related = Product::active()
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->select('id', 'title', 'slug', 'price', 'discount_price', 'main_image', 'category_id', 'is_active')
@@ -35,11 +32,10 @@ class ProductController extends Controller
             ->orderBy('display_order')
             ->latest()
             ->take(4)
-            ->get()
-        );
+            ->get();
 
-        $wishlistedIds = auth()->check()
-            ? auth()->user()->wishlistedProductIds()
+        $wishlistedIds = auth('web')->check()
+            ? auth('web')->user()->wishlistedProductIds()
             : [];
 
         $hooks = app(PluginRuntime::class)->hooks();

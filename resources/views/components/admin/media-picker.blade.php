@@ -27,37 +27,37 @@
         } catch (e) { this.error = e.message; }
         finally { this.loading = false; }
     }
-}" class="space-y-2" data-media-picker="{{ $name }}">
+}" class="admin-stack-2" data-media-picker="{{ $name }}">
     @if($multiple)
         <input type="hidden" name="{{ $name }}_present" value="1">
         <template x-for="(id, index) in selected" :key="id">
-            <div class="flex flex-wrap items-center gap-2 text-sm">
+            <div class="d-flex flex-wrap align-items-center gap-2">
                 <input type="hidden" name="{{ $name }}[]" :value="id">
                 <span x-text="(index + 1) + '. Asset #' + id"></span>
-                <button type="button" @click="move(index, -1)" :disabled="index === 0" class="underline disabled:opacity-40" aria-label="Move image earlier">Earlier</button>
-                <button type="button" @click="move(index, 1)" :disabled="index === selected.length - 1" class="underline disabled:opacity-40" aria-label="Move image later">Later</button>
-                <button type="button" @click="selected = selected.filter(value => value !== id)" class="underline" aria-label="Remove selected image">Remove</button>
+                <button type="button" @click="move(index, -1)" :disabled="index === 0" class="btn btn-sm btn-outline-secondary text-decoration-underline" aria-label="Move image earlier">Earlier</button>
+                <button type="button" @click="move(index, 1)" :disabled="index === selected.length - 1" class="btn btn-sm btn-outline-secondary text-decoration-underline" aria-label="Move image later">Later</button>
+                <button type="button" @click="selected = selected.filter(value => value !== id)" class="btn btn-sm btn-outline-danger" aria-label="Remove selected image">Remove</button>
             </div>
         </template>
     @else
         <input type="hidden" name="{{ $name }}" :value="selected || ''">
-        <span x-show="selected" x-text="'Selected asset #' + selected" class="text-sm"></span>
+        <span x-show.important="selected" x-text="'Selected asset #' + selected" class="small"></span>
     @endif
-    <button type="button" class="btn-gold px-4 py-2" @click="open = !open; if (open) load(@js(route('admin.media.picker', array_filter(['type' => $type]))))">{{ $label }}</button>
-    <button type="button" x-show="multiple ? selected.length : selected" x-cloak @click="selected = multiple ? [] : null" class="text-sm underline">Clear selection</button>
-    <div x-show="open" x-cloak class="p-4 border rounded-xl bg-white">
-        <p x-show="loading" role="status">Loading media…</p>
-        <p x-show="error" x-text="error" role="alert" class="text-red-700"></p>
-        <div class="grid gap-3 grid-cols-2 sm:grid-cols-4">
+    <button type="button" class="btn btn-primary px-3 py-2" @click="open = !open; if (open) load(@js(route('admin.media.picker', array_filter(['type' => $type]))))">{{ $label }}</button>
+    <button type="button" x-show.important="multiple ? selected.length : selected" x-cloak @click="selected = multiple ? [] : null" class="btn btn-sm btn-outline-secondary small text-decoration-underline">Clear selection</button>
+    <div x-show.important="open" x-cloak class="card p-3 border rounded-2 bg-white">
+        <p x-show.important="loading" role="status">Loading media…</p>
+        <p x-show.important="error" x-text="error" role="alert" class="text-danger"></p>
+        <div class="d-grid gap-3 admin-cols-2 admin-cols-sm-4">
             <template x-for="file in files" :key="file.id">
-                <button type="button" class="p-2 border rounded-lg" @click="choose(file)" :aria-pressed="multiple ? selected.includes(file.id) : selected === file.id">
-                    <template x-if="file.mime_type.startsWith('image/')"><img :src="file.url" :alt="file.alt_text" class="h-20 w-full object-contain"></template>
-                    <span x-text="file.title" class="block text-sm"></span>
+                <button type="button" class="btn btn-sm btn-outline-secondary p-2 border rounded-2" @click="choose(file)" :aria-pressed="multiple ? selected.includes(file.id) : selected === file.id">
+                    <template x-if="file.mime_type.startsWith('image/')"><img :src="file.url" :alt="file.alt_text" class="admin-height-20 w-100 object-fit-contain"></template>
+                    <span x-text="file.title" class="d-block small"></span>
                 </button>
             </template>
         </div>
-        <p x-show="!loading && !error && !files.length" class="text-sm">No public media available.</p>
-        <button type="button" x-show="next" x-cloak @click="load(next)" class="underline mt-3">Next page</button>
-        <button type="button" @click="open = false" class="underline mt-3 ml-3">Close</button>
+        <p x-show.important="!loading && !error && !files.length" class="small">No public media available.</p>
+        <button type="button" x-show.important="next" x-cloak @click="load(next)" class="btn btn-sm btn-outline-secondary text-decoration-underline mt-3">Next page</button>
+        <button type="button" @click="open = false" class="btn btn-sm btn-outline-secondary text-decoration-underline mt-3 ms-3">Close</button>
     </div>
 </div>

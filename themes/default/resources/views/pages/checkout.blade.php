@@ -465,7 +465,7 @@
                         <div class="divide-y divide-cream-100 max-h-64 overflow-y-auto scrollbar-hide mb-6 pr-1">
                             @foreach($items as $item)
                                 <div class="flex gap-3 py-3 items-center">
-                                    <img src="{{ $item->product?->main_image_url ?? asset('images/placeholder.jpg') }}" 
+                                    <img src="{{ $item->product?->main_image_url ?? asset('images/placeholder.svg') }}"
                                          alt="{{ $item->product?->title }}" 
                                          class="w-12 h-12 rounded-lg object-cover border border-cream-100 shrink-0">
                                     <div class="flex-1 min-w-0 text-xs">

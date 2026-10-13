@@ -1,64 +1,63 @@
-<x-admin-layout title="Manage Delivery Zones">
+<x-admin-layout title="Manage delivery zones">
 
     {{-- Header --}}
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-4 mb-5">
         <div>
-            <h1 class="text-2xl font-heading font-bold text-espresso-800">Delivery Zones</h1>
-            <p class="text-xs text-espresso-500 mt-1">Configure Sialkot delivery zones and their respective delivery charges.</p>
+            <h1 class="text-body admin-page-title">Delivery zones</h1>
+            <p class="small text-body-secondary mt-1">Configure Sialkot delivery zones and their respective delivery charges.</p>
         </div>
         @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.delivery-zones.create'))
-<a href="{{ route('admin.delivery-zones.create') }}" class="btn-gold py-2 px-5 text-xs font-semibold">
-            + Add Delivery Zone
+<a href="{{ route('admin.delivery-zones.create') }}" class="btn btn-primary py-2 px-4 small fw-semibold">
+            + Add delivery zone
         </a>
 @endif
     </div>
 
     {{-- Delivery Zones List --}}
-    <div class="bg-white border border-cream-150 rounded-2xl p-6 shadow-sm">
+    <div class="card bg-white border border-light-subtle rounded-2 p-4 shadow-sm">
         @if($zones->isEmpty())
-            <p class="text-xs text-espresso-400 text-center py-8">No delivery zones defined yet.</p>
+            <p class="small text-body-secondary text-center py-5">No delivery zones defined yet.</p>
         @else
             <x-admin.bulk-root :action="route('admin.delivery-zones.bulk')">
                 <x-slot:actions>
-                    <button type="submit" name="bulk_action" value="activate" class="px-2.5 py-1.5 bg-cream-100 hover:bg-espresso-800 hover:text-white rounded-lg transition-colors font-bold text-[10px] uppercase">Activate</button>
-                    <button type="submit" name="bulk_action" value="deactivate" class="px-2.5 py-1.5 bg-cream-100 hover:bg-espresso-800 hover:text-white rounded-lg transition-colors font-bold text-[10px] uppercase">Deactivate</button>
-                    <button type="submit" name="bulk_action" value="delete" data-bulk-confirm="Delete :count selected delivery zone(s)? Zones used on past orders will be skipped." class="px-2.5 py-1.5 bg-red-50 text-red-650 hover:bg-red-600 hover:text-white rounded-lg transition-colors font-bold text-[10px] uppercase">Delete</button>
+                    <button type="submit" name="bulk_action" value="activate" class="btn btn-sm btn-outline-secondary px-2 py-2 bg-body-tertiary rounded-2 fw-semibold small">Activate</button>
+                    <button type="submit" name="bulk_action" value="deactivate" class="btn btn-sm btn-outline-secondary px-2 py-2 bg-body-tertiary rounded-2 fw-semibold small">Deactivate</button>
+                    <button type="submit" name="bulk_action" value="delete" data-bulk-confirm="Delete :count selected delivery zone(s)? Zones used on past orders will be skipped." class="btn btn-sm btn-outline-danger px-2 py-2 bg-danger-subtle text-danger rounded-2 fw-semibold small">Delete</button>
                 </x-slot:actions>
-            <div class="overflow-x-auto">
-                <table class="admin-table text-xs">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle admin-table small">
                     <thead>
                         <tr>
                             <th class="admin-bulk-col"><x-admin.bulk-checkbox all /></th>
-                            <th>Zone Name</th>
-                            <th>Delivery Fee</th>
-                            <th>Display Order</th>
+                            <th>Zone name</th>
+                            <th class="price num">Delivery fee</th>
+                            <th>Display order</th>
                             <th>Status</th>
-                            <th class="text-right">Actions</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($zones as $zone)
                             <tr>
                                 <td class="admin-bulk-col"><x-admin.bulk-checkbox :value="$zone->id" :label="'Select ' . $zone->name" /></td>
-                                <td class="font-bold text-espresso-800 text-sm">{{ $zone->name }}</td>
-                                <td class="text-espresso-800 font-semibold text-sm">{{ format_price($zone->delivery_fee) }}</td>
-                                <td class="text-espresso-600 font-semibold">{{ $zone->display_order }}</td>
+                                <td class="fw-semibold text-body small">{{ $zone->name }}</td>
+                                <td class="text-body fw-semibold small price num">{{ format_price($zone->delivery_fee) }}</td>
+                                <td class="text-body-secondary fw-semibold">{{ $zone->display_order }}</td>
                                 <td>
-                                    <span class="badge text-[9px] uppercase px-2 py-0.5 rounded-full font-bold
-                                                 {{ $zone->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-750' }}">
+                                    <span class="badge small px-2 py-1 rounded-pill fw-semibold {{ $zone->is_active ? 'bg-success-subtle text-success' : 'bg-body-secondary text-body-secondary' }}">
                                         {{ $zone->is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="flex items-center gap-2 justify-end">
+                                    <div class="d-flex align-items-center gap-2 justify-content-end">
                                         @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.delivery-zones.edit'))
-<a href="{{ route('admin.delivery-zones.edit', $zone->id) }}" class="px-2.5 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white rounded-lg transition-colors font-bold">Edit</a>
+<a href="{{ route('admin.delivery-zones.edit', $zone->id) }}" class="px-2 py-2 bg-body-tertiary rounded-2 fw-semibold">Edit</a>
 @endif
                                         
                                         <form action="{{ route('admin.delivery-zones.destroy', $zone->id) }}" method="POST"
                                               onsubmit="return confirm('Are you sure you want to delete this delivery zone?');">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="px-2.5 py-1.5 bg-red-50 text-red-650 hover:bg-red-600 hover:text-white rounded-lg transition-colors font-bold">Delete</button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-2 bg-danger-subtle text-danger rounded-2 fw-semibold">Delete</button>
                                         </form>
                                     </div>
                                 </td>
@@ -69,7 +68,7 @@
             </div>
 
             {{-- Pagination --}}
-            {{ $zones->links('components.pagination') }}
+            {{ $zones->links('pagination::bootstrap-5') }}
             </x-admin.bulk-root>
         @endif
     </div>

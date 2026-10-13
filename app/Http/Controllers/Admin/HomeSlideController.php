@@ -105,10 +105,12 @@ class HomeSlideController extends Controller
     protected function deleteSlide(HomeSlide $homeSlide): void
     {
         if ($homeSlide->image_path && ! str_starts_with($homeSlide->image_path, 'images/')) {
-            Storage::disk('public')->delete($homeSlide->image_path);
+            $desktop = $homeSlide->image_path;
+            DB::afterCommit(fn () => Storage::disk('public')->delete($desktop));
         }
         if ($homeSlide->mobile_image_path && ! str_starts_with($homeSlide->mobile_image_path, 'images/')) {
-            Storage::disk('public')->delete($homeSlide->mobile_image_path);
+            $mobile = $homeSlide->mobile_image_path;
+            DB::afterCommit(fn () => Storage::disk('public')->delete($mobile));
         }
         $homeSlide->delete();
     }

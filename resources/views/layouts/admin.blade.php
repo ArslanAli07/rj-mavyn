@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-cream-50">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-100 bg-body-tertiary">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,233 +8,237 @@
 
     <title>{{ $title ?? 'Admin Dashboard' }} — {{ setting('site_name', 'Store') }}</title>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/admin.css', 'resources/js/admin.js'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     @stack('head')
 </head>
-<body class="h-full font-sans antialiased text-espresso-900" x-data="{ sidebarOpen: false }">
+<body class="h-100 text-body">
 
-    {{-- Mobile Sidebar Backdrop --}}
-    <div x-show="sidebarOpen" x-cloak class="fixed inset-0 z-50 bg-espresso-800/60 backdrop-blur-sm lg:hidden" @click="sidebarOpen = false"></div>
-
-    {{-- Sidebar Container --}}
-    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-           class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-cream-200 flex flex-col transition-transform duration-300 ease-in-out">
-        
+    {{-- Responsive Bootstrap sidebar --}}
+    <aside id="admin-sidebar" class="offcanvas-lg offcanvas-start admin-sidebar border-end" tabindex="-1" aria-labelledby="admin-sidebar-title">
         {{-- Sidebar Brand --}}
-        <div class="px-6 py-4 border-b border-cream-100 flex items-center justify-between shrink-0">
-            <a href="{{ route('admin.workspace') }}" class="flex items-center gap-2">
+        <div class="px-4 py-3 border-bottom border-light-subtle d-flex align-items-center justify-content-between flex-shrink-0">
+            <a href="{{ route('admin.workspace') }}" class="d-flex align-items-center gap-2">
                 @if($logoUrl = store_media_url('site_logo', ''))
-                    <img src="{{ $logoUrl }}" alt="Store logo" class="h-8 w-auto">
+                    <img src="{{ $logoUrl }}" alt="Store logo" class="admin-height-8 w-auto">
                 @endif
-                <div class="flex flex-col leading-none">
-                    <span class="font-heading font-bold text-base text-espresso-800">{{ setting('site_name', 'Store') }} <span class="text-primary-500">Admin</span></span>
-                    <span class="text-[8px] text-espresso-400 tracking-widest uppercase font-light">Store Management</span>
+                <div class="d-flex flex-column lh-1">
+                    <span id="admin-sidebar-title" class="admin-heading fw-semibold fs-6 text-body">{{ setting('site_name', 'Store') }} <span class="text-primary">Admin</span></span>
+                    <span class="small text-body-secondary admin-letter-spacing fw-normal">Store management</span>
                 </div>
             </a>
-            <button @click="sidebarOpen = false" class="lg:hidden p-1 text-espresso-500 hover:bg-cream-100 rounded-lg">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <button type="button" data-bs-dismiss="offcanvas" data-bs-target="#admin-sidebar" aria-label="Close navigation" class="btn btn-sm btn-outline-secondary d-lg-none p-1 text-body-secondary rounded-2">
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
 
+        <div class="offcanvas-body d-flex flex-column p-0 overflow-hidden">
         {{-- Sidebar Navigation --}}
-        <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+        <nav class="flex-grow-1 overflow-y-auto p-3 admin-stack-1">
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.dashboard'))
 <a href="{{ route('admin.dashboard') }}" class="admin-nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                 Dashboard
             </a>
 @endif
 
-            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-espresso-400 uppercase tracking-wider">Catalog</div>
+            <div class="pt-3 pb-2 px-3 small fw-semibold text-body-secondary admin-letter-spacing">Catalog</div>
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.products.index'))
 <a href="{{ route('admin.products.index') }}" class="admin-nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                 Products
             </a>
 @endif
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.categories.index'))
 <a href="{{ route('admin.categories.index') }}" class="admin-nav-item {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 Categories
             </a>
 @endif
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.occasions.index'))
 <a href="{{ route('admin.occasions.index') }}" class="admin-nav-item {{ request()->routeIs('admin.occasions.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 Occasions
             </a>
 @endif
 
-            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-espresso-400 uppercase tracking-wider">Sales</div>
+            <div class="pt-3 pb-2 px-3 small fw-semibold text-body-secondary admin-letter-spacing">Sales</div>
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.orders.index'))
 <a href="{{ route('admin.orders.index') }}" class="admin-nav-item {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                <span class="flex-1">Orders</span>
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                <span class="flex-grow-1">Orders</span>
                 <span id="admin-pending-orders-count"
-                      class="ml-auto min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold leading-5 text-center {{ request()->routeIs('admin.orders.*') ? 'bg-white/20 text-white' : 'bg-primary-500 text-white' }} {{ ($pendingOrdersCount ?? 0) > 0 ? '' : 'hidden' }}">
+                      class="ms-auto admin-min-width-badge admin-height-5 px-2 rounded-pill small fw-semibold lh-sm text-center {{ request()->routeIs('admin.orders.*') ? 'bg-primary text-white' : 'bg-primary-subtle text-primary' }} {{ ($pendingOrdersCount ?? 0) > 0 ? '' : 'd-none' }}">
                     {{ $pendingOrdersCount ?? 0 }}
                 </span>
             </a>
 @endif
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.customers.index'))
 <a href="{{ route('admin.customers.index') }}" class="admin-nav-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                 Customers
             </a>
 @endif
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.coupons.index'))
 <a href="{{ route('admin.coupons.index') }}" class="admin-nav-item {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
                 Coupons
             </a>
 @endif
 
-            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-espresso-400 uppercase tracking-wider">Content</div>
+            <div class="pt-3 pb-2 px-3 small fw-semibold text-body-secondary admin-letter-spacing">Content</div>
             @if(auth('admin')->user()?->hasPermission('media.view'))
                 @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.media.index'))
-<a href="{{ route('admin.media.index') }}" class="admin-nav-item {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">Media Library</a>
+<a href="{{ route('admin.media.index') }}" class="admin-nav-item {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">
+                <svg class="admin-width-5 admin-height-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7H3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1v-1M8 3h12a1 1 0 011 1v12a1 1 0 01-1 1H8a1 1 0 01-1-1V4a1 1 0 011-1zM7 13l4-4 4 4 2-2 4 4M16 7h.01"/></svg>
+                Media library
+            </a>
 @endif
             @endif
-            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.home-slides.index'))
-<a href="{{ route('admin.home-slides.index') }}" class="admin-nav-item {{ request()->routeIs('admin.home-slides.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Hero Slides
-            </a>
-@endif
-            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.testimonials.index'))
-<a href="{{ route('admin.testimonials.index') }}" class="admin-nav-item {{ request()->routeIs('admin.testimonials.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                Testimonials
-            </a>
-@endif
-            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.faqs.index'))
-<a href="{{ route('admin.faqs.index') }}" class="admin-nav-item {{ request()->routeIs('admin.faqs.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                FAQs
-            </a>
-@endif
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.contact-messages.index'))
 <a href="{{ route('admin.contact-messages.index') }}" class="admin-nav-item {{ request()->routeIs('admin.contact-messages.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                 Messages
             </a>
 @endif
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.newsletter.index'))
 <a href="{{ route('admin.newsletter.index') }}" class="admin-nav-item {{ request()->routeIs('admin.newsletter.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-2.25-1.5a2 2 0 00-2.22 0l-2.25 1.5"/></svg>
-                Newsletter Subscribers
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-2.25-1.5a2 2 0 00-2.22 0l-2.25 1.5"/></svg>
+                Newsletter subscribers
             </a>
 @endif
 
-            <div class="pt-4 pb-2 px-4 text-xs font-semibold text-espresso-400 uppercase tracking-wider">Configuration</div>
+            <div class="pt-3 pb-2 px-3 small fw-semibold text-body-secondary admin-letter-spacing">Configuration</div>
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.delivery-zones.index') && plugin_active('mavyn.local-delivery'))
 <a href="{{ route('admin.delivery-zones.index') }}" class="admin-nav-item {{ request()->routeIs('admin.delivery-zones.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                Delivery Zones
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Delivery zones
             </a>
 @endif
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.seo.index'))
 <a href="{{ route('admin.seo.index') }}" class="admin-nav-item {{ request()->routeIs('admin.seo.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                SEO Settings
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                SEO settings
             </a>
 @endif
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.settings.index'))
 <a href="{{ route('admin.settings.index') }}" class="admin-nav-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                General Settings
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                General settings
             </a>
 @endif
-        @if(auth('admin')->user()->hasPermission('extensions.view'))<a class="admin-nav-item" href="{{ route('admin.extensions.index') }}">Plugins</a>@endif
-@if(auth('admin')->user()->hasPermission('themes.view'))<a class="admin-nav-item" href="{{ route('admin.themes.index') }}">Themes</a>@endif
-        @if(auth('admin')->user()->hasPermission('staff.manage'))<a class="admin-nav-item" href="{{ route('admin.staff.index') }}">Staff access</a>@endif
-@if(auth('admin')->user()->hasPermission('audit.view'))<a class="admin-nav-item" href="{{ route('admin.audit.index') }}">Audit history</a>@endif
+        @if(auth('admin')->user()->hasPermission('extensions.view'))
+            <a class="admin-nav-item {{ request()->routeIs('admin.extensions.*') ? 'active' : '' }}" href="{{ route('admin.extensions.index') }}">
+                <svg class="admin-width-5 admin-height-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4h1a3 3 0 010 6H3v4a2 2 0 002 2h4v-1a3 3 0 016 0v1h4a2 2 0 002-2v-4h1a3 3 0 000-6h-1V5a2 2 0 00-2-2h-4V2a3 3 0 00-6 0v1z"/></svg>
+                Plugins
+            </a>
+        @endif
+        @if(auth('admin')->user()->hasPermission('themes.view'))
+            <a class="admin-nav-item {{ request()->routeIs('admin.themes.*') ? 'active' : '' }}" href="{{ route('admin.themes.index') }}">
+                <svg class="admin-width-5 admin-height-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3a9 9 0 100 18h1a2 2 0 001.6-3.2 1.5 1.5 0 011.2-2.4H18a3 3 0 003-3A9.4 9.4 0 0012 3zM7.5 10h.01M10 6.5h.01M14.5 6.5h.01M18 10h.01"/></svg>
+                Themes
+            </a>
+        @endif
+        @if(auth('admin')->user()->hasPermission('staff.manage'))
+            <a class="admin-nav-item {{ request()->routeIs('admin.staff.*') ? 'active' : '' }}" href="{{ route('admin.staff.index') }}">
+                <svg class="admin-width-5 admin-height-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2zM15 9h3m-3 4h3M6 17a3 3 0 016 0M11 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                Staff access
+            </a>
+        @endif
+        @if(auth('admin')->user()->hasPermission('audit.view'))
+            <a class="admin-nav-item {{ request()->routeIs('admin.audit.*') ? 'active' : '' }}" href="{{ route('admin.audit.index') }}">
+                <svg class="admin-width-5 admin-height-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 11a9 9 0 119 10M3 4v7h7m2-4v5l3 2"/></svg>
+                Audit history
+            </a>
+        @endif
 </nav>
 
         {{-- Sidebar Footer --}}
-        <div class="p-4 border-t border-cream-100 shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center font-bold text-primary-700">
+        <div class="p-3 border-top border-light-subtle flex-shrink-0">
+            <div class="d-flex align-items-center gap-3">
+                <div class="admin-width-9 admin-height-9 rounded-pill bg-primary-subtle d-flex align-items-center justify-content-center fw-semibold text-primary">
                     {{ substr(auth('admin')->user()->name ?? 'A', 0, 1) }}
                 </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-xs font-semibold text-espresso-850 truncate">{{ auth('admin')->user()->name ?? 'Administrator' }}</p>
-                    <p class="text-[10px] text-espresso-400 truncate">{{ auth('admin')->user()->email ?? '' }}</p>
+                <div class="flex-grow-1 admin-min-width-0">
+                    <p class="small fw-semibold text-body text-truncate">{{ auth('admin')->user()->name ?? 'Administrator' }}</p>
+                    <p class="small text-body-secondary text-truncate">{{ auth('admin')->user()->email ?? '' }}</p>
                 </div>
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
-                    <button type="submit" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg" title="Log Out">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    <button type="submit" class="btn btn-sm btn-outline-danger p-2 text-danger rounded-2" title="Log Out">
+                        <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                     </button>
                 </form>
             </div>
         </div>
+        </div>
     </aside>
 
     {{-- Main Admin Panel Area --}}
-    <div class="lg:pl-64 flex flex-col min-h-screen">
+    <div class="admin-main d-flex flex-column min-vh-100">
         
         {{-- Top Header --}}
-        <header class="bg-white border-b border-cream-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0">
-            <div class="flex items-center gap-4">
-                <button @click="sidebarOpen = true" class="lg:hidden p-2 text-espresso-500 hover:bg-cream-100 rounded-xl">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <header class="bg-white border-bottom border-light-subtle admin-height-16 d-flex align-items-center justify-content-between px-3 px-sm-4 px-lg-5 flex-shrink-0">
+            <div class="d-flex align-items-center gap-4">
+                <button type="button" data-bs-toggle="offcanvas" data-bs-target="#admin-sidebar" aria-controls="admin-sidebar" aria-label="Open navigation" class="btn btn-sm btn-outline-secondary d-lg-none p-2 text-body-secondary rounded-2">
+                    <svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-                <div class="hidden sm:flex items-center gap-1.5 text-xs text-espresso-400">
-                    <span>Admin Panel</span>
+                <div class="d-none d-sm-flex align-items-center gap-2 small text-body-secondary">
+                    <span>Admin panel</span>
                     <span>/</span>
-                    <span class="text-espresso-700 font-medium">{{ $title ?? 'Dashboard' }}</span>
+                    <span class="text-body fw-medium">{{ $title ?? 'Dashboard' }}</span>
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
-                <a href="{{ route('home') }}" target="_blank" class="btn-ghost py-1.5 px-3 flex items-center gap-1.5 text-xs border border-cream-200">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                    View Website
+            <div class="d-flex align-items-center gap-4">
+                <a href="{{ route('home') }}" target="_blank" class="btn btn-outline-secondary py-2 px-3 d-flex align-items-center gap-2 small border border-light-subtle">
+                    <svg class="admin-width-4 admin-height-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    View website
                 </a>
             </div>
         </header>
 
         {{-- Page Content --}}
-        <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main class="flex-grow-1 p-3 p-sm-4 p-lg-5 overflow-y-auto">
+            <div class="container-fluid admin-content-container px-0">
             
-            {{-- Flush Message --}}
-            @if(session('success'))
-                <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)" class="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-2xl flex items-center gap-3 text-sm">
-                    <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <span>{{ session('success') }}</span>
+                {{-- Flush Message --}}
+                @if(session('success'))
+                    <div x-data="{ show: true }" x-show.important="show" x-init="setTimeout(() => show = false, 4000)" role="alert" class="alert alert-success mb-4 p-3 bg-success-subtle border border-success-subtle text-success rounded-2 d-flex align-items-center gap-3 small">
+                        <svg class="admin-width-5 admin-height-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                @endif
+                <div id="admin-notification-permission-banner" class="d-none mb-4 p-3 bg-primary-subtle border border-primary-subtle text-body rounded-2 d-flex flex-column flex-sm-row align-items-sm-center gap-3 small">
+                    <div class="flex-grow-1">
+                        <p class="fw-semibold text-body">Enable alerts for new orders</p>
+                        <p class="small text-body-secondary mt-1">Tap Allow so this device can play a sound and show a notification when a customer orders. Keep this tab open, and turn the ringer / volume up.</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        <button type="button" id="admin-enable-notifications" class="btn btn-primary py-2 px-3 small fw-semibold">Allow</button>
+                        <button type="button" id="admin-dismiss-notifications" class="btn btn-outline-secondary py-2 px-3 small">Not now</button>
+                    </div>
                 </div>
-            @endif
-            <div id="admin-notification-permission-banner" class="hidden mb-6 p-4 bg-primary-50 border border-primary-200 text-espresso-800 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
-                <div class="flex-1">
-                    <p class="font-semibold text-espresso-850">Enable alerts for new orders</p>
-                    <p class="text-xs text-espresso-500 mt-0.5">Tap Allow so this device can play a sound and show a notification when a customer orders. Keep this tab open, and turn the ringer / volume up.</p>
+                <div id="admin-order-sound-banner" class="d-none mb-4 p-3 bg-primary-subtle border border-primary-subtle text-body rounded-2 d-flex flex-column flex-sm-row align-items-sm-center gap-3 small">
+                    <div class="flex-grow-1">
+                        <p class="fw-semibold text-body">Tap to enable order sounds</p>
+                        <p class="small text-body-secondary mt-1">Phones and tablets block sound until you interact with this page. Tap Enable, turn the ringer on, and keep this tab open.</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        <button type="button" id="admin-enable-order-sound" class="btn btn-primary py-2 px-3 small fw-semibold">Enable</button>
+                        <button type="button" id="admin-dismiss-order-sound" class="btn btn-outline-secondary py-2 px-3 small">Not now</button>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" id="admin-enable-notifications" class="btn-gold py-1.5 px-4 text-xs font-semibold">Allow</button>
-                    <button type="button" id="admin-dismiss-notifications" class="btn-ghost py-1.5 px-3 text-xs">Not now</button>
-                </div>
-            </div>
-            <div id="admin-order-sound-banner" class="hidden mb-6 p-4 bg-primary-50 border border-primary-200 text-espresso-800 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
-                <div class="flex-1">
-                    <p class="font-semibold text-espresso-850">Tap to enable order sounds</p>
-                    <p class="text-xs text-espresso-500 mt-0.5">Phones and tablets block sound until you interact with this page. Tap Enable, turn the ringer on, and keep this tab open.</p>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" id="admin-enable-order-sound" class="btn-gold py-1.5 px-4 text-xs font-semibold">Enable</button>
-                    <button type="button" id="admin-dismiss-order-sound" class="btn-ghost py-1.5 px-3 text-xs">Not now</button>
-                </div>
-            </div>
-            @if(session('error'))
-                <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl flex items-center gap-3 text-sm">
-                    <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    <span>{{ session('error') }}</span>
-                </div>
-            @endif
+                @if(session('error'))
+                    <div x-data="{ show: true }" x-show.important="show" x-init="setTimeout(() => show = false, 5000)" role="alert" class="alert alert-danger mb-4 p-3 bg-danger-subtle border border-danger-subtle text-danger rounded-2 d-flex align-items-center gap-3 small">
+                        <svg class="admin-width-5 admin-height-5 text-danger flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <span>{{ session('error') }}</span>
+                    </div>
+                @endif
 
-            {{ $slot }}
+                {{ $slot }}
+            </div>
         </main>
     </div>
 
@@ -257,7 +261,7 @@
                 const n = selected.length;
 
                 if (count) count.textContent = n + ' selected';
-                if (toolbar) toolbar.classList.toggle('hidden', n === 0);
+                if (toolbar) toolbar.classList.toggle('d-none', n === 0);
                 if (selectAll) {
                     selectAll.checked = boxes.length > 0 && n === boxes.length;
                     selectAll.indeterminate = n > 0 && n < boxes.length;
@@ -334,7 +338,7 @@
     <audio id="admin-order-sound" preload="auto" playsinline webkit-playsinline>
         <source src="{{ asset('order-notification-sound.mp3') }}" type="audio/mpeg">
     </audio>
-    <div id="admin-new-order-toast" class="fixed bottom-0 inset-x-0 lg:left-64 z-[100] hidden" role="status" aria-live="polite"></div>
+    <div id="admin-new-order-toast" class="position-fixed bottom-0 start-0 end-0 admin-toast-position admin-toast-layer d-none" role="status" aria-live="polite"></div>
     <script>
         (function () {
             const pollUrl = @json(route('admin.orders.poll'));
@@ -374,23 +378,23 @@
 
             function hidePermissionBanner() {
                 const banner = document.getElementById('admin-notification-permission-banner');
-                if (banner) banner.classList.add('hidden');
+                if (banner) banner.classList.add('d-none');
             }
 
             function showPermissionBanner() {
                 const banner = document.getElementById('admin-notification-permission-banner');
-                if (banner) banner.classList.remove('hidden');
+                if (banner) banner.classList.remove('d-none');
             }
 
             function hideSoundBanner() {
                 const banner = document.getElementById('admin-order-sound-banner');
-                if (banner) banner.classList.add('hidden');
+                if (banner) banner.classList.add('d-none');
             }
 
             function showSoundBanner() {
                 if (soundBannerDismissed || audioUnlocked) return;
                 const banner = document.getElementById('admin-order-sound-banner');
-                if (banner) banner.classList.remove('hidden');
+                if (banner) banner.classList.remove('d-none');
             }
 
             function getAudioContext(create) {
@@ -606,7 +610,7 @@
 
                 try {
                     const notification = new Notification('New order ' + number, {
-                        body: name + ' · Rs ' + total.toLocaleString() + extra,
+                        body: name + ' · Rs. ' + total.toLocaleString() + extra,
                         icon: notificationIcon,
                         tag: 'store-new-order',
                         renotify: true,
@@ -633,7 +637,7 @@
                 if (lastPendingCount === count) return;
                 lastPendingCount = count;
                 badge.textContent = String(count);
-                badge.classList.toggle('hidden', count <= 0);
+                badge.classList.toggle('d-none', count <= 0);
             }
 
             function clearToast() {
@@ -641,7 +645,7 @@
                 if (!el) return;
                 clearTimeout(el._hideTimer);
                 el._hideTimer = null;
-                el.classList.add('hidden');
+                el.classList.add('d-none');
                 el.innerHTML = '';
             }
 
@@ -654,34 +658,34 @@
                 const total = Number(order.grand_total || 0);
                 const url = String(order.url || '#');
                 const extra = extraCount > 1
-                    ? '<span class="text-cream-300">+' + (extraCount - 1) + ' more new order' + (extraCount > 2 ? 's' : '') + '</span>'
+                    ? '<span class="text-body-secondary">+' + (extraCount - 1) + ' more new order' + (extraCount > 2 ? 's' : '') + '</span>'
                     : '';
 
                 el.innerHTML =
-                    '<div class="w-full bg-espresso-800 text-white border-t border-espresso-700 shadow-lg">' +
-                        '<div class="flex flex-col sm:flex-row sm:items-center gap-3 px-4 sm:px-6 py-3.5">' +
-                            '<div class="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center shrink-0">' +
-                                '<svg class="w-5 h-5 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>' +
+                    '<div class="w-100 admin-order-toast shadow-lg">' +
+                        '<div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3 px-3 px-sm-4 py-3">' +
+                            '<div class="admin-width-10 admin-height-10 rounded-pill bg-primary d-flex align-items-center justify-content-center flex-shrink-0">' +
+                                '<svg class="admin-width-5 admin-height-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>' +
                             '</div>' +
-                            '<div class="flex-1 min-w-0">' +
-                                '<p class="text-xs uppercase tracking-wider text-primary-300 font-semibold">New order received</p>' +
-                                '<p class="font-heading font-bold text-base truncate">' + escapeHtml(name) +
-                                    ' <span class="font-sans font-medium text-sm text-cream-200">· ' + escapeHtml(number) + ' · Rs ' + total.toLocaleString() + '</span></p>' +
+                            '<div class="flex-grow-1 admin-min-width-0">' +
+                                '<p class="small admin-letter-spacing text-primary fw-semibold">New order received</p>' +
+                                '<p class="admin-heading fw-semibold fs-6 text-truncate">' + escapeHtml(name) +
+                                    ' <span class="fw-medium small text-body-secondary">· ' + escapeHtml(number) + ' · Rs. ' + total.toLocaleString() + '</span></p>' +
                                 extra +
                             '</div>' +
-                            '<div class="flex items-center gap-2 shrink-0">' +
-                                '<a href="' + escapeHtml(url) + '" class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 transition-colors">' +
-                                    'View Order' +
-                                    '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>' +
+                            '<div class="d-flex align-items-center gap-2 flex-shrink-0">' +
+                                '<a href="' + escapeHtml(url) + '" class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-2 rounded-2 bg-primary px-3 py-2 small fw-semibold text-white">' +
+                                    'View order' +
+                                    '<svg class="admin-width-4 admin-height-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>' +
                                 '</a>' +
-                                '<button type="button" class="admin-new-order-dismiss p-2 text-cream-300 hover:text-white rounded-lg" aria-label="Dismiss">' +
-                                    '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>' +
+                                '<button type="button" class="btn btn-sm btn-outline-secondary admin-new-order-dismiss p-2 text-body-secondary rounded-2" aria-label="Dismiss">' +
+                                    '<svg class="admin-width-4 admin-height-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>' +
                                 '</button>' +
                             '</div>' +
                         '</div>' +
                     '</div>';
 
-                el.classList.remove('hidden');
+                el.classList.remove('d-none');
                 clearTimeout(el._hideTimer);
                 el._hideTimer = setTimeout(clearToast, 12000);
 

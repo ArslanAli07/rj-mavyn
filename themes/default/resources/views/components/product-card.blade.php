@@ -19,7 +19,7 @@
                 $hasRealImage = (bool) ($product->main_image_asset_id || $product->main_image);
                 $productImg = $hasRealImage
                     ? $product->main_image_url
-                    : asset('images/placeholder.jpg');
+                    : asset('images/placeholder.svg');
             @endphp
             <img src="{{ $productImg }}" srcset="{{ $product->main_image_srcset }}" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                  alt="{{ $product->main_image_alt }}"

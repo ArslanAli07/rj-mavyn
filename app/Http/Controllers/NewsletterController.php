@@ -11,7 +11,7 @@ class NewsletterController extends Controller
 {
     public function subscribe(Request $request): JsonResponse|RedirectResponse
     {
-        $request->validate(['email' => 'required|email|max:255']);
+        $data = $request->validate(['email' => 'required|string|email|max:255', 'name' => 'nullable|string|max:255']);
 
         $existing = NewsletterSubscriber::where('email', $request->email)->first();
 
@@ -25,7 +25,7 @@ class NewsletterController extends Controller
         } else {
             NewsletterSubscriber::create([
                 'email'         => $request->email,
-                'name'          => $request->name,
+                'name'          => $data['name'] ?? null,
                 'is_active'     => true,
                 'subscribed_at' => now(),
             ]);

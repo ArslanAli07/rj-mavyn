@@ -131,11 +131,6 @@
                     <hr class="border-light-subtle">
 
                     <label class="d-flex align-items-center gap-2 admin-clickable user-select-none">
-                        <input type="checkbox" name="is_featured" value="1" class="form-check-input">
-                        <span>Chef Featured</span>
-                    </label>
-
-                    <label class="d-flex align-items-center gap-2 admin-clickable user-select-none">
                         <input type="checkbox" name="is_bestseller" value="1" class="form-check-input">
                         <span>Best Seller</span>
                     </label>

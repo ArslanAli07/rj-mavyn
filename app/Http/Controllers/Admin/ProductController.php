@@ -147,7 +147,7 @@ class ProductController extends Controller
                 $data['main_image'] = $this->storeProductImage($request->file('main_image'), 800);
             }
 
-            $data['is_featured'] = $request->boolean('is_featured');
+            $data['is_featured'] = $request->boolean('is_featured', $product->is_featured);
             $data['is_bestseller'] = $request->boolean('is_bestseller');
             $data['is_new_arrival'] = $request->boolean('is_new_arrival');
             $data['in_stock'] = $request->boolean('in_stock');

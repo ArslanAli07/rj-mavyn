@@ -71,6 +71,7 @@ class ProductController extends Controller
         app(CatalogSlugService::class)->validate(Product::class, $data['slug'], 'title');
 
         DB::transaction(function () use ($request, $data) {
+            DB::table('extension_runtime')->where('id', 1)->sharedLock()->first();
             if ($request->hasFile('main_image')) {
                 $data['main_image'] = $this->storeProductImage($request->file('main_image'), 800);
             }
@@ -83,6 +84,9 @@ class ProductController extends Controller
 
             $quantity = (int) $data['stock_quantity'];
             unset($data['main_image_asset_id'], $data['gallery_asset_ids'], $data['gallery_asset_ids_present'], $data['stock_quantity'], $data['inventory_mode'], $data['inventory_version']);
+            if (isset($data['plugin_attributes'])) {
+                $data['plugin_attributes'] = app(ProductAttributesService::class)->merge(null, $data['plugin_attributes']);
+            }
             $product = app(CatalogSlugService::class)->create(Product::class, $data, 'title');
             $this->inventory->configureProduct($product, $request->input('inventory_mode', 'untracked'), $quantity, 0, $request->user('admin'));
             if ($request->exists('main_image_asset_id')) {
@@ -150,6 +154,9 @@ class ProductController extends Controller
             $data['is_active'] = $request->boolean('is_active');
 
             unset($data['main_image_asset_id'], $data['gallery_asset_ids'], $data['gallery_asset_ids_present'], $data['stock_quantity'], $data['inventory_mode'], $data['inventory_version']);
+            if (isset($data['plugin_attributes'])) {
+                $data['plugin_attributes'] = app(ProductAttributesService::class)->merge($product, $data['plugin_attributes']);
+            }
             $product->update($data);
             if ($request->exists('main_image_asset_id') || $request->hasFile('main_image')) {
                 $this->mediaLibrary->setProductMainImage($product, $request->integer('main_image_asset_id') ?: null, $request->user('admin'));
@@ -442,7 +449,7 @@ class ProductController extends Controller
 
             foreach (app(ProductAttributesService::class)->fields('variant') as $entry) {
                 $key = $entry['field']->key;
-                if (array_key_exists($key, $payload)) {
+                if ($entry['legacy'] && array_key_exists($key, $payload)) {
                     $attributes[$key] = $payload[$key] === '' ? null : $payload[$key];
                 }
             }
@@ -451,9 +458,15 @@ class ProductController extends Controller
                 if (! $variant) {
                     continue;
                 }
+                if (isset($payload['plugin_attributes'])) {
+                    $attributes['plugin_attributes'] = app(ProductAttributesService::class)->merge($variant, $payload['plugin_attributes']);
+                }
                 $variant->update($attributes);
                 $keptIds[] = $variant->id;
             } else {
+                if (isset($payload['plugin_attributes'])) {
+                    $attributes['plugin_attributes'] = app(ProductAttributesService::class)->merge(null, $payload['plugin_attributes']);
+                }
                 $variant = $product->variants()->create($attributes);
                 $keptIds[] = $variant->id;
             }

@@ -332,13 +332,14 @@ class CartService
             $subtotal = $this->subtotal();
             $coupon = $this->getAppliedCoupon();
             $discount = $coupon && $coupon->is_valid ? $coupon->calculateDiscount($subtotal) : '0.00';
-            $grandTotal = Money::decimal(max(0, Money::minor($subtotal) - Money::minor($discount)));
+            $tax = app(StoreFinancials::class)->taxMinor(Money::minor($subtotal), Money::minor($discount));
+            $grandTotal = Money::decimal(max(0, Money::minor($subtotal) - Money::minor($discount)) + $tax);
 
             $this->cachedTotals = [
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'delivery_fee' => null,
-                'tax' => 0,
+                'tax' => Money::decimal($tax),
                 'grand_total' => $grandTotal,
                 'coupon' => $coupon,
             ];

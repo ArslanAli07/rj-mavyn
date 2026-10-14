@@ -101,7 +101,13 @@ class CheckoutAttemptService
         foreach (['first_name', 'last_name', 'email', 'phone', 'country', 'city', 'address_line', 'map_link', 'payment_method', 'order_notes'] as $field) {
             $fields[$field] = trim((string) ($data[$field] ?? ''));
         }
-        $fields['delivery_zone_id'] = (int) $data['delivery_zone_id'];
+        $fields['delivery_zone_id'] = (int) ($data['delivery_zone_id'] ?? 0);
+        // Preserve hashes for already committed legacy requests.
+        foreach (['shipping_option', 'postal_code'] as $field) {
+            if (isset($data[$field]) && $data[$field] !== '') {
+                $fields[$field] = trim((string) $data[$field]);
+            }
+        }
         $fields['receipt'] = $receiptHash;
 
         return hash('sha256', json_encode($fields, JSON_THROW_ON_ERROR));

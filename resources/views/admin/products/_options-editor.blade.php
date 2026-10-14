@@ -53,10 +53,14 @@
                 </div>
 
                 @foreach(app(\App\Services\ProductAttributesService::class)->fields('variant') as $entry)
-                    @php($field = $entry['field'])
+                    @php
+                        $field = $entry['field'];
+                        $attributeName = $entry['legacy'] ? $field->key : 'plugin_attributes]['.$entry['owner'].']['.$field->key;
+                        $attributeModel = $entry['legacy'] ? 'variant.'.$field->key : "variant.plugin_attributes['".$entry['owner']."']['".$field->key."']";
+                    @endphp
                     <div class="admin-span-sm-2">
                         <label class="form-label small">{{ $field->label }}</label>
-                        <input type="text" :name="'variants[' + index + '][{{ $field->key }}]'" x-model="variant.{{ $field->key }}" maxlength="{{ $field->maxLength }}" class="form-control small py-2" placeholder="Optional">
+                        <input type="text" :name="'variants[' + index + '][{{ $attributeName }}]'" x-model="{{ $attributeModel }}" maxlength="{{ $field->maxLength }}" class="form-control small py-2" placeholder="Optional">
                     </div>
                 @endforeach
 

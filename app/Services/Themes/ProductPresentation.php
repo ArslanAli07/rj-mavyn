@@ -4,6 +4,7 @@ namespace App\Services\Themes;
 
 use App\Models\Product;
 use App\Services\InventoryService;
+use App\Services\ProductAttributesService;
 
 /** Legacy view-data adapter. Business-derived selections stay in the host. */
 final class ProductPresentation
@@ -34,6 +35,7 @@ final class ProductPresentation
         $variantsPayload = $activeVariants->map(function ($v) use ($product) {
             return [
                 'id' => (int) $v->id,
+                'attributes' => collect(app(ProductAttributesService::class)->fields('variant'))->filter(fn ($entry) => ! $entry['legacy'])->map(fn ($entry) => ['key' => $entry['owner'].'.'.$entry['field']->key, 'label' => $entry['field']->label, 'value' => app(ProductAttributesService::class)->value($v, $entry)])->filter(fn ($entry) => $entry['value'] !== null)->values()->all(),
                 'available_quantity' => app(InventoryService::class)->availableQuantity($product, $v),
                 'name' => $v->display_name,
                 'effective_price' => (float) $v->effective_price,
@@ -58,6 +60,7 @@ final class ProductPresentation
 
                     return [
                         'id' => (int) $v->id,
+                        'attributes' => collect(app(ProductAttributesService::class)->fields('variant'))->filter(fn ($entry) => ! $entry['legacy'])->map(fn ($entry) => ['key' => $entry['owner'].'.'.$entry['field']->key, 'label' => $entry['field']->label, 'value' => app(ProductAttributesService::class)->value($v, $entry)])->filter(fn ($entry) => $entry['value'] !== null)->values()->all(),
                         'name' => $v->name,
                         'price_adjustment' => $adjustment,
                         'formatted_adjustment' => $adjustment == 0

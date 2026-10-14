@@ -12,6 +12,13 @@
                     variant.stock_quantity ??= 0;
                     variant.reserved_quantity ??= 0;
                     variant.inventory_version ??= 0;
+                    variant.plugin_attributes ??= {};
+                    @foreach(app(\App\Services\ProductAttributesService::class)->fields('variant') as $entry)
+                        @if(!$entry['legacy'])
+                            variant.plugin_attributes[@js($entry['owner'])] ??= {};
+                            variant.plugin_attributes[@js($entry['owner'])][@js($entry['field']->key)] ??= '';
+                        @endif
+                    @endforeach
                 });
             },
 
@@ -22,6 +29,7 @@
                     price: '',
                     discount_price: '',
                     servings: '',
+                    plugin_attributes: {},
                     is_default: this.variants.length === 0,
                     is_active: true,
                     in_stock: true,
@@ -30,6 +38,7 @@
                     reserved_quantity: 0,
                     inventory_version: 0,
                 });
+                this.init();
             },
             removeVariant(index) {
                 if (this.variants.length <= 1) {

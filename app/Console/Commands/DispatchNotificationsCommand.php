@@ -10,11 +10,11 @@ class DispatchNotificationsCommand extends Command
 {
     protected $signature = 'notifications:dispatch {--limit=100 : Maximum entries to queue} {--report : Report only}';
 
-    protected $description = 'Queue due order notifications and recover interrupted dispatches';
+    protected $description = 'Queue due order and account notifications and recover interrupted dispatches';
 
     public function handle(NotificationOutboxService $outbox): int
     {
-        $this->info('Pending: '.NotificationOutbox::whereNull('sent_at')->count().'; sent: '.NotificationOutbox::whereNotNull('sent_at')->count().'.');
+        $this->info('Pending: '.NotificationOutbox::whereNull('sent_at')->whereNull('discarded_at')->count().'; sent: '.NotificationOutbox::whereNotNull('sent_at')->count().'; discarded: '.NotificationOutbox::whereNotNull('discarded_at')->count().'.');
         if ($this->option('report')) {
             return self::SUCCESS;
         }

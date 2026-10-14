@@ -1,17 +1,10 @@
 {
-  "_bootstrap-BJ5uWcnM.js": {
-    "file": "assets/bootstrap-BJ5uWcnM.js",
-    "name": "bootstrap",
-    "imports": [
-      "_rolldown-runtime-D9-fqq9M.js"
-    ]
+  "_bootstrap-DPDJGqso.js": {
+    "file": "assets/bootstrap-DPDJGqso.js",
+    "name": "bootstrap"
   },
-  "_rolldown-runtime-D9-fqq9M.js": {
-    "file": "assets/rolldown-runtime-D9-fqq9M.js",
-    "name": "rolldown-runtime"
-  },
-  "_vendor-CWk4R-Yb.js": {
-    "file": "assets/vendor-CWk4R-Yb.js",
+  "_vendor-BsdidMpC.js": {
+    "file": "assets/vendor-BsdidMpC.js",
     "name": "vendor"
   },
   "node_modules/@fontsource/inter/files/inter-latin-400-normal.woff": {
@@ -76,7 +69,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-DZdsQoL1.css",
+    "file": "assets/app-UZ1KENT4.css",
     "name": "app",
     "names": [
       "app.css"
@@ -85,22 +78,22 @@
     "isEntry": true
   },
   "resources/js/admin.js": {
-    "file": "assets/admin-C2mTcf8X.js",
+    "file": "assets/admin-ikNmpQX2.js",
     "name": "admin",
     "src": "resources/js/admin.js",
     "isEntry": true,
     "imports": [
-      "_vendor-CWk4R-Yb.js",
-      "_bootstrap-BJ5uWcnM.js"
+      "_bootstrap-DPDJGqso.js",
+      "_vendor-BsdidMpC.js"
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-f9t627Rm.js",
+    "file": "assets/app-Bh4QqI6u.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "imports": [
-      "_vendor-CWk4R-Yb.js"
+      "_vendor-BsdidMpC.js"
     ]
   }
 }

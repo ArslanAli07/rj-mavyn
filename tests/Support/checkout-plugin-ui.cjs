@@ -11,7 +11,7 @@ vm.runInNewContext(script, {
     Alpine: { data: (name, value) => { assert.equal(name, 'checkoutForm'); factory = value; } },
 });
 const component = factory();
-Object.assign(component.form, { firstName: 'Test', lastName: 'Buyer', email: 'buyer@example.com', phone: '03001234567', deliveryZoneId: Object.keys(component.zones)[0], addressLine: '1 Main Street', paymentMethod: 'cod' });
+Object.assign(component.form, { firstName: 'Test', lastName: 'Buyer', email: 'buyer@example.com', phone: '03001234567', deliveryZoneId: Object.keys(component.zones)[0], addressLine: '1 Main Street', city: 'Sialkot', paymentMethod: 'cod' });
 let files = [];
 const form = { querySelector: () => ({ files }) };
 assert.equal(component.receiptRequired, false);

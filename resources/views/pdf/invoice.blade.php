@@ -44,11 +44,11 @@
         return str_repeat($char, $width);
     }
 
-    $siteName = setting('site_name', 'Happy Tea');
+    $siteName = $order->store_name;
     $sitePhone = trim((string) setting('site_phone'));
 @endphp
 <div>{{ centerLine(strtoupper($siteName), $LW) }}</div>
-<div>{{ centerLine('Beverages . Sialkot', $LW) }}</div>
+<div>{{ centerLine($order->brand_snapshot['tagline'] ?? '', $LW) }}</div>
 
 @if($sitePhone)
 <div>{{ centerLine($sitePhone, $LW) }}</div>
@@ -93,20 +93,20 @@
 @if($item->special_request)
 <div>  Note: {{ $item->special_request }}</div>
 @endif
-<div>{{ padLine($item->quantity . ' x ' . format_price($item->unit_price), format_price($item->total_price), $LW) }}</div>
+<div>{{ padLine($item->quantity . ' x ' . order_price($order, $item->unit_price), order_price($order, $item->total_price), $LW) }}</div>
 <div></div>
 @endforeach
 <div>{{ ruleLine($LW) }}</div>
-<div>{{ padLine('Subtotal', format_price($order->subtotal), $LW) }}</div>
+<div>{{ padLine('Subtotal', order_price($order, $order->subtotal), $LW) }}</div>
 @if($order->discount_amount > 0)
-<div>{{ padLine('Discount', '-' . format_price($order->discount_amount), $LW) }}</div>
+<div>{{ padLine('Discount', '-' . order_price($order, $order->discount_amount), $LW) }}</div>
 @endif
 @if($order->tax_amount > 0)
-<div>{{ padLine('Tax', format_price($order->tax_amount), $LW) }}</div>
+<div>{{ padLine('Tax', order_price($order, $order->tax_amount), $LW) }}</div>
 @endif
-<div>{{ padLine('Delivery', $order->delivery_fee > 0 ? format_price($order->delivery_fee) : (is_null($order->delivery_zone_id) ? 'To confirm' : 'Free'), $LW) }}</div>
+<div>{{ padLine('Delivery', $order->delivery_fee > 0 ? order_price($order, $order->delivery_fee) : (is_null($order->delivery_zone_id) ? 'To confirm' : 'Free'), $LW) }}</div>
 <div>{{ ruleLine($LW) }}</div>
-<div>{{ padLine('TOTAL', format_price($order->grand_total), $LW) }}</div>
+<div>{{ padLine('TOTAL', order_price($order, $order->grand_total), $LW) }}</div>
 <div>{{ ruleLine($LW) }}</div>
 @if($order->order_notes)
 <div>NOTES:</div>

@@ -19,6 +19,9 @@ final class ReleaseManifest
         $files = [];
         foreach (self::TREES as $tree) {
             if (! is_dir(base_path($tree))) {
+                if (in_array($tree, ['plugins', 'themes'], true)) {
+                    continue;
+                }
                 throw new RuntimeException('Release source tree is missing.');
             }
             foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path($tree), RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {

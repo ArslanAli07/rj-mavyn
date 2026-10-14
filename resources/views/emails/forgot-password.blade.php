@@ -1,6 +1,6 @@
 @extends('emails.layout')
 
-@section('title', 'Reset Password — Happy Tea')
+@section('title', 'Reset Password — ($brand ?? \App\Services\StoreIdentity::snapshot())['name'])
 
 @section('content')
     <div class="welcome">Hello, {{ $user->name }}!</div>

@@ -1,6 +1,6 @@
 @extends('emails.layout')
 
-@section('title', 'Order Status Update — Happy Tea')
+@section('title', 'Order Status Update — '.$order->store_name)
 
 @section('content')
     <div class="welcome">Hello, {{ $order->customer_name }}!</div>
@@ -28,7 +28,7 @@
                 {{-- Preparing Step --}}
                 <div class="step {{ in_array($order->status, ['preparing', 'out_for_delivery', 'delivered']) ? 'active' : '' }} {{ in_array($order->status, ['out_for_delivery', 'delivered']) ? 'completed' : '' }}">
                     <div class="step-icon">2</div>
-                    Preparing
+                    Processing
                 </div>
                 
                 {{-- Out For Delivery Step --}}
@@ -54,7 +54,7 @@
         </div>
         <div class="summary-row">
             <span class="summary-label">Grand Total:</span>
-            <span class="summary-value">{{ format_price($order->grand_total) }}</span>
+            <span class="summary-value">{{ order_price($order, $order->grand_total) }}</span>
         </div>
         <div class="summary-row">
             <span class="summary-label">Delivery Address:</span>

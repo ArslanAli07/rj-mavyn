@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Services\CartService;
 use App\Services\CheckoutAttemptService;
-use App\Services\LocalDeliveryService;
 use App\Services\OrderAccessService;
 use App\Services\OrderPlacementService;
 use App\Services\PaymentMethodService;
+use App\Services\ShippingService;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -46,12 +46,17 @@ class CheckoutController extends Controller
         // Eager-load addresses so default_address accessor costs 0 extra queries.
         $addresses = auth()->check() ? auth()->user()->load('addresses')->addresses : collect();
         $defaultAddr = auth()->check() ? auth()->user()->default_address : null;
-        $zones = collect(app(LocalDeliveryService::class)->zones())->map(fn ($zone) => (object) ['id' => $zone->id, 'name' => $zone->name, 'delivery_fee' => Money::decimal($zone->feeMinor)]);
+        $shipping = app(ShippingService::class);
+        $shippingChoices = $shipping->choices($shipping->request(Money::minor($totals['subtotal']), (string) setting('store_country', config('site.country'))));
+        $shippingOptions = collect($shippingChoices)->map(fn ($choice, $token) => (object) ['id' => $token, 'name' => $choice['option']->label, 'delivery_fee' => Money::decimal($choice['option']->feeMinor), 'legacy_zone_id' => $choice['legacy_zone_id']]);
+        // Preserve numeric delivery-zone view data for previously released themes.
+        $zones = $shippingOptions->filter(fn ($choice) => $choice->legacy_zone_id !== null)->map(fn ($choice) => (object) ['id' => $choice->legacy_zone_id, 'name' => $choice->name, 'delivery_fee' => $choice->delivery_fee])->values();
+        $defaultShippingOption = $shippingOptions->first(fn ($choice) => $defaultAddr && $choice->legacy_zone_id === $defaultAddr->delivery_zone_id)?->id ?? '';
         $paymentChoices = $this->payments->choices();
 
         $enabledPaymentMethods = collect($this->payments->enabled());
 
-        return view('pages.checkout', compact('totals', 'items', 'addresses', 'defaultAddr', 'zones', 'enabledPaymentMethods', 'checkoutKey', 'paymentChoices'));
+        return view('pages.checkout', compact('totals', 'items', 'addresses', 'defaultAddr', 'zones', 'shippingOptions', 'enabledPaymentMethods', 'checkoutKey', 'paymentChoices', 'defaultShippingOption'));
     }
 
     public function placeOrder(Request $request): RedirectResponse|JsonResponse
@@ -64,7 +69,9 @@ class CheckoutController extends Controller
             'phone' => 'required|string|max:20',
             'country' => 'required|string|max:100',
             'city' => 'required|string|max:100',
-            'delivery_zone_id' => 'required|integer|min:1',
+            'delivery_zone_id' => 'nullable|required_without:shipping_option|integer|min:1',
+            'shipping_option' => 'nullable|string|max:255',
+            'postal_code' => 'nullable|string|max:30',
             'address_line' => 'required|string|max:500',
             'map_link' => 'nullable|string|max:500',
             'payment_method' => 'required|string|max:100',

@@ -1,6 +1,6 @@
 # Implemented theme runtime (0.1)
 
-Three Composer packages are installed: `mavyn/theme-default`, `mavyn/theme-happy-tea`, and `mavyn/theme-happy-tea-child`. The migration initially selects Happy Tea to preserve the existing storefront. The child is an inactive example with a homepage override. Themes contain presentation files, not controllers, routes, commerce services, migrations, or executable settings. They run as trusted release code, not sandboxed merchant uploads.
+The reference client installs three Composer packages separately: `mavyn/theme-default`, `mavyn/theme-happy-tea`, and `mavyn/theme-happy-tea-child`. Theme source and package requirements belong to each clone, not the master repository; see the [repository setup](../README.md). The migration initially selects Happy Tea to preserve the existing storefront. Other clients activate their own installed theme. The child is an inactive example with a homepage override. Themes contain presentation files, not controllers, routes, commerce services, migrations, or executable settings. They run as trusted release code, not sandboxed merchant uploads.
 
 ## Discovery and templates
 

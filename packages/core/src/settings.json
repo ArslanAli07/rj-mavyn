@@ -222,5 +222,87 @@
         "group": "general",
         "permission": "settings.manage",
         "secret": false
+    },
+    "store_currency": {
+        "type": "text",
+        "default": "PKR",
+        "rules": [
+            "required",
+            "in:PKR,USD,EUR,GBP,AUD,CAD,AED,SAR,INR"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "store_currency_symbol": {
+        "type": "text",
+        "default": "Rs.",
+        "rules": [
+            "required",
+            "string",
+            "max:10"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "store_tax_rate": {
+        "type": "text",
+        "default": "0.00",
+        "rules": [
+            "required",
+            "numeric",
+            "min:0",
+            "max:100",
+            "decimal:0,2"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "store_country": {
+        "type": "text",
+        "default": "Pakistan",
+        "rules": [
+            "required",
+            "string",
+            "max:100"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "store_country_code": {
+        "type": "text",
+        "default": "PK",
+        "rules": [
+            "required",
+            "regex:/^[A-Z]{2}$/"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "store_timezone": {
+        "type": "text",
+        "default": "Asia/Karachi",
+        "rules": [
+            "required",
+            "timezone"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
+    },
+    "store_locale": {
+        "type": "text",
+        "default": "en",
+        "rules": [
+            "required",
+            "in:en"
+        ],
+        "group": "general",
+        "permission": "settings.manage",
+        "secret": false
     }
 }

@@ -18,7 +18,7 @@ final class StoreAvailabilityService
         $open = true;
         $labels = [];
         foreach ($registry->keys('ordering.policy') as $key) {
-            $result = $registry->get('ordering.policy', $key)->evaluate(DateTimeImmutable::createFromInterface(now(config('site.timezone'))));
+            $result = $registry->get('ordering.policy', $key)->evaluate(DateTimeImmutable::createFromInterface(now((string) setting('store_timezone', config('site.timezone')))));
             $enabled = $enabled && $result->manuallyEnabled;
             $open = $open && $result->open;
             $labels[] = $result->hoursLabel;

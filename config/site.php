@@ -2,51 +2,52 @@
 
 return [
 
-    'name'         => env('APP_NAME', 'Happy Tea'),
-    'tagline'      => 'Crafted with love, served with soul',
-    'email'        => env('SITE_EMAIL', 'hello@happyteaskt.com'),
-    'phone'        => env('SITE_PHONE', '03328437863'),
-    'whatsapp'     => env('SITE_WHATSAPP', '+923328437863'),
-    'address'      => env('SITE_ADDRESS', 'Main Boulevard, Model Town, Sialkot, Pakistan'),
-    'city'         => 'Sialkot',
-    'country'      => 'Pakistan',
-    'currency'     => 'PKR',
+    'name' => env('APP_NAME', 'Store'),
+    'tagline' => env('SITE_TAGLINE', ''),
+    'email' => env('SITE_EMAIL', ''),
+    'phone' => env('SITE_PHONE', ''),
+    'whatsapp' => env('SITE_WHATSAPP', ''),
+    'address' => env('SITE_ADDRESS', ''),
+    'city' => env('SITE_CITY', ''),
+    'country_code' => env('SITE_COUNTRY_CODE', 'PK'),
+    'country' => 'Pakistan',
+    'currency' => 'PKR',
     'currency_symbol' => 'Rs.',
-    'timezone'     => 'Asia/Karachi',
+    'timezone' => 'Asia/Karachi',
 
     'business_hours' => [
         'Monday - Friday' => '9:00 AM – 9:00 PM',
-        'Saturday'        => '10:00 AM – 8:00 PM',
-        'Sunday'          => '11:00 AM – 6:00 PM',
+        'Saturday' => '10:00 AM – 8:00 PM',
+        'Sunday' => '11:00 AM – 6:00 PM',
     ],
 
     'social' => [
-        'instagram' => env('SITE_INSTAGRAM', 'https://www.instagram.com/happyteaskt'),
-        'whatsapp'  => env('SITE_WHATSAPP', '+923328437863'),
+        'instagram' => env('SITE_INSTAGRAM', ''),
+        'whatsapp' => env('SITE_WHATSAPP', ''),
     ],
 
     'payment' => [
         'easypaisa' => [
-            'account' => env('EASYPAISA_ACCOUNT', '0327-9004305'),
-            'name'    => env('EASYPAISA_NAME', 'Happy Tea'),
+            'account' => env('EASYPAISA_ACCOUNT', ''),
+            'name' => env('EASYPAISA_NAME', ''),
         ],
         'jazzcash' => [
-            'account' => env('JAZZCASH_ACCOUNT', '0327-9004305'),
-            'name'    => env('JAZZCASH_NAME', 'Happy Tea'),
+            'account' => env('JAZZCASH_ACCOUNT', ''),
+            'name' => env('JAZZCASH_NAME', ''),
         ],
         'bank' => [
-            'bank_name' => env('BANK_NAME', 'Meezan Bank'),
-            'account'   => env('BANK_ACCOUNT', '0123456789012345'),
-            'iban'      => env('BANK_IBAN', 'PK12MEZN0001234567890123'),
-            'title'     => env('BANK_TITLE', 'Happy Tea'),
+            'bank_name' => env('BANK_NAME', ''),
+            'account' => env('BANK_ACCOUNT', ''),
+            'iban' => env('BANK_IBAN', ''),
+            'title' => env('BANK_TITLE', ''),
         ],
     ],
 
     'delivery' => [
-        'min_order'      => 500,
-        'free_above'     => 2000,
-        'standard_fee'   => 300,
-        'express_fee'    => 400,
+        'min_order' => 500,
+        'free_above' => 2000,
+        'standard_fee' => 300,
+        'express_fee' => 400,
         'same_day_cutoff' => '13:00', // 1 PM
         'advance_notice_hours' => 24,
     ],

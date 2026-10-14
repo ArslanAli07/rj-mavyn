@@ -4,7 +4,7 @@ Four Composer path packages now supply the former built-in commerce features. Th
 
 | Package | Contribution | Disable behavior |
 |---|---|---|
-| `mavyn/local-delivery` | Typed zone quote in PKR for Pakistan | New zone checkout/address writes and delivery-zone administration stop; zones and saved addresses remain. |
+| `mavyn/local-delivery` | Typed zone quote in PKR for Pakistan | New zone checkout/writes and delivery-zone administration stop; generic addresses and other fulfillment providers remain available. |
 | `mavyn/manual-payments` | COD, Easypaisa, JazzCash, bank transfer | Methods disappear from new checkout; orders and private receipts remain. |
 | `mavyn/food-products` | Ingredients, allergens, variant servings | Storefront/editor fields disappear and submitted field writes reject; stored values remain. |
 | `mavyn/store-availability` | Manual pause and inclusive daily/overnight hours | The optional restriction is removed; ordering remains subject to other enabled policies. |
@@ -17,13 +17,13 @@ Deploy the root locked dependencies including `packages/` and `plugins/`, build 
 
 The payment registry supplies selectable methods, instructions, enabled state, and receipt policy. The fulfillment registry supplies the zone quote; the host locks and revalidates the current available zone. Order placement rechecks availability inside its transaction, validates the active payment provider and receipt requirement, calculates integer-cent totals, and saves payment/food snapshots. Completed idempotent requests still replay after plugins are disabled.
 
-New orders retain the payment recipient/instructions and purchased food attributes after later configuration changes or plugin deactivation. Historical orders without snapshots use the installed manual-payment compatibility adapter. Existing authorization and private receipt delivery remain host responsibilities. These providers do not implement online payment capture, refunds, or general carrier orchestration.
+New orders retain the payment recipient/instructions and purchased food attributes after later configuration changes or plugin deactivation. Historical orders without snapshots use the core manual-payment compatibility adapter, which remains available without the package. Existing authorization and private receipt delivery remain host responsibilities. These providers do not implement online payment capture, refunds, or general carrier orchestration.
 
 Daily hours evaluate the configured store timezone, include boundary minutes, and support windows spanning midnight. Empty start/end times remove the hourly restriction; manual pause still applies. Multiple ordering policies must all allow ordering.
 
 ## Compatibility boundaries
 
-Laravel models, tables, delivery-zone CRUD, shared product CRUD, checkout transactions, and historical route identities remain in the host. `DeliveryZoneStore` and `SettingsStore` supply package interfaces. Food descriptors map to retained product/variant columns; this is not a general extension-field persistence engine. Legacy `Setting::get/set` keys for these four packages forward to namespaced storage, and the general settings form uses plugin definitions. Extracted form sections are disabled when their plugin is inactive, and submitted HTTP writes are rejected. The existing `settings.manage` grant applies to these definitions, in addition to the plugin-page management permission.
+Laravel models, tables, delivery-zone CRUD, shared product CRUD, checkout transactions, and historical route identities remain in the host. `DeliveryZoneStore` and `SettingsStore` supply package interfaces. Food descriptors map to retained product/variant columns. Other declared text/textarea attributes use namespaced product/variant JSON storage and historical snapshots. Legacy `Setting::get/set` keys for these four packages forward to namespaced storage, and the general settings form uses plugin definitions. Extracted form sections are disabled when their plugin is inactive, and submitted HTTP writes are rejected. The existing `settings.manage` grant applies to these definitions, in addition to the plugin-page management permission.
 
 The legacy scalar delivery settings are retained configuration; the selected zone fee remains authoritative. No new free-delivery threshold calculation is introduced. Blank payment account information retains the prior toggle-based availability behavior. Review those settings before offering a manual transfer method.
 
@@ -40,4 +40,4 @@ MAVYN_CHECKOUT_UI_CAPTURE=/tmp/mavyn-plugin-checkout.html php artisan test --fil
 node tests/Support/checkout-plugin-ui.cjs /tmp/mavyn-plugin-checkout.html
 ```
 
-This executes the actual rendered JavaScript with minimal DOM stubs; it is not a browser interaction test. The next milestone is theme runtime and Happy Tea storefront extraction.
+This executes the actual rendered JavaScript with minimal DOM stubs; it is not a browser interaction test. Theme runtime and storefront extraction are implemented. See [fix validation](FIX_VALIDATION.md) for generic shipping, attributes, finances and migration acceptance.

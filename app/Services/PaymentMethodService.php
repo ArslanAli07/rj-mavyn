@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
+use App\Services\Plugins\LegacyPaymentInstructions;
 use App\Services\Plugins\PluginRuntime;
 use Illuminate\Validation\ValidationException;
 use Mavyn\Contracts\Plugins\PaymentInstructions;
 use Mavyn\Contracts\Plugins\SelectablePaymentProvider;
 use Mavyn\Contracts\SettingsStore;
-use Mavyn\ManualPayments\Methods;
 use RuntimeException;
 
 class PaymentMethodService
@@ -46,6 +46,6 @@ class PaymentMethodService
 
     public function historical(string $id): ?PaymentInstructions
     {
-        return Methods::historical($id, $this->settings)?->instructions();
+        return LegacyPaymentInstructions::for($id, $this->settings);
     }
 }

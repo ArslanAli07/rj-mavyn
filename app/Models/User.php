@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Services\NotificationOutboxService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Validation\ValidationException;
 
 class User extends Authenticatable
 {
@@ -20,7 +21,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'password' => 'hashed',
         ];
     }
 
@@ -64,8 +65,8 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute(): string
     {
         return $this->avatar
-            ? asset('storage/' . $this->avatar)
-            : 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=C8976A&color=fff';
+            ? asset('storage/'.$this->avatar)
+            : 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=C8976A&color=fff';
     }
 
     public function wishlistedProductIds(): array
@@ -77,16 +78,13 @@ class User extends Authenticatable
      * Send the password reset notification.
      *
      * @param  string  $token
-     * @return void
      */
     public function sendPasswordResetNotification($token): void
     {
         if (setting('email_forgot_password', true)) {
-            try {
-                \Illuminate\Support\Facades\Mail::to($this->email)->send(new \App\Mail\ForgotPasswordMail($this, $token));
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Failed to send forgot password email to ' . $this->email . ': ' . $e->getMessage());
-            }
+            app(NotificationOutboxService::class)->recordAccount($this, $token);
+        } else {
+            throw ValidationException::withMessages(['email' => 'Password reset email is currently unavailable.']);
         }
     }
 }

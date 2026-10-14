@@ -28,6 +28,7 @@ class ProductVariant extends Model
         'price',
         'discount_price',
         'servings',
+        'plugin_attributes',
         'sort_order',
         'is_default',
         'is_active',
@@ -37,6 +38,7 @@ class ProductVariant extends Model
     protected function casts(): array
     {
         return [
+            'plugin_attributes' => 'array',
             'price' => 'decimal:2',
             'discount_price' => 'decimal:2',
             'sort_order' => 'integer',

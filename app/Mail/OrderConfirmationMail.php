@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -31,7 +32,8 @@ class OrderConfirmationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Order Confirmation — '.$this->order->order_number.' - Happy Tea',
+            from: new Address((string) config('mail.from.address'), $this->order->store_name),
+            subject: 'Order Confirmation — '.$this->order->order_number.' - '.$this->order->store_name,
         );
     }
 

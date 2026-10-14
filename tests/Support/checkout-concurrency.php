@@ -16,8 +16,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
-use App\Services\CheckoutAttemptService;
 use App\Services\CartService;
+use App\Services\CheckoutAttemptService;
 use App\Services\InventoryService;
 use App\Services\NotificationOutboxService;
 use App\Services\OrderPlacementService;
@@ -216,7 +216,14 @@ $race = function (string $operation, array $keys, int|array $customerId) use ($d
     foreach ($pair as $process) {
         $process->wait();
         $check($process->isSuccessful(), 'Concurrency worker failed: '.$process->getErrorOutput());
-        $results[] = json_decode(trim($process->getOutput()), true, flags: JSON_THROW_ON_ERROR);
+        try {
+            $results[] = json_decode(trim($process->getOutput()), true, flags: JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            $diagnostics = tempnam(sys_get_temp_dir(), 'mavyn-checkout-worker-');
+            file_put_contents($diagnostics, $process->getOutput()."\n".$process->getErrorOutput());
+            chmod($diagnostics, 0600);
+            throw new RuntimeException('Unexpected worker output for '.$operation.'. Private diagnostics: '.$diagnostics, previous: $exception);
+        }
     }
     unlink($directory.'/go-'.$operation);
 

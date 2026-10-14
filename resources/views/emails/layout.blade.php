@@ -1,8 +1,11 @@
+@php
+    $emailBrand = $brand ?? (isset($order) ? ($order->brand_snapshot ?? \App\Services\StoreIdentity::snapshot()) : \App\Services\StoreIdentity::snapshot());
+@endphp
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>@yield('title', 'Happy Tea')</title>
+    <title>@yield('title', $emailBrand['name'])</title>
     <style>
         /* Brand: matches storefront theme */
         body {
@@ -276,21 +279,13 @@
             <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto; text-align: left;">
                 <tr>
                     <td style="padding-right: 12px; vertical-align: middle;">
-                        @php
-                            $emailLogoPath = public_path('images/email_logo.png');
-                            if (! is_file($emailLogoPath)) {
-                                $emailLogoPath = public_path('assets/android-chrome-192x192.png');
-                            }
-                        @endphp
                         @if($storeLogoUrl = app(\App\Services\Media\ContentMediaService::class)->branding('site_logo')['url'] ?? null)
                             <img src="{{ $storeLogoUrl }}" alt="{{ setting('site_name', 'Store') }} Logo" width="45" height="45" style="height: 45px; width: 45px; border-radius: 50%; display: block;">
-                        @elseif(is_file($emailLogoPath))
-                            <img src="{{ $message->embed($emailLogoPath) }}" alt="Happy Tea Logo" width="45" height="45" style="height: 45px; width: 45px; border-radius: 50%; display: block;">
                         @endif
                     </td>
                     <td style="vertical-align: middle; line-height: 1.2;">
-                        <span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: block;">Happy Tea</span>
-                        <span style="color: #FFE3C2; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; display: block; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding-left: 3px;">Beverages · Sialkot</span>
+                        <span style="color: #ffffff; font-size: 24px; font-weight: bold; letter-spacing: 1px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: block;">{{ $emailBrand['name'] }}</span>
+                        <span style="color: #FFE3C2; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; display: block; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding-left: 3px;">{{ $emailBrand['tagline'] ?? '' }}</span>
                     </td>
                 </tr>
             </table>
@@ -303,9 +298,9 @@
 
         {{-- Footer --}}
         <div class="footer">
-            <p>© {{ date('Y') }} Happy Tea. All rights reserved.</p>
+            <p>© {{ date('Y') }} {{ $emailBrand['name'] }}. All rights reserved.</p>
             @php
-                $emailAddress = trim((string) setting('site_address'));
+                $emailAddress = trim((string) ($emailBrand['address'] ?? ''));
                 $emailFacebook = trim((string) setting('facebook_url'));
                 $emailInstagram = trim((string) setting('instagram_url'));
                 $emailTiktok = trim((string) setting('tiktok_url'));

@@ -6,6 +6,8 @@ These documents describe the platform and its implemented increments. The progre
 |---|---|
 | [Product requirements](PRD.md) | Scope, product behavior, migration, and acceptance criteria |
 | [Architecture](ARCHITECTURE.md) | Core boundaries, extension runtime, dependencies, lifecycle, and releases |
+| [Fixes and acceptance](FIX_VALIDATION.md) | Resolved findings, supported contracts, Happy Tea rehearsal and remaining production scope |
+| [System completeness review](COMPLETENESS_REVIEW.md) | Current verification, confirmed gaps, and work required to finish the initial platform |
 | [Plugin development](PLUGIN_DEVELOPMENT.md) | Building business capabilities and extending existing functionality |
 | [Theme development](THEME_DEVELOPMENT.md) | Storefront packages, child themes, templates, settings, and assets |
 | [Central media management](MEDIA_MANAGEMENT.md) | Shared library/picker, polymorphic usage, Spatie integration, optimization, privacy, and migration |

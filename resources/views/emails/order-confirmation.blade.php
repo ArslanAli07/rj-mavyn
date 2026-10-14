@@ -1,11 +1,11 @@
 @extends('emails.layout')
 
-@section('title', 'Order Confirmation — Happy Tea')
+@section('title', 'Order Confirmation — '.$order->store_name)
 
 @section('content')
     <div class="welcome">Hello, {{ $order->customer_name }}!</div>
     <p class="intro">
-        Thank you for choosing Happy Tea. We have successfully registered your order. Our team will contact you shortly on your provided phone number to confirm the dispatch details.
+        Thank you for choosing {{ $order->store_name }}. We have successfully registered your order. Our team will contact you shortly on your provided phone number to confirm the dispatch details.
     </p>
 
     {{-- Summary details --}}
@@ -16,7 +16,7 @@
         </div>
         <div class="summary-row">
             <span class="summary-label">Payment Method:</span>
-            <span class="summary-value" style="text-transform: uppercase;">{{ $order->payment_method }}</span>
+            <span class="summary-value" style="text-transform: uppercase;">{{ $order->payment_method_label }}</span>
         </div>
         <div class="summary-row">
             <span class="summary-label">Delivery Address:</span>
@@ -59,7 +59,7 @@
                         <div style="font-size: 11px; color: #8C7568;">SKU: {{ $item->product_sku }}</div>
                     </td>
                     <td style="text-align: center;">{{ $item->quantity }}</td>
-                    <td style="text-align: right; font-weight: bold;">{{ format_price($item->total_price) }}</td>
+                    <td style="text-align: right; font-weight: bold;">{{ order_price($order, $item->total_price) }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -67,13 +67,16 @@
 
     {{-- Pricing Totals --}}
     <div class="total-box">
-        Subtotal: <span style="font-weight: normal; color: #2E1B12; margin-right: 15px;">{{ format_price($order->subtotal) }}</span>
-        Delivery: <span style="font-weight: normal; color: #2E1B12; margin-right: 15px;">{{ $order->delivery_fee > 0 ? format_price($order->delivery_fee) : (is_null($order->delivery_zone_id) ? 'To be confirmed' : 'Free') }}</span>
+        Subtotal: <span style="font-weight: normal; color: #2E1B12; margin-right: 15px;">{{ order_price($order, $order->subtotal) }}</span>
+        Delivery: <span style="font-weight: normal; color: #2E1B12; margin-right: 15px;">{{ $order->delivery_fee > 0 ? order_price($order, $order->delivery_fee) : (is_null($order->delivery_zone_id) ? 'To be confirmed' : 'Free') }}</span>
         @if($order->discount_amount > 0)
-            Discount: <span style="font-weight: normal; color: #8FBF9F; margin-right: 15px;">-{{ format_price($order->discount_amount) }}</span>
+            Discount: <span style="font-weight: normal; color: #8FBF9F; margin-right: 15px;">-{{ order_price($order, $order->discount_amount) }}</span>
+        @endif
+        @if($order->tax_amount > 0)
+            Tax: <span>{{ order_price($order, $order->tax_amount) }}</span>
         @endif
         <div style="margin-top: 10px;">
-            Grand Total: <span class="total-value">{{ format_price($order->grand_total) }}</span>
+            Grand Total: <span class="total-value">{{ order_price($order, $order->grand_total) }}</span>
         </div>
     </div>
 

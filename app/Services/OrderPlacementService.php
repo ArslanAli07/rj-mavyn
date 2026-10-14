@@ -101,9 +101,12 @@ class OrderPlacementService
 
                 $this->inventory->assertAvailable($items);
                 $subtotal = Money::decimal($items->sum(fn ($item) => Money::minor($item->price) * $item->quantity));
+                $financials = app(StoreFinancials::class)->snapshot();
                 $coupon = $this->validatedCoupon($subtotal, $data['email']);
                 $discount = $coupon ? $coupon->calculateDiscount($subtotal) : '0.00';
-                $quote = app(LocalDeliveryService::class)->quote((int) $data['delivery_zone_id'], Money::minor($subtotal), $data['country']);
+                $taxMinor = app(StoreFinancials::class)->taxMinor(Money::minor($subtotal), Money::minor($discount), $financials['tax_rate']);
+                $shipping = app(ShippingService::class)->choose($data, Money::minor($subtotal));
+                $quote = $shipping['quote'];
                 $address = $data['address_line'];
                 if (! empty($data['map_link'])) {
                     $address .= "\nMap Link: ".$data['map_link'];
@@ -120,9 +123,12 @@ class OrderPlacementService
 
                 $order = Order::create([
                     'order_number' => Order::generateOrderNumber(),
+                    'brand_snapshot' => StoreIdentity::snapshot(),
+                    ...$financials,
                     'user_id' => auth('web')->id(),
                     'coupon_id' => $coupon?->id,
-                    'delivery_zone_id' => $data['delivery_zone_id'],
+                    'delivery_zone_id' => $shipping['legacy_zone_id'],
+                    'shipping_snapshot' => ['provider_key' => $shipping['provider_key'], 'option_id' => $shipping['option']->id, 'label' => $quote->label, 'fee_minor' => $quote->feeMinor, 'currency' => $quote->currency],
                     'customer_name' => $data['first_name'].' '.$data['last_name'],
                     'customer_email' => $data['email'],
                     'customer_phone' => $data['phone'],
@@ -130,11 +136,12 @@ class OrderPlacementService
                     'delivery_city' => $data['city'],
                     'delivery_area' => $quote->label,
                     'delivery_address' => $address,
+                    'delivery_postal_code' => $data['postal_code'] ?? null,
                     'subtotal' => $subtotal,
                     'delivery_fee' => Money::decimal($quote->feeMinor),
                     'discount_amount' => $discount,
-                    'tax_amount' => 0,
-                    'grand_total' => Money::decimal(max(0, Money::minor($subtotal) - Money::minor($discount) + $quote->feeMinor)),
+                    'tax_amount' => Money::decimal($taxMinor),
+                    'grand_total' => Money::decimal(max(0, Money::minor($subtotal) - Money::minor($discount)) + $taxMinor + $quote->feeMinor),
                     'payment_method' => $data['payment_method'],
                     'payment_instructions_snapshot' => ['provider_key' => $payment['provider_key'], 'label' => $payment['instructions']->label, 'instructions' => $payment['instructions']->instructions, 'requires_receipt' => $payment['instructions']->requiresReceipt],
                     'payment_receipt' => $receiptPath,

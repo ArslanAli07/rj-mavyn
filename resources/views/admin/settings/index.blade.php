@@ -20,6 +20,17 @@
         @csrf
         @method('PUT')
 
+        <details class="card bg-white border rounded-2 p-4">
+            <summary class="fw-semibold">Regional and financial settings</summary>
+            <p class="small text-body-secondary mt-3">Tax is added to discounted merchandise; fulfillment charges are excluded. Currency is fixed once products or orders exist.</p>
+            @foreach(['store_currency' => 'Currency code', 'store_currency_symbol' => 'Currency symbol', 'store_tax_rate' => 'Tax rate (%)', 'store_country' => 'Country', 'store_country_code' => 'Country code (two letters)', 'store_timezone' => 'Timezone', 'store_locale' => 'Language (en)'] as $key => $label)
+                <label class="d-block mt-3">{{ $label }}
+                    <input class="form-control mt-1" name="{{ $key }}" value="{{ old($key, $settings->get($key)?->value) }}" required>
+                </label>
+                @error($key)<p class="text-danger small">{{ $message }}</p>@enderror
+            @endforeach
+        </details>
+
         <details class="card bg-white border rounded-2 p-4"><summary class="fw-semibold admin-clickable">Store information and policy text</summary>
             <p class="small mt-2">Plain text used by the default storefront. Content stays with the store when themes change.</p>
             @foreach(['site_city' => 'City', 'about_text' => 'About us', 'shipping_policy' => 'Shipping and delivery', 'returns_policy' => 'Returns and refunds', 'privacy_policy' => 'Privacy policy', 'terms_policy' => 'Terms and conditions'] as $key => $label)

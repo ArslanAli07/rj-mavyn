@@ -13,6 +13,6 @@ class NotificationOutbox extends Model
     protected function casts(): array
     {
         return ['payload' => 'array', 'attempts' => 'integer', 'available_at' => 'datetime',
-            'queued_at' => 'datetime', 'sent_at' => 'datetime'];
+            'queued_at' => 'datetime', 'sent_at' => 'datetime', 'expires_at' => 'datetime', 'discarded_at' => 'datetime'];
     }
 }

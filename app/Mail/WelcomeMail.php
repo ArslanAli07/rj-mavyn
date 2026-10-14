@@ -3,10 +3,14 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Services\StoreIdentity;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class WelcomeMail extends Mailable
@@ -16,7 +20,12 @@ class WelcomeMail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(public User $user) {}
+    public function __construct(public User $user, public ?array $brand = null, public ?string $messageId = null) {}
+
+    public function headers(): Headers
+    {
+        return new Headers(messageId: $this->messageId);
+    }
 
     /**
      * Get the message envelope.
@@ -24,7 +33,8 @@ class WelcomeMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome to Happy Tea! 🧋',
+            from: new Address((string) config('mail.from.address'), ($this->brand ?? StoreIdentity::snapshot())['name']),
+            subject: 'Welcome to '.($this->brand ?? StoreIdentity::snapshot())['name'].'!',
         );
     }
 
@@ -41,7 +51,7 @@ class WelcomeMail extends Mailable
     /**
      * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, Attachment>
      */
     public function attachments(): array
     {

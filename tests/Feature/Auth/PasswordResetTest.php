@@ -3,7 +3,9 @@
 namespace Tests\Feature\Auth;
 
 use App\Mail\ForgotPasswordMail;
+use App\Models\NotificationOutbox;
 use App\Models\User;
+use App\Services\NotificationOutboxService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -25,7 +27,8 @@ class PasswordResetTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->post('/forgot-password', $this->withHoneypot(['email' => $user->email]));
+        $this->post('/forgot-password', $this->withHoneypot(['email' => $user->email]))->assertSessionHasNoErrors();
+        app(NotificationOutboxService::class)->deliver(NotificationOutbox::sole()->id);
 
         Mail::assertSent(ForgotPasswordMail::class, function (ForgotPasswordMail $mail) use ($user) {
             return $mail->hasTo($user->email);
@@ -38,7 +41,8 @@ class PasswordResetTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->post('/forgot-password', $this->withHoneypot(['email' => $user->email]));
+        $this->post('/forgot-password', $this->withHoneypot(['email' => $user->email]))->assertSessionHasNoErrors();
+        app(NotificationOutboxService::class)->deliver(NotificationOutbox::sole()->id);
 
         Mail::assertSent(ForgotPasswordMail::class, function (ForgotPasswordMail $mail) {
             $response = $this->get('/reset-password/'.$mail->token);
@@ -55,7 +59,8 @@ class PasswordResetTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->post('/forgot-password', $this->withHoneypot(['email' => $user->email]));
+        $this->post('/forgot-password', $this->withHoneypot(['email' => $user->email]))->assertSessionHasNoErrors();
+        app(NotificationOutboxService::class)->deliver(NotificationOutbox::sole()->id);
 
         Mail::assertSent(ForgotPasswordMail::class, function (ForgotPasswordMail $mail) use ($user) {
             $response = $this->post('/reset-password', [

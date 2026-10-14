@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Order;
 use App\Models\Setting;
 use App\Services\CartService;
 use App\Services\Media\ContentMediaService;
@@ -17,12 +18,17 @@ if (! function_exists('plugin_active')) {
 
 if (! function_exists('format_price')) {
     /**
-     * Format a number as PKR price.
+     * Format current catalog prices with the configured store symbol.
      */
     function format_price(float|int|string $amount): string
     {
-        return Money::format(Money::minor($amount));
+        return Money::format(Money::minor($amount), (string) setting('store_currency_symbol', config('site.currency_symbol', 'Rs.')));
     }
+}
+
+function order_price(Order $order, float|int|string|null $amount): string
+{
+    return Money::format(Money::minor($amount), $order->currency_symbol ?? 'Rs.');
 }
 
 if (! function_exists('setting')) {

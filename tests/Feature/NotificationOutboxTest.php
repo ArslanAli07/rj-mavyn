@@ -50,6 +50,25 @@ class NotificationOutboxTest extends TestCase
         return NotificationOutbox::sole();
     }
 
+    public function test_legacy_brand_backfill_preserves_orders_and_pending_mail_after_rebranding(): void
+    {
+        $entry = $this->place();
+        Order::query()->update(['brand_snapshot' => null]);
+        $payload = $entry->payload;
+        unset($payload['order']['brand_snapshot'], $payload['order']['currency'], $payload['order']['currency_symbol']);
+        $entry->update(['payload' => $payload]);
+        Setting::set('site_name', 'Original Store');
+        $migration = require database_path('migrations/2026_10_14_000005_snapshot_legacy_order_branding.php');
+        $migration->up();
+        Setting::set('site_name', 'Renamed Store');
+        $migration->up();
+        $this->assertSame('Original Store', Order::sole()->store_name);
+        $this->assertSame('Original Store', json_decode($entry->fresh()->payload['order']['brand_snapshot'], true)['name']);
+        $this->assertSame('PKR', $entry->fresh()->payload['order']['currency']);
+        app(NotificationOutboxService::class)->deliver($entry->id);
+        Mail::assertSent(OrderConfirmationMail::class, fn ($mail) => $mail->envelope()->from->name === 'Original Store');
+    }
+
     public function test_confirmation_is_durable_before_dispatch_and_replay_does_not_duplicate_it(): void
     {
         $entry = $this->place();

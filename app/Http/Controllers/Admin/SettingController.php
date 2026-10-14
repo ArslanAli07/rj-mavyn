@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Services\Media\MediaLibraryService;
 use App\Services\Plugins\LegacyCommerceSettings;
+use App\Services\StoreFinancials;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -56,6 +57,7 @@ class SettingController extends Controller
             'homepage_gallery_asset_ids.*' => [...$this->mediaLibrary->imageRules(), 'required', 'distinct'],
         ]);
         DB::transaction(function () use ($request, $validated, $definitions) {
+            app(StoreFinancials::class)->validateChange($validated);
             $mediaFields = ['site_logo_asset_id', 'site_favicon_asset_id', 'homepage_gallery_asset_ids', 'homepage_gallery_asset_ids_present'];
             foreach (array_diff_key($validated, array_flip($mediaFields)) as $key => $value) {
                 $definition = $definitions[$key];

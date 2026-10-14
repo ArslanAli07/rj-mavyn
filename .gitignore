@@ -21,6 +21,14 @@
 /storage/*.key
 /storage/pail
 /vendor
+# Themes and plugins belong to each application clone, not the shared repository.
+/themes/
+/plugins/
+/public/themes/
+# Generated dependency files and private package choices for each clone.
+/composer.json
+/composer.lock
+/composer.client.json
 _ide_helper.php
 Homestead.json
 Homestead.yaml

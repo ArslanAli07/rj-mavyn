@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\InventoryService;
+use App\Services\StoreIdentity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -28,14 +29,18 @@ class Order extends Model
         'delivery_country', 'delivery_city', 'delivery_area',
         'delivery_address', 'delivery_postal_code',
         'subtotal', 'delivery_fee', 'discount_amount', 'tax_amount', 'grand_total',
-        'payment_method', 'payment_instructions_snapshot', 'payment_receipt', 'payment_receipt_disk', 'payment_status', 'status',
+        'payment_method', 'payment_instructions_snapshot', 'shipping_snapshot', 'payment_receipt', 'payment_receipt_disk', 'payment_status', 'status',
         'order_notes', 'admin_notes', 'delivered_at',
         'inventory_managed', 'status_revision',
+        'currency', 'currency_symbol', 'tax_rate', 'brand_snapshot',
     ];
 
     protected function casts(): array
     {
         return [
+            'shipping_snapshot' => 'array',
+            'brand_snapshot' => 'array',
+            'tax_rate' => 'decimal:2',
             'payment_instructions_snapshot' => 'array',            'subtotal' => 'decimal:2',
             'delivery_fee' => 'decimal:2',
             'discount_amount' => 'decimal:2',
@@ -98,9 +103,14 @@ class Order extends Model
         return self::STATUSES[$this->status] ?? ucfirst($this->status);
     }
 
+    public function getStoreNameAttribute(): string
+    {
+        return $this->brand_snapshot['name'] ?? StoreIdentity::snapshot()['name'];
+    }
+
     public function getPaymentMethodLabelAttribute(): string
     {
-        return self::PAYMENT_METHODS[$this->payment_method] ?? $this->payment_method;
+        return $this->payment_instructions_snapshot['label'] ?? self::PAYMENT_METHODS[$this->payment_method] ?? $this->payment_method;
     }
 
     public function getStatusColorAttribute(): string

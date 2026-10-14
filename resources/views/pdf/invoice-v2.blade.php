@@ -111,14 +111,14 @@
 </head>
 <body>
     @php
-        $siteName = setting('site_name', 'Happy Tea');
+        $siteName = $order->store_name;
         $siteAddress = trim((string) setting('site_address'));
         $sitePhone = trim((string) setting('site_phone'));
     @endphp
 
     <div class="center">
         <div class="brand">{{ $siteName }}</div>
-        <div class="muted">Beverages · Sialkot</div>
+        <div class="muted">{{ $order->brand_snapshot['tagline'] ?? '' }}</div>
         @if($siteAddress)
             <div class="muted">{{ $siteAddress }}</div>
         @endif
@@ -186,9 +186,9 @@
                     @if($item->special_request)
                         <div class="item-meta">Note: {{ $item->special_request }}</div>
                     @endif
-                    <div class="item-meta">{{ $item->quantity }} x {{ format_price($item->unit_price) }}</div>
+                    <div class="item-meta">{{ $item->quantity }} x {{ order_price($order, $item->unit_price) }}</div>
                 </td>
-                <td class="col-amount">{{ format_price($item->total_price) }}</td>
+                <td class="col-amount">{{ order_price($order, $item->total_price) }}</td>
             </tr>
         @endforeach
     </table>
@@ -198,25 +198,25 @@
     <table class="row">
         <tr>
             <td>Subtotal</td>
-            <td class="right">{{ format_price($order->subtotal) }}</td>
+            <td class="right">{{ order_price($order, $order->subtotal) }}</td>
         </tr>
         @if($order->discount_amount > 0)
             <tr>
                 <td>Discount</td>
-                <td class="right">-{{ format_price($order->discount_amount) }}</td>
+                <td class="right">-{{ order_price($order, $order->discount_amount) }}</td>
             </tr>
         @endif
         @if($order->tax_amount > 0)
             <tr>
                 <td>Tax</td>
-                <td class="right">{{ format_price($order->tax_amount) }}</td>
+                <td class="right">{{ order_price($order, $order->tax_amount) }}</td>
             </tr>
         @endif
         <tr>
             <td>Delivery</td>
             <td class="right">
                 @if($order->delivery_fee > 0)
-                    {{ format_price($order->delivery_fee) }}
+                    {{ order_price($order, $order->delivery_fee) }}
                 @elseif(is_null($order->delivery_zone_id))
                     To confirm
                 @else
@@ -226,7 +226,7 @@
         </tr>
         <tr>
             <td class="total-label">TOTAL</td>
-            <td class="total-value">{{ format_price($order->grand_total) }}</td>
+            <td class="total-value">{{ order_price($order, $order->grand_total) }}</td>
         </tr>
     </table>
 

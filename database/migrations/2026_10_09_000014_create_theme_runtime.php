@@ -1,9 +1,11 @@
 <?php
 
+use App\Services\Themes\InstalledThemeCatalog;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Mavyn\Core\Themes\ThemeCatalog;
 
 return new class extends Migration
 {
@@ -23,7 +25,9 @@ return new class extends Migration
             $table->primary(['theme_id', 'key']);
         });
         // Preserve the existing presentation without writing commerce or merchant media.
-        DB::table('theme_selection')->insert(['id' => 1, 'active_theme' => 'mavyn.theme-happy-tea', 'created_at' => now(), 'updated_at' => now()]);
+        $installed = is_file(config('themes.catalog')) ? app(InstalledThemeCatalog::class)->load()->all() : [];
+        $initial = isset($installed['mavyn.theme-happy-tea']) ? 'mavyn.theme-happy-tea' : ThemeCatalog::DEFAULT;
+        DB::table('theme_selection')->insert(['id' => 1, 'active_theme' => $initial, 'created_at' => now(), 'updated_at' => now()]);
     }
 
     public function down(): void

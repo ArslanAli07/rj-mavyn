@@ -10,6 +10,14 @@ use PHPUnit\Framework\TestCase;
 
 class ThemeContractsTest extends TestCase
 {
+    public function test_core_can_be_installed_before_client_themes(): void
+    {
+        $catalog = new ThemeCatalog([]);
+        $this->assertSame([], $catalog->all());
+        $this->expectException(InvalidArgumentException::class);
+        $catalog->get(ThemeCatalog::DEFAULT);
+    }
+
     private function packages(): array
     {
         $default = ['package' => 'mavyn/theme-default', 'version' => '0.1.0', 'manifest' => ['kind' => 'theme', 'id' => ThemeCatalog::DEFAULT, 'name' => 'Default', 'contract' => '^0.1', 'parent' => null, 'requires_active' => [], 'settings' => ['accent_color' => ['type' => 'color', 'default' => '#123456']], 'templates' => array_combine(TemplateInventory::NAMES, array_map(fn ($name) => 'resources/views/'.str_replace('.', '/', $name).'.blade.php', TemplateInventory::NAMES)), 'asset_manifest' => 'dist/manifest.json']];

@@ -43,7 +43,7 @@ There is no automatic expiry or cleanup of checkout keys. Keep completed attempt
 
 A caught rollback removes an uncommitted receipt. If an exception occurs after commit, the durable marker protects its saved receipt. If database availability prevents verifying commit state, cleanup conservatively preserves the file and logs a warning. A process interruption can leave an uncommitted file; retrying the same draft reuses its path. Abandoned drafts/files have no automatic sweeper yet and should not be removed without checking their commit state.
 
-Confirmation email is sent only by the request that creates the order; a replay never sends it again. Delivery remains best effort. An interruption before email delivery can leave a committed order without a confirmation email. Durable notification/outbox delivery remains a later milestone.
+The request that creates an order records its confirmation in the durable outbox; a replay never creates another entry. Dispatch and retry behavior is described below.
 
 ## Verification
 
@@ -68,7 +68,7 @@ php tests/Support/inventory-concurrency.php
 
 The checkout check covers simultaneous retries, different keys contending for one cart, and a forced exception after commit that preserves the receipt and recovers the original order. Functional tests cover ownership, conflicting details/receipt bytes, rollback, coupon edits, new carts, disabled services, price review, interrupted uploads, deleted-order tombstones, page reloads, and delayed retries. Browser verification uses an isolated database/session/receipt directory and simulates loss of a committed manual-payment response before retrying from the same form.
 
-Decimal-safe pricing is the next implementation milestone, followed by guest coupon identity policy.
+Decimal-safe pricing and guest coupon identity enforcement are implemented.
 
 ## Coupon identity policy
 
@@ -123,4 +123,12 @@ Dispatch and delivery select the oldest unsent notification per order, including
 
 Migration `2026_10_09_000011_add_order_status_notifications` initializes existing orders at revision zero and defaults existing outbox entries to confirmation type. It performs no historical status backfill. Apply it before serving the new code, then restart long-lived queue workers before permitting new status notifications; old worker code does not understand the new notification type. The dispatch schedule and queue configuration are unchanged.
 
-Tests cover single/bulk/no-op changes, re-entered statuses, opt-in/global settings, audit rollback, invalid bulk rollback, permission denial, original snapshots after edits/deletion, private-note exclusion, ordered delivery, retry recovery, compatibility with serialized legacy jobs, and a database-queue round trip for status mail. Disposable MySQL workers verify that concurrent identical status updates create one revision, change audit, and outbox entry, and duplicate senders send once. No live SMTP/provider test has been performed.
+Tests cover single/bulk/no-op changes, re-entered statuses, opt-in/global settings, audit rollback, invalid bulk rollback, permission denial, original snapshots after edits/deletion, private-note exclusion, ordered delivery, retry recovery, compatibility with serialized legacy jobs, and a database-queue round trip for status mail. Disposable MySQL workers verify that concurrent identical status updates create one revision, change audit, and outbox entry, and duplicate senders send once. Local SMTP acceptance with a real database-queue worker has been verified using synthetic account recipients; external-provider acceptance remains deployment-specific.
+
+## Account notifications and financial snapshots
+
+Welcome and password-reset messages use the same durable outbox. Registration and its welcome intent commit together. Reset tokens are encrypted using the client APP_KEY; messages expire with the configured broker lifetime and replaced tokens or changed/deleted accounts are discarded before send. The reset response says queued. Account messages do not wait on unrelated orders or welcome delivery. Keep the scheduler and notification worker running before offering password recovery.
+
+Orders and order-mail snapshots retain currency, currency symbol, flat tax rate, brand and shipping selection. Receipt paths and admin notes remain excluded from mail. See [fix validation](FIX_VALIDATION.md) for supported financial boundaries and the five required migrations.
+
+For manual abandoned-draft maintenance, stop new requests and drain checkout workers first, then take a database/storage backup. Select only old records with both `committed_at` and `order_id` null (a suggested operational retention period is 30 days). A receipt eligible for deletion is exactly `receipts/checkout-<key_hash>` on the private local disk, with no committed order reference. Verify the same state again before deleting. Retain unknown paths, legacy public receipts, completed attempts (including deleted-order tombstones) and all cart-owner locks. If storage/database state cannot be verified, preserve files and retry after recovery. Perform this only in a maintenance window; there is no automatic prune command.

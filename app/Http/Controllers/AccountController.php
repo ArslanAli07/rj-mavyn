@@ -90,13 +90,16 @@ class AccountController extends Controller
             'phone' => 'required|string|max:20',
             'country' => 'required|string|max:100',
             'city' => 'required|string|max:100',
-            'delivery_zone_id' => 'required|exists:delivery_zones,id',
+            'delivery_zone_id' => 'nullable|integer|exists:delivery_zones,id',
+            'area' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:30',
             'address_line' => 'required|string|max:500',
             'is_default' => 'boolean',
         ]);
 
-        $zone = DeliveryZone::find($data['delivery_zone_id']);
-        $data['area'] = $zone?->name;
+        $zone = $this->addressZone($data['delivery_zone_id'] ?? null);
+        $data['delivery_zone_id'] = $zone?->id;
+        $data['area'] = $zone?->name ?? ($data['area'] ?? null);
 
         if (! empty($data['is_default'])) {
             auth()->user()->addresses()->update(['is_default' => false]);
@@ -119,12 +122,15 @@ class AccountController extends Controller
             'phone' => 'required|string|max:20',
             'country' => 'required|string|max:100',
             'city' => 'required|string|max:100',
-            'delivery_zone_id' => 'required|exists:delivery_zones,id',
+            'delivery_zone_id' => 'nullable|integer|exists:delivery_zones,id',
+            'area' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:30',
             'address_line' => 'required|string|max:500',
         ]);
 
-        $zone = DeliveryZone::find($data['delivery_zone_id']);
-        $data['area'] = $zone?->name;
+        $zone = $this->addressZone($data['delivery_zone_id'] ?? null);
+        $data['delivery_zone_id'] = $zone?->id;
+        $data['area'] = $zone?->name ?? ($data['area'] ?? null);
 
         $address->update($data);
 
@@ -139,6 +145,17 @@ class AccountController extends Controller
         $address->delete();
 
         return back()->with('success', 'Address deleted.');
+    }
+
+    private function addressZone(?int $id): ?DeliveryZone
+    {
+        if ($id === null) {
+            return null;
+        }
+        // Legacy zone associations remain guarded; generic addresses need no plugin.
+        abort_unless(plugin_active('mavyn.local-delivery'), 404);
+
+        return DeliveryZone::where('is_active', true)->findOrFail($id);
     }
 
     public function setDefaultAddress(Address $address): RedirectResponse

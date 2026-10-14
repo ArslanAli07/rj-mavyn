@@ -1,0 +1,26 @@
+{
+    "require": {
+        "mavyn/theme-default": "^0.1",
+        "acme/store-theme": "^1.0",
+        "acme/store-plugin": "^1.0"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "themes/*",
+            "options": {
+                "symlink": true,
+                "versions": {
+                    "mavyn/theme-default": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "plugins/*",
+            "options": {
+                "symlink": true
+            }
+        }
+    ]
+}

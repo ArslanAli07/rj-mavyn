@@ -15,6 +15,10 @@ final class ThemeCatalog
 
     public function __construct(array $packages)
     {
+        // A fresh core installation can precede the clone's theme installation.
+        if ($packages === []) {
+            return;
+        }
         foreach ($packages as $package) {
             $manifest = $package['manifest'] ?? [];
             $id = $manifest['id'] ?? '';

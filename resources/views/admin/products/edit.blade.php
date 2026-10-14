@@ -80,6 +80,7 @@
                         'price' => (float) $v->price,
                         'discount_price' => $v->discount_price ? (float) $v->discount_price : '',
                         'servings' => $v->servings ?? '',
+                        'plugin_attributes' => $v->plugin_attributes ?? [],
                         'is_default' => (bool) $v->is_default,
                         'is_active' => (bool) $v->is_active,
                         'in_stock' => (bool) $v->in_stock,

@@ -36,11 +36,13 @@ class Product extends Model
         'stock_quantity', 'in_stock', 'is_featured', 'is_bestseller', 'is_new_arrival',
         'inventory_mode',
         'is_active', 'main_image', 'sales_count', 'display_order',
+        'plugin_attributes',
     ];
 
     protected function casts(): array
     {
         return [
+            'plugin_attributes' => 'array',
             'price' => 'decimal:2',
             'discount_price' => 'decimal:2',
             'in_stock' => 'boolean',

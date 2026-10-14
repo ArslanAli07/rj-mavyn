@@ -1,3 +1,14 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+@source "../../themes";
+
+/* Preserve the previous default border on legacy theme utilities. */
+@layer base {
+    *, ::before, ::after, ::backdrop, ::file-selector-button {
+        border-color: #e5e7eb;
+    }
+}
+
 :root, .storefront-theme {
     /* Brand Palette */
     --color-primary: #F88027;         /* Warm Orange */
@@ -20,9 +31,6 @@
     --font-syne: 'Syne', sans-serif;
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* Honeypot: off-screen so humans never see it, but bots still fill it */
 .hp-field {
@@ -126,18 +134,18 @@
         @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
     }
 
-    .badge-featured  { @apply badge bg-primary-100 text-primary-700; }
-    .badge-new       { @apply badge bg-green-100 text-green-700; }
-    .badge-sale      { @apply badge bg-red-100 text-red-700; }
-    .badge-bestseller{ @apply badge bg-espresso-100 text-espresso-700; }
+    .badge-featured  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700; }
+    .badge-new       { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700; }
+    .badge-sale      { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700; }
+    .badge-bestseller{ @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-espresso-100 text-espresso-700; }
 
     /* Status badges (orders) */
-    .status-pending         { @apply badge bg-yellow-100 text-yellow-800; }
-    .status-confirmed       { @apply badge bg-blue-100 text-blue-800; }
-    .status-preparing       { @apply badge bg-purple-100 text-purple-800; }
-    .status-out_for_delivery{ @apply badge bg-orange-100 text-orange-800; }
-    .status-delivered       { @apply badge bg-green-100 text-green-800; }
-    .status-cancelled       { @apply badge bg-red-100 text-red-800; }
+    .status-pending         { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800; }
+    .status-confirmed       { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800; }
+    .status-preparing       { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800; }
+    .status-out_for_delivery{ @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800; }
+    .status-delivered       { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800; }
+    .status-cancelled       { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800; }
 
     /* Navbar */
     .nav-link {
@@ -175,9 +183,9 @@
         @apply fixed bottom-4 right-4 z-50 px-5 py-3 rounded-xl shadow-luxury text-sm font-medium flex items-center gap-3 animate-slide-in;
     }
 
-    .toast-success { @apply toast bg-green-600 text-white; }
-    .toast-error   { @apply toast bg-red-600 text-white; }
-    .toast-info    { @apply toast bg-espresso-800 text-white; }
+    .toast-success { @apply fixed bottom-4 right-4 z-50 px-5 py-3 rounded-xl shadow-luxury text-sm font-medium flex items-center gap-3 animate-slide-in bg-green-600 text-white; }
+    .toast-error   { @apply fixed bottom-4 right-4 z-50 px-5 py-3 rounded-xl shadow-luxury text-sm font-medium flex items-center gap-3 animate-slide-in bg-red-600 text-white; }
+    .toast-info    { @apply fixed bottom-4 right-4 z-50 px-5 py-3 rounded-xl shadow-luxury text-sm font-medium flex items-center gap-3 animate-slide-in bg-espresso-800 text-white; }
 }
 
 /* ── Utilities ────────────────────────────────────────────────────────────────── */

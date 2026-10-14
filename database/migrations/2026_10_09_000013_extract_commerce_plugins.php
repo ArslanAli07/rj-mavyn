@@ -13,8 +13,11 @@ return new class extends Migration
     {
         // Preserve the previously always-installed behavior; do not migrate/drop legacy tables or identifiers.
         $defaults = ['easypaisa_account' => 'site.payment.easypaisa.account', 'easypaisa_name' => 'site.payment.easypaisa.name', 'jazzcash_account' => 'site.payment.jazzcash.account', 'jazzcash_name' => 'site.payment.jazzcash.name', 'bank_name' => 'site.payment.bank.bank_name', 'bank_title' => 'site.payment.bank.title', 'bank_account' => 'site.payment.bank.account', 'bank_iban' => 'site.payment.bank.iban'];
-        $ids = ['mavyn.local-delivery', 'mavyn.manual-payments', 'mavyn.food-products', 'mavyn.store-availability'];
         $catalog = app(InstalledPluginCatalog::class)->load();
+        $ids = array_values(array_intersect(
+            ['mavyn.local-delivery', 'mavyn.manual-payments', 'mavyn.food-products', 'mavyn.store-availability'],
+            array_keys($catalog->all()),
+        ));
         // Validate every imported value before MySQL performs nontransactional schema changes.
         $settings = [];
         foreach ($ids as $id) {

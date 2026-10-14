@@ -75,8 +75,8 @@ Route::prefix('account')->name('account.')->middleware('auth')->group(function (
     Route::get('/password', [AccountController::class, 'password'])->name('password');
     Route::put('/password', [AccountController::class, 'updatePassword'])->name('password.update');
     Route::get('/addresses', [AccountController::class, 'addresses'])->name('addresses');
-    Route::post('/addresses', [AccountController::class, 'storeAddress'])->middleware('plugin.active:mavyn.local-delivery')->name('addresses.store');
-    Route::put('/addresses/{address}', [AccountController::class, 'updateAddress'])->middleware('plugin.active:mavyn.local-delivery')->name('addresses.update');
+    Route::post('/addresses', [AccountController::class, 'storeAddress'])->name('addresses.store');
+    Route::put('/addresses/{address}', [AccountController::class, 'updateAddress'])->name('addresses.update');
     Route::delete('/addresses/{address}', [AccountController::class, 'deleteAddress'])->name('addresses.delete');
     Route::patch('/addresses/{address}/default', [AccountController::class, 'setDefaultAddress'])->name('addresses.default');
     Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');

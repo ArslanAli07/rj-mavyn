@@ -200,7 +200,7 @@ For the implemented local workflow without repeated Composer updates, see [local
 
 Own namespaced tables and migrations. Use extension tables or typed product attributes instead of adding arbitrary columns to core tables. Core schema changes require a supported core migration/contract.
 
-Migrations run during deployment, are recorded by package, and remain immutable after release. Updates must preserve historical records. Deactivation does not roll back tables.
+Migrations run during deployment, are recorded by package, and remain immutable after release. Updates must preserve historical records. Deactivation does not roll back tables. Plugin setup should add only required schema/configuration. Keep sample products, images, categories and customer data in separately invoked demo seeders or isolated test fixtures. See [required database initialization](DATABASE_SETUP.md).
 
 Settings schemas declare types, defaults, validation, permissions, and secret flags. Use minor units plus currency for money. Reject unknown keys and invalid values. Credentials must be protected/masked and omitted from logs and public configuration.
 

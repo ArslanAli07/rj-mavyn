@@ -4,6 +4,8 @@ Use http://mavyn.test/ and http://mavyn.test/admin/login. Set local `APP_URL=htt
 
 ## Setup
 
+`php artisan migrate --seed` initializes only required platform settings and the first administrator. Interactive first setup asks for credentials; unattended setup uses `MAVYN_ADMIN_EMAIL`/`MAVYN_ADMIN_PASSWORD`. Existing accounts/settings and store records are preserved. See [database setup](DATABASE_SETUP.md).
+
 - `php artisan storage:link --force` points `public/storage` to this workspace’s `storage/app/public`.
 - `php artisan admin:provision <email>` creates an active super admin using a hidden password prompt (minimum 12 characters). Existing emails are rejected; the command does not reset accounts.
 - For local setup only, `php artisan admin:provision <email> --local-password-file` generates credentials in `storage/app/private/local-admin.txt` with mode 0600. The file is outside public storage and excluded from Git; an existing credential file is never overwritten.

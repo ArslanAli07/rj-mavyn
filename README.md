@@ -72,3 +72,5 @@ See [Plugin runtime](docs/PLUGIN_RUNTIME.md) and
 For the resolved completeness findings, supported shipping/attributes/financial contracts and Happy Tea migration acceptance, see [fix validation](docs/FIX_VALIDATION.md). Core-only validation uses `composer test:core`; the full integration suite requires the client reference packages.
 
 Installed plugins support [local editing without repeated Composer updates](docs/PLUGIN_RUNTIME.md#local-development-without-repeated-composer-updates). With `APP_ENV=local`, PHP and platform-manifest changes load directly from the plugin package. New dependencies/autoload mappings still require Composer; new migrations require `php artisan migrate`.
+
+Default `php artisan migrate --seed` initializes only required platform data, including the first administrator and missing core settings. Store catalog/media/demo content is excluded. See [database setup](docs/DATABASE_SETUP.md) for credentials, unattended setup and idempotent behavior.

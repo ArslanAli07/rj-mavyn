@@ -55,6 +55,20 @@ class CloneBootstrapTest extends TestCase
         $this->assertDatabaseCount('plugin_states', 0);
         $this->assertDatabaseCount('plugin_settings', 0);
         $this->assertDatabaseHas('theme_selection', ['active_theme' => 'mavyn.theme-default']);
+        $this->assertDatabaseCount('home_slides', 0);
+    }
+
+    public function test_core_only_migrate_and_seed_adds_only_required_platform_data(): void
+    {
+        $this->catalog([]);
+        config(['platform.bootstrap_admin' => ['name' => 'Owner', 'email' => 'owner@example.test', 'password' => 'a-strong-bootstrap-password'], 'site.name' => 'Store']);
+        $this->assertSame(0, Artisan::call('migrate', ['--seed' => true, '--force' => true, '--no-interaction' => true]));
+        $this->assertDatabaseCount('admins', 1);
+        $this->assertDatabaseHas('settings', ['key' => 'site_name', 'value' => 'Store']);
+        $this->assertDatabaseHas('settings', ['key' => 'store_currency', 'value' => 'PKR']);
+        foreach (['products', 'product_variants', 'product_images', 'categories', 'occasions', 'home_slides', 'delivery_zones', 'coupons', 'users', 'orders', 'order_items', 'faqs', 'testimonials', 'media', 'media_assets', 'media_usages'] as $table) {
+            $this->assertDatabaseCount($table, 0);
+        }
     }
 
     public function test_new_clone_imports_only_reference_plugins_that_are_installed(): void

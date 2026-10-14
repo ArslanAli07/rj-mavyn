@@ -24,54 +24,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Seed default slides
-        \Illuminate\Support\Facades\DB::table('home_slides')->insert([
-            [
-                'image_path' => 'images/hero_cakes.jpg',
-                'title' => 'Crafted with',
-                'title_highlighted' => 'Pure Love',
-                'description' => 'Exquisite custom cakes, velvety pastries & rich brownies — handcrafted daily with the finest European butter and delivered fresh across Sialkot.',
-                'button_text' => 'Explore Collection',
-                'button_link' => '/shop',
-                'left_icon' => '🍰',
-                'right_badge_text' => '• 100% Organic Ingredients • Premium Taste',
-                'right_badge_emoji' => '🍰',
-                'display_order' => 1,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'image_path' => 'images/hero_pastries.jpg',
-                'title' => 'French Style',
-                'title_highlighted' => 'Fresh Pastries',
-                'description' => 'Indulge in our delicate croissants, cupcakes, and tarts, baked with pure butter, high-grade chocolate, and farm eggs.',
-                'button_text' => 'Order Pastries',
-                'button_link' => '/shop',
-                'left_icon' => '🥐',
-                'right_badge_text' => '• Freshly Baked Daily • French Recipe',
-                'right_badge_emoji' => '🥐',
-                'display_order' => 2,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'image_path' => 'images/hero_brownies.jpg',
-                'title' => 'Indulgent Chocolate',
-                'title_highlighted' => 'Fudgy Brownies',
-                'description' => 'Try our signature Lotus Biscoff and chocolate fudge brownies, prepared fresh daily with imported cocoa and premium butter.',
-                'button_text' => 'Order Brownies',
-                'button_link' => '/shop',
-                'left_icon' => '🍫',
-                'right_badge_text' => '• Belgian Chocolate • Fudgy Texture',
-                'right_badge_emoji' => '🍫',
-                'display_order' => 3,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        ]);
     }
 
     public function down(): void

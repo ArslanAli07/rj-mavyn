@@ -144,7 +144,7 @@ class MediaContentIntegrationTest extends TestCase
         $private = $this->image('private');
         $document = $this->library->upload(UploadedFile::fake()->create('guide.pdf', 10, 'application/pdf'), ['title' => 'Guide', 'visibility' => 'public'], $this->admin);
         $category = Category::create(['name' => 'Bags']);
-        $slide = HomeSlide::firstOrFail();
+        $slide = HomeSlide::create(['title' => 'Media validation fixture', 'display_order' => 0]);
         $this->actingAs($this->admin, 'admin');
         foreach ([$private->id, $document->id, 9999] as $id) {
             $this->post(route('admin.categories.store'), ['name' => 'Rejected', 'image_asset_id' => $id])->assertSessionHasErrors('image_asset_id');

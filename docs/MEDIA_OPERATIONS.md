@@ -72,3 +72,5 @@ Receipt delivery requires admin authentication and sends `Cache-Control: no-stor
 After importing, process queued conversions, inspect processing status, verify representative storefront images and authorized receipts, and verify that old public receipt URLs no longer serve their bytes. Restore missing private originals from the coordinated backup. For a full rollback, restore the database and files together while preserving private receipt access/storage rules.
 
 Local audit on 2026-10-08: the journal schema is applied, but there are no products, categories, orders, or media assets. Three default slides reference missing `images/hero_cakes.jpg`, `images/hero_pastries.jpg`, and `images/hero_brownies.jpg`. Both report and apply preserve these unresolved references. Isolated fixtures validate migration behavior; existing-store backfill remains outstanding.
+
+The former default-slide inserts have been removed from the migration for fresh installations. Standard migration/seeding adds no media or slide content; see [database initialization](DATABASE_SETUP.md). Existing content is preserved.

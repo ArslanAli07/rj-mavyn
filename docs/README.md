@@ -13,6 +13,7 @@ These documents describe the platform and its implemented increments. The progre
 | [Central media management](MEDIA_MANAGEMENT.md) | Shared library/picker, polymorphic usage, Spatie integration, optimization, privacy, and migration |
 | [Media operations](MEDIA_OPERATIONS.md) | Processing profiles, order retention, durable cleanup, and recovery commands |
 | [Inventory operations](INVENTORY_OPERATIONS.md) | Stock policies, reservations, staff adjustments, order transitions, and concurrency checks |
+| [Database setup](DATABASE_SETUP.md) | Required settings/admin initialization without demo catalog or media content |
 | [Admin operations](ADMIN_OPERATIONS.md) | Staff permissions, sensitive actions, retained audit history, and access assignment |
 | [Checkout operations](CHECKOUT_OPERATIONS.md) | Checkout keys, coupon identity, receipt recovery, durable confirmations, and retry checks |
 | [Local browser testing](LOCAL_TESTING.md) | Admin setup, media worker, and product-image checks |

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Plugins\InstalledPluginCatalog;
+use App\Services\Plugins\PluginManifests;
 use App\Services\Themes\InstalledThemeCatalog;
 use App\Services\Themes\ThemeAssets;
 use Composer\InstalledVersions;
@@ -45,7 +46,9 @@ class BuildPluginCatalogCommand extends Command
                 if (! $path || ! str_starts_with($path, $base.DIRECTORY_SEPARATOR)) {
                     throw new RuntimeException('Plugin package must be inside the host artifact.');
                 }
-                $packages[] = ['package' => $package['name'], 'version' => $package['version'], 'path' => substr($path, strlen($base) + 1), 'manifest' => $meta];
+                $relative = substr($path, strlen($base) + 1);
+                $meta = app(PluginManifests::class)->read($package, $resources->resource(['path' => $relative], 'composer.json'));
+                $packages[] = ['package' => $package['name'], 'version' => $package['version'], 'path' => $relative, 'manifest' => $meta];
             }
             $catalog = new PluginCatalog($packages);
             $migrationNames = array_map('basename', glob(database_path('migrations/*.php')));

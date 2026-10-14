@@ -194,6 +194,8 @@ An illustrative protected route group may use proposed aliases `plugin.active:ac
 
 Register settings and pages through the shared admin; reuse its forms, validation errors, pagination, and layout. Do not fork the admin layout to add a menu item.
 
+For the implemented local workflow without repeated Composer updates, see [local plugin development](PLUGIN_RUNTIME.md#local-development-without-repeated-composer-updates). Installed path-package PHP and platform metadata edits refresh locally; dependency changes still require Composer and database changes still require explicit migrations.
+
 ## 9. Database, settings, and product fields
 
 Own namespaced tables and migrations. Use extension tables or typed product attributes instead of adding arbitrary columns to core tables. Core schema changes require a supported core migration/contract.

@@ -235,11 +235,11 @@ class ThemeRuntimeTest extends TestCase
         app(ThemeManager::class)->activate(self::CHILD);
         $state = app(ThemeRuntime::class)->state();
         $styles = $state['assets']['styles'];
-        $this->assertStringContainsString('/themes/'.ThemeCatalog::DEFAULT.'/', $styles[0]);
-        $this->assertStringContainsString('/themes/'.self::HAPPY.'/', $styles[2]);
-        $this->assertStringContainsString('/themes/'.self::CHILD.'/', $styles[3]);
-        $this->assertMatchesRegularExpression('~/[a-f0-9]{64}/theme.css$~', $styles[3]);
-        $this->assertStringContainsString('/themes/'.self::HAPPY.'/', theme_asset('assets/Logo_Happytea.svg'));
+        $this->assertStringContainsString('/theme-assets/'.ThemeCatalog::DEFAULT.'/', $styles[0]);
+        $this->assertStringContainsString('/theme-assets/'.self::HAPPY.'/', $styles[3]);
+        $this->assertStringContainsString('/theme-assets/'.self::CHILD.'/', $styles[4]);
+        $this->assertMatchesRegularExpression('~/[a-f0-9]{64}/dist/theme.css$~', $styles[4]);
+        $this->assertStringContainsString('/theme-assets/'.self::HAPPY.'/', theme_asset('assets/Logo_Happytea.svg'));
     }
 
     public function test_store_content_is_escaped_and_retained_across_theme_switches(): void

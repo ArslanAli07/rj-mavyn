@@ -40,9 +40,9 @@ list and initializes a missing lockfile from the shared lock. It preserves an
 existing clone lockfile. Run `composer update` after changing either manifest,
 then keep the resolved clone lockfile with that client's deployment artifacts.
 Subsequent deployments use `composer install` with that lockfile. Composer's
-existing hooks build catalogs and publish theme assets.
+existing hooks build catalogs and validate theme assets. Theme files are served directly from their packages; see [theme asset loading](docs/THEME_RUNTIME.md#assets).
 
-Themes, plugins, generated `public/themes/` assets, and clone Composer files are
+Themes, plugins, legacy `public/themes/` copies, and clone Composer files are
 ignored. Core extension APIs, admin tooling, and test fixtures remain shared.
 The existing local Happy Tea package list and lockfile have been retained.
 
@@ -70,3 +70,5 @@ See [Plugin runtime](docs/PLUGIN_RUNTIME.md) and
 [Theme runtime](docs/THEME_RUNTIME.md) for activation and runtime details.
 
 For the resolved completeness findings, supported shipping/attributes/financial contracts and Happy Tea migration acceptance, see [fix validation](docs/FIX_VALIDATION.md). Core-only validation uses `composer test:core`; the full integration suite requires the client reference packages.
+
+Installed plugins support [local editing without repeated Composer updates](docs/PLUGIN_RUNTIME.md#local-development-without-repeated-composer-updates). With `APP_ENV=local`, PHP and platform-manifest changes load directly from the plugin package. New dependencies/autoload mappings still require Composer; new migrations require `php artisan migrate`.

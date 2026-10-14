@@ -13,10 +13,16 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\ThemeAssetController;
 use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public Routes ──────────────────────────────────────────────────────────────
+
+Route::get('/theme-assets/{theme}/{revision}/{path}', ThemeAssetController::class)
+    ->where(['theme' => '[a-z][a-z0-9-]*\.[a-z][a-z0-9.-]*', 'revision' => '[a-f0-9]{64}', 'path' => '.+'])
+    ->withoutMiddleware('web')
+    ->name('theme-assets.show');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 

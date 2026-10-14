@@ -39,9 +39,27 @@ Store name/contact/media and plain-text about/policy content belong to core sett
 
 ## Assets
 
-`platform:themes:assets` publishes declared resources to `public/themes/{id}/{sha256}/{filename}`. The manifest records checksum-verified `styles`, `scripts`, and optional named `files` (images/fonts). Paths stay inside installed packages. Assets load default → parent → child; named files resolve to the last supplied override. `theme_asset(name)` returns only declared public URLs. No vendor filesystem URL or merchant-provided filename is accepted.
+All theme source and build output stay inside their installed package, normally `themes/<theme>/`. Laravel serves declared files through `/theme-assets/{id}/{revision}/{package-relative-path}`. The revision hashes the complete validated manifest, so related CSS, JavaScript, images and fonts share a URL namespace and relative imports keep working. Nothing is copied or symlinked into `public/`. For Nginx setups with static-extension locations, add a `location ^~ /theme-assets/ { try_files $uri /index.php?$query_string; }` block so those requests reach Laravel. The public web-server document root stays `public/`; non-file requests must reach Laravel's `index.php`, including paths ending in `.css`, `.js` or image extensions.
 
-Happy Tea's bundled logos/illustrations are package assets; original public legacy paths remain for historical compatibility. Standalone storefront effects are extracted from the shared CSS into the default package. Host Vite still provides shared utility styles and one Alpine runtime. Theme CSS/scripts load only on storefront layouts and cannot replace admin templates. Packages must ship production-ready assets; there is no request-time frontend dependency build. Existing external font/Swiper/GSAP resources remain in the extracted legacy layouts; offline delivery and full stylesheet independence are not certified here.
+The format-1 manifest has checksum-verified `styles`, `scripts`, and optional named `files`. Declare emitted JS chunks and CSS dependencies in `files` too. Supported packaged files: CSS/JS, PNG/JPEG/WebP/AVIF/GIF/ICO/SVG, WOFF/WOFF2/TTF/OTF, MP4/WebM and browser `.webmanifest` files. Internal JSON manifests, Blade/PHP, dotfiles and undeclared resources are never delivered. Checksums and real-path containment are verified before serving. Responses use the correct MIME, `nosniff`, ETag/304 support and public immutable caching; delivery does not start a customer session.
+
+Assets load default → parent → child; named files resolve to the last supplied override. `theme_asset(name)` returns the URL for a declared named asset. Scripts are loaded as ES modules; use `window` explicitly for deliberately shared browser APIs. The default theme supplies one Alpine runtime. A child/parent should not load another global Alpine runtime. `platform:themes:assets` remains a compatibility command in deployment hooks, but now validates package assets instead of publishing copies.
+
+```blade
+<img src="{{ theme_asset('images/logo.svg') }}" alt="Store logo">
+@foreach($theme['assets']['styles'] as $url)
+    <link rel="stylesheet" href="{{ $url }}">
+@endforeach
+@foreach($theme['assets']['scripts'] as $url)
+    <script type="module" src="{{ $url }}"></script>
+@endforeach
+```
+
+The local default theme owns `resources/css/app.css`, `resources/js/app.js`, Tailwind/Vite configuration, its npm lockfile and `dist/build/`. Build it with `npm ci --ignore-scripts --prefix themes/default` then `npm run build --prefix themes/default`; the build regenerates `dist/manifest.json`, including emitted dependency files. Theme `base: './'` ensures relative output URLs. Explicit Tailwind sources cover theme Blade/JS files, including ignored client themes, while excluding built assets and development dependencies; see [Tailwind source detection](https://tailwindcss.com/docs/detecting-classes-in-source-files). Ship the prebuilt package and validate it with `php artisan platform:themes:assets`. Host `npm run build` builds the shared admin only. Deploy updated default/theme layouts alongside this host change: older layouts using `@vite` for shared `resources/css/app.css` or `resources/js/app.js` must switch to the theme asset lists shown above. Other themes may choose their own build tool, provided they generate the same manifest contract.
+
+Happy Tea's bundled logos/illustrations stay in its package; original public legacy paths remain for historical compatibility. Merchant uploads and admin assets retain their existing storage. Existing external font/Swiper/GSAP resources remain in the reference layouts. Package resources are not built during requests. Theme source is ignored by the master repository and must be committed in each client's theme repository.
+
+A changed manifest produces new URLs. An unavailable old revision returns 404; keep releases available during rolling deployments and account for cached pages when removing older releases. Existing old `public/themes` copies are not automatically removed and are no longer required for newly rendered pages. PHP handles first asset requests; normal browser/proxy caching reduces repeat traffic.
 
 ## Preview and activation
 
@@ -64,7 +82,7 @@ php artisan platform:extensions:validate
 php artisan platform:themes:activate mavyn.theme-happy-tea
 ```
 
-Composer post-autoload builds catalogs/publishes assets before package discovery. Build shared frontend assets, cache routes/views, and restart workers as part of the normal deployment. The host view cache does not precompile every theme override; package compilation is covered by the theme tests. Keep hashes/old public artifacts while old requests or rollback releases may reference them; no destructive asset cleanup is automatic.
+Composer post-autoload builds catalogs/validates assets before package discovery. Build each theme inside its package and the shared admin with the host build, cache routes/views, and restart workers during deployment. Package files must remain readable by the PHP process. The host view cache does not precompile every theme override; package compilation is covered by the theme tests. Retain prior release packages for rollback; no destructive asset cleanup is automatic.
 
 A missing/incompatible selected theme, required plugin, template or asset falls back to the valid default for rendering, logs a reason, and preserves selection for diagnosis. A stale/missing installed catalog fails closed and requires rebuild. A render-time PHP/Blade failure has an explicit recovery path rather than hiding an exception: deploy repaired code or select default through the shared admin/CLI. Recover with:
 
@@ -80,3 +98,5 @@ To return to the prior selection, choose its recorded ID after validating that r
 Theme tests cover discovery rules, one-level inheritance, fallback, initial selection, retained settings/content, atomic invalid batches, escaping, permissions, preview isolation/expiry/revocation, rejected preview mutations/order access, required plugins, no-op activation/audit rollback, ordered hashed URLs, and PHP compilation of every installed template. Plain core tests run the catalog/settings algorithms without Laravel. Disposable MySQL checks duplicate activation, activation versus dependency disable and settings versus activation with pre-existing snapshots. Existing commerce tests and the rendered checkout JavaScript checks run through Happy Tea.
 
 Next: non-food pilot and deployment/recovery validation, together with the outstanding existing-store records/files backfill. Browser/accessibility and live pilot validation remain to be performed before release.
+
+Asset delivery validation (2026-10-14): 368 application tests / 8,120 assertions and 20 core-only tests / 90 assertions pass. A disposable browser fixture with no public theme directory verifies catalog/cart/checkout, admin separation, packaged asset responses and responsive layout. The theme builds with its own locked dependencies; shared admin builds separately. Six final automated accessibility scans reported no violations. A direct CSS request through the existing `mavyn.test` Nginx server returned 200 with the correct MIME and immutable caching.

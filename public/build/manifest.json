@@ -68,15 +68,6 @@
       "assets/jetbrains-mono-latin-500-normal-CJOVTJB7.woff"
     ]
   },
-  "resources/css/app.css": {
-    "file": "assets/app-UZ1KENT4.css",
-    "name": "app",
-    "names": [
-      "app.css"
-    ],
-    "src": "resources/css/app.css",
-    "isEntry": true
-  },
   "resources/js/admin.js": {
     "file": "assets/admin-ikNmpQX2.js",
     "name": "admin",
@@ -84,15 +75,6 @@
     "isEntry": true,
     "imports": [
       "_bootstrap-DPDJGqso.js",
-      "_vendor-BsdidMpC.js"
-    ]
-  },
-  "resources/js/app.js": {
-    "file": "assets/app-Bh4QqI6u.js",
-    "name": "app",
-    "src": "resources/js/app.js",
-    "isEntry": true,
-    "imports": [
       "_vendor-BsdidMpC.js"
     ]
   }

@@ -41,7 +41,7 @@ Staging preflight verified all 12 checks, including source inventory, client ide
 
 ## Release and remaining scope
 
-For each fresh client, provision pinned extensions in its own repository, generate the ignored Composer manifest, install dependencies, generate a unique APP_KEY, configure independent database/storage/session/cache/queue names, migrate, provision an administrator and publish theme assets. Never regenerate an existing store's key during migration. See [deployment operations](DEPLOYMENT_OPERATIONS.md), [plugin development](PLUGIN_DEVELOPMENT.md) and [theme development](THEME_DEVELOPMENT.md).
+For each fresh client, provision pinned extensions in its own repository, generate the ignored Composer manifest, install dependencies, generate a unique APP_KEY, configure independent database/storage/session/cache/queue names, migrate, provision an administrator and validate theme assets. Theme resources and build output now stay inside their packages and are served through the manifest-controlled route; see [asset loading](THEME_RUNTIME.md#assets). Never regenerate an existing store's key during migration. See [deployment operations](DEPLOYMENT_OPERATIONS.md), [plugin development](PLUGIN_DEVELOPMENT.md) and [theme development](THEME_DEVELOPMENT.md).
 
 Deploy all five `2026_10_14_*` migrations with the new code; retain backups and restart application/queue workers. Schedule `notifications:dispatch` and operate the configured notification queue. Password-reset links are reported as queued, and the worker must run before token expiry.
 

@@ -12,7 +12,7 @@ final class ReleaseManifest
 {
     private const TREES = ['app', 'config', 'database/migrations', 'packages', 'plugins', 'themes', 'resources', 'routes', 'public/build'];
 
-    private const FILES = ['artisan', 'bootstrap/app.php', 'bootstrap/providers.php', 'composer.json', 'composer.lock', 'package.json', 'package-lock.json', 'vite.config.js', 'tailwind.config.js', 'postcss.config.js', 'public/index.php', 'public/.htaccess', 'public/images/placeholder.svg'];
+    private const FILES = ['artisan', 'bootstrap/app.php', 'bootstrap/providers.php', 'composer.json', 'composer.lock', 'package.json', 'package-lock.json', 'vite.config.js', 'postcss.config.js', 'public/index.php', 'public/.htaccess', 'public/images/placeholder.svg'];
 
     public function inventory(): array
     {
@@ -24,7 +24,11 @@ final class ReleaseManifest
                 }
                 throw new RuntimeException('Release source tree is missing.');
             }
-            foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path($tree), RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
+            $sources = new \RecursiveCallbackFilterIterator(
+                new RecursiveDirectoryIterator(base_path($tree), RecursiveDirectoryIterator::SKIP_DOTS),
+                fn ($file) => ! in_array($file->getFilename(), ['.git', 'node_modules'], true),
+            );
+            foreach (new RecursiveIteratorIterator($sources) as $file) {
                 if ($file->isLink()) {
                     throw new RuntimeException('Release source symlinks are not supported.');
                 }

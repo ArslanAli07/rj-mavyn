@@ -24,9 +24,13 @@ final class InstalledPluginCatalog
         if (($data['format'] ?? null) !== 1 || ($data['lock_hash'] ?? null) !== hash_file('sha256', base_path('composer.lock'))) {
             throw new RuntimeException('Plugin catalog is stale; run platform:extensions:build.');
         }
-        $catalog = new PluginCatalog($data['packages']);
+        $packages = app(PluginManifests::class)->localCatalog($data['packages'], $this->resource(...));
+        $catalog = new PluginCatalog($packages);
         foreach ($catalog->all() as $plugin) {
             $this->resource($plugin, 'composer.json');
+            foreach (array_merge($plugin['manifest']['routes'] ?? [], $plugin['manifest']['migrations'] ?? []) as $relative) {
+                $this->resource($plugin, $relative);
+            }
         }
 
         return $catalog;

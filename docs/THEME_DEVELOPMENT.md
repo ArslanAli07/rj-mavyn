@@ -243,11 +243,11 @@ See [Central media management](MEDIA_MANAGEMENT.md). Bundled icons/fonts/illustr
 
 ### Packaged assets
 
-Each theme can own a frontend package manifest/lockfile and build tooling. Ship prebuilt production assets plus a validated manifest so client servers need not resolve/build a theme's dependencies during a storefront request.
+Keep all theme CSS, JavaScript, images, fonts, frontend configuration and built output inside the theme directory. The implemented runtime serves only manifest-declared files directly through a Laravel route; no `public/` copy is required. See [asset loading and build commands](THEME_RUNTIME.md#assets). Each theme can own a frontend package manifest/lockfile and build tooling. Ship prebuilt production assets plus a validated manifest so client servers need not resolve/build a theme's dependencies during a storefront request.
 
 - Asset paths include theme identity/version or content hashes.
 - Use the platform asset resolver, not filesystem paths into `vendor/`.
-- Keep shared Alpine/platform behavior on the host's supported runtime contract; do not load a second conflicting global runtime.
+- The default theme supplies the storefront Alpine runtime; do not load a second conflicting global runtime.
 - Scope plugin/theme CSS and avoid resetting unrelated components.
 - Parent assets load in the documented order before child overrides.
 - Keep JavaScript optional for supported basic forms where practical; expose accessible loading/error states for asynchronous actions.

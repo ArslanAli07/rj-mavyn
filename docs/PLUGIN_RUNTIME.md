@@ -6,7 +6,7 @@ The runtime discovers Composer-installed plugins, stores client activation/setti
 
 Scaffold with `php artisan platform:plugin:make acme.example`. It creates `plugins/acme.example` with a manifest and an inert entry point; it never requires or activates the package. Add a Composer path repository for `plugins/*` and the actual package development branch/version to the ignored `composer.client.json`, run `php bin/prepare-composer.php`, and resolve the client lockfile with `composer update`. See the [repository setup](../README.md). Plugins require PHP, `mavyn/core`, and `mavyn/contracts` explicitly. Current core/contracts constraints are `^0.1`.
 
-Build `bootstrap/cache/extensions.json` using `php artisan platform:extensions:build`. Composer post-autoload executes this before Laravel discovery. The command reads Composer's installed metadata, checks compatibility, entry point/interface, identity/schema, namespaced resource paths, duplicate migration names, and rejects plugin-level eager autoload files/Laravel auto-discovery. It atomically writes the catalog bound to the lockfile hash. No plugin business registration or database migration runs during build. Transitive dependency eager behavior still requires package review.
+Build `bootstrap/cache/extensions.json` using `php artisan platform:extensions:build`. Composer post-autoload executes this before Laravel discovery. The command uses Composer's installed package graph and reads each plugin's current source manifest, checks compatibility, entry point/interface, identity/schema, namespaced resource paths, duplicate migration names, and rejects plugin-level eager autoload files/Laravel auto-discovery. It atomically writes the catalog bound to the lockfile hash. No plugin business registration or database migration runs during build. Transitive dependency eager behavior still requires package review.
 
 Installed plugin paths must resolve inside the host artifact. Production must ship their files and rebuild catalog/routes when packages change. A missing catalog with installed plugins, stale lock hash, missing resource, invalid enabled graph, or invalid contribution fails closed. The build command remains available to repair a stale catalog. `MAVYN_EXTENSION_CATALOG` can select a controlled deployment/test catalog path; it must never point at merchant uploads.
 
@@ -32,6 +32,26 @@ Manifest metadata is under `composer.json` → `extra.mavyn`:
 ```
 
 Versions come from Composer, not another version field. Active dependencies are an ID-to-Composer-constraint map; conflicts are symmetric at validation even when declared by one side. No automatic dependency activation occurs. Capabilities support `payment.provider`, `fulfillment.provider`, `product.attributes`, and `ordering.policy`. Permission names are the plugin ID plus one action suffix. Unknown manifest/schema fields are rejected. Migration filenames include the plugin ID with dots/hyphens replaced by underscores. Resource paths stay inside the installed package and cannot traverse directories.
+
+## Local development without repeated Composer updates
+
+Install the plugin once using a Composer path repository with `symlink: true`. With `APP_ENV=local`, the host reads installed plugins' current `extra.mavyn` metadata from their own `composer.json` on each application bootstrap/catalog load. Local editing of PHP classes, settings, capabilities, permissions, route declarations and migration declarations does not require `composer update` or a catalog rebuild. New PHP classes under an existing PSR-4 namespace load normally; avoid Composer's authoritative classmap mode during development. Composer documents [path repositories](https://getcomposer.org/doc/05-repositories.md#path) and [development autoload constraints](https://getcomposer.org/doc/articles/autoloader-optimization.md).
+
+```dotenv
+APP_ENV=local
+# Enabled by default for local environments:
+MAVYN_PLUGIN_DEV=true
+```
+
+Refresh the page to use edited code/metadata. Keep local routes uncached; if they were cached, run `php artisan route:clear` before editing routes. Clear compiled views when diagnosing stale presentation. Restart long-running PHP/queue workers to load changed classes. Editing files does not rewrite Composer metadata, change the lockfile, automatically activate a plugin or alter the database.
+
+For a new migration, add its package-relative file to `extra.mavyn.migrations`, then run `php artisan migrate`. The next CLI bootstrap discovers that declaration directly. Migration filenames still include the plugin ID with dots/hyphens replaced by underscores. Activating/using providers with pending migrations remains blocked until those migrations are applied. Deactivation preserves the schema/data. Never edit a migration that has already run; add a new migration.
+
+Verification: seven development regression cases pass, including unchanged Composer files, live route/settings edits, explicit migration gating, production snapshots and dependency/autoload mismatch rejection. Full suite: 375 tests / 8,142 assertions; core-only suite: 20 tests / 90 assertions.
+
+First installation, changed PHP dependencies, autoload mappings, replacement/provided/conflicting packages, package type or package identity still require Composer resolution. The host checks those installed dependency/autoload declarations against the edited source and rejects mismatches rather than pretending missing dependencies are available. Changes to `require-dev` inside a library do not add development tools to the host; install those in the plugin's own development workspace when needed.
+
+Production/staging uses the built catalog; source metadata edits do not automatically change it. `MAVYN_PLUGIN_DEV=true` cannot enable live metadata outside `APP_ENV=local`. Set `MAVYN_PLUGIN_DEV=false` locally to reproduce release behavior. `platform:extensions:build` reads source plugin manifests in any environment and freezes validated metadata without resolving/upgrading packages, provided the installed dependency/autoload graph is unchanged. Thus metadata-only changes can be deployed with a catalog rebuild followed by migration/validation and cache/worker coordination. Version and distribute changed plugin code through its own repository.
 
 ## Deploy and lifecycle
 
@@ -98,6 +118,6 @@ Secrets have empty/null defaults, are encrypted with the application key, never 
 
 Tests cover namespaces/schema, dependency ordering/version/conflict/cycles, readonly typed hooks, priority/exclusivity/sealing/lazy providers, activation/deactivation retry and rollback, deployment migration gating, encrypted/namespaced settings, permission denial, live revision refresh, escaped storefront notices, scaffolding, stale catalogs, and actual cached-route activation guards. `tests/Support/plugin-concurrency.php` uses a disposable MySQL database for duplicate activation, dependent activation vs dependency disable, and settings save vs disable.
 
-Local delivery, manual payment methods, food fields, and store availability are implemented in four [commerce packages](COMMERCE_PLUGINS.md). Next: theme runtime and Happy Tea storefront extraction. Durable domain-event subscriptions, general jobs/draining, product/admin UI slots, automatic update/purge tooling, and theme runtime remain future milestones.
+Local delivery, manual payment methods, food fields, and store availability are implemented in four [commerce packages](COMMERCE_PLUGINS.md). Theme runtime and Happy Tea storefront extraction are implemented. Durable domain-event subscriptions, general jobs/draining, product/admin UI slots and automatic update/purge tooling remain future milestones.
 
 For selectable shipping options, namespaced attribute persistence, supported financial settings and historical snapshots, see [current contracts and acceptance](FIX_VALIDATION.md).

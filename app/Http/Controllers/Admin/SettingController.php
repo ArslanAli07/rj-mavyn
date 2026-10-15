@@ -41,7 +41,7 @@ class SettingController extends Controller
     {
         $definitions = [...(new SettingsSchema)->definitions(), ...app(LegacyCommerceSettings::class)->schema()];
         $mediaFields = ['site_logo_asset_id', 'site_favicon_asset_id', 'homepage_gallery_asset_ids', 'homepage_gallery_asset_ids_present'];
-        $unknown = array_diff(array_keys($request->except(['_token', '_method', ...$mediaFields])), array_keys($definitions));
+        $unknown = array_diff(array_keys($request->except(['_token', '_method', 'pricing_revision', ...$mediaFields])), array_keys($definitions));
         if ($unknown !== []) {
             throw ValidationException::withMessages(array_fill_keys($unknown, 'Unknown setting.'));
         }

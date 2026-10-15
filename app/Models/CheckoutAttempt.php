@@ -17,7 +17,7 @@ class CheckoutAttempt extends Model
 
     protected function casts(): array
     {
-        return ['committed_at' => 'datetime'];
+        return ['committed_at' => 'datetime', 'review_quote' => 'array', 'review_expires_at' => 'datetime'];
     }
 
     public function order(): BelongsTo

@@ -4,6 +4,7 @@ namespace App\Services\Plugins;
 
 use App\Models\Admin;
 use App\Models\AdminAuditLog;
+use App\Services\Pricing\PricingService;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -50,6 +51,7 @@ final class PluginSettings
     {
         abort_unless($actor->hasPermission('extensions.manage'), 403);
         DB::transaction(function () use ($id, $values, $actor) {
+            app(PricingService::class)->lock(true);
             DB::table('extension_runtime')->where('id', 1)->lockForUpdate()->first();
             abort_unless(DB::table('plugin_states')->where('plugin_id', $id)->where('active', true)->lockForUpdate()->first(['plugin_id']) !== null, 409, 'Plugin is disabled.');
             $definitions = $this->definitions($id);

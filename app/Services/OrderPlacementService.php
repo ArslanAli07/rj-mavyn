@@ -3,12 +3,13 @@
 namespace App\Services;
 
 use App\Models\CartItem;
-use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Services\Media\MediaLibraryService;
+use App\Services\Pricing\CheckoutQuoteService;
+use App\Services\Pricing\PricingService;
 use App\Support\Money;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -35,6 +36,8 @@ class OrderPlacementService
 
         try {
             $placement = DB::transaction(function () use ($data, $receipt, &$receiptPath) {
+                app(PricingService::class)->lock();
+                DB::table('extension_runtime')->where('id', 1)->sharedLock()->first();
                 $attempt = $this->attempts->lock($data['idempotency_key'] ?? '');
                 $receiptHash = $this->attempts->receiptHash($receipt);
                 $requestHash = $this->attempts->requestHash($data, $receiptHash ?? ($attempt->committed_at ? $attempt->receipt_hash : null));
@@ -90,22 +93,14 @@ class OrderPlacementService
                 }
 
                 if ($changedPrices) {
-                    // Commit only refreshed cart prices; the customer must resubmit to accept them.
-                    foreach ($items as $item) {
-                        $item->save();
-                    }
-                    $attempt->update(['cart_hash' => $this->attempts->cartHash($items)]);
-
-                    return null;
+                    throw ValidationException::withMessages(['review_token' => 'Prices changed. Request a fresh quote and review it before confirming.']);
                 }
-
                 $this->inventory->assertAvailable($items);
-                $subtotal = Money::decimal($items->sum(fn ($item) => Money::minor($item->price) * $item->quantity));
-                $financials = app(StoreFinancials::class)->snapshot();
-                $coupon = $this->validatedCoupon($subtotal, $data['email']);
-                $discount = $coupon ? $coupon->calculateDiscount($subtotal) : '0.00';
-                $taxMinor = app(StoreFinancials::class)->taxMinor(Money::minor($subtotal), Money::minor($discount), $financials['tax_rate']);
-                $shipping = app(ShippingService::class)->choose($data, Money::minor($subtotal));
+                $quotes = app(CheckoutQuoteService::class);
+                $terms = $quotes->calculate($data, $items);
+                $quotes->assertReviewed($attempt, $data, $terms['review']);
+                ['subtotal' => $subtotal, 'financials' => $financials, 'coupon' => $coupon, 'discount' => $discount,
+                    'taxMinor' => $taxMinor, 'shipping' => $shipping, 'payment' => $payment] = $terms;
                 $quote = $shipping['quote'];
                 $address = $data['address_line'];
                 if (! empty($data['map_link'])) {
@@ -210,10 +205,6 @@ class OrderPlacementService
             $this->cart->forgetCachedState();
         }
 
-        if (! $placement) {
-            throw ValidationException::withMessages(['cart' => 'Prices have changed. Review your updated cart and submit again to accept the new prices.']);
-        }
-
         if (! $placement->replayed) {
             $this->cart->removeCoupon();
             Cache::forget('admin_dashboard_stats');
@@ -221,24 +212,5 @@ class OrderPlacementService
         }
 
         return $placement;
-    }
-
-    private function validatedCoupon(string $subtotal, string $email): ?Coupon
-    {
-        $code = session('coupon_code');
-        if (! $code) {
-            return null;
-        }
-
-        $coupon = Coupon::where('code', $code)->lockForUpdate()->first();
-        if (! $coupon || ! $coupon->is_valid || Money::minor($subtotal) < Money::minor($coupon->minimum_order)) {
-            throw ValidationException::withMessages(['coupon' => 'Your coupon is no longer valid. Remove it or choose another coupon.']);
-        }
-
-        if (app(CouponIdentityService::class)->limitReached($coupon, $email, locked: true)) {
-            throw ValidationException::withMessages(['coupon' => 'The coupon usage limit has been reached for this customer.']);
-        }
-
-        return $coupon;
     }
 }

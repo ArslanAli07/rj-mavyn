@@ -1,4 +1,5 @@
 @php
+    $historyOrder = $item instanceof \App\Models\OrderItem ? ($order ?? $item->order) : null;
     $variantLabel = $item->variant_label ?? null;
     $options = $item->options_snapshot ?? [];
     $specialRequest = $item->special_request ?? null;
@@ -20,7 +21,7 @@
                 {{ $option['value_name'] ?? '' }}
                 @if(!empty($option['price_adjustment']) && (float) $option['price_adjustment'] != 0)
                     <span class="{{ $adjustmentClass ?? 'text-espresso-500' }}">
-                        ({{ (float) $option['price_adjustment'] > 0 ? '+' : '' }}{{ format_price($option['price_adjustment']) }})
+                        ({{ (float) $option['price_adjustment'] > 0 ? '+' : '' }}{{ ($historyOrder ? order_price($historyOrder, $option['price_adjustment']) : format_price($option['price_adjustment'], $item->currency ?? null)) }})
                     </span>
                 @endif
             </p>

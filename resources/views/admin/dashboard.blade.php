@@ -5,6 +5,12 @@
         <p class="small text-body-secondary mt-1">Track revenue, orders, and stock at a glance.</p>
     </div>
 
+    <form method="GET" class="mb-3 d-flex gap-2 align-items-center">
+        <label for="report-currency">Report currency</label>
+        <select id="report-currency" name="currency" class="form-select w-auto">
+            @foreach(array_keys(\Mavyn\Core\Currencies::SYMBOLS) as $code)<option value="{{ $code }}" @selected($code === $reportCurrency)>{{ $code }}</option>@endforeach
+        </select><button class="btn btn-primary">Apply</button>
+    </form>
     {{-- Stats Cards --}}
     <div class="d-grid admin-cols-1 admin-cols-sm-2 admin-cols-lg-4 gap-4 mb-5">
         
@@ -13,7 +19,7 @@
             <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-success-subtle text-success d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.2 0-4 1.1-4 2.5S9.8 13 12 13s4 1.1 4 2.5S14.2 18 12 18s-4-1.1-4-2.5M12 6v14M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
             <div>
                 <span class="text-body-secondary admin-kpi-label">Total sales</span>
-                <span class="admin-kpi text-body mt-1">{{ format_price($stats['total_sales']) }}</span>
+                <span class="admin-kpi text-body mt-1">{{ format_price($stats['total_sales'], $reportCurrency) }}</span>
             </div>
         </div>
 
@@ -22,7 +28,7 @@
             <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19h16M5 15l5-5 4 3 6-8m-5 0h5v5"/></svg></div>
             <div>
                 <span class="text-body-secondary admin-kpi-label">Today's sales</span>
-                <span class="admin-kpi text-body mt-1">{{ format_price($stats['today_sales']) }}</span>
+                <span class="admin-kpi text-body mt-1">{{ format_price($stats['today_sales'], $reportCurrency) }}</span>
             </div>
         </div>
 
@@ -30,7 +36,7 @@
         <div class="card admin-kpi-card bg-white border border-light-subtle rounded-2 p-4 shadow-sm position-relative">
             <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14v14H5zM8 3v4m8-4v4M5 10h14m-7 3v3l2 1"/></svg></div>
             <div>
-                <span class="text-body-secondary admin-kpi-label">Pending / total</span>
+                <span class="text-body-secondary admin-kpi-label">Pending / total (all currencies)</span>
                 <span class="admin-kpi text-body mt-1">
                     {{ $stats['pending_orders'] }} <span class="text-body-secondary small">/ {{ $stats['total_orders'] }}</span>
                 </span>
@@ -56,7 +62,7 @@
         {{-- Revenue Chart --}}
         <div class="card bg-white border border-light-subtle rounded-2 p-4 shadow-sm admin-span-lg-2 d-flex flex-column admin-height-96">
             <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-light-subtle pb-2">
-                <h3 class="text-body admin-section-title">7-day revenue trend (PKR)</h3>
+                <h3 class="text-body admin-section-title">7-day revenue trend ({{ $reportCurrency }})</h3>
             </div>
             <div class="flex-grow-1 admin-min-height-0 position-relative">
                 <canvas id="revenueChart" class="w-100 h-100"></canvas>
@@ -130,7 +136,7 @@
                                         {{ ucfirst(str_replace('_', ' ', $order->status)) }}
                                     </span>
                                 </td>
-                                <td class="fw-semibold text-primary price num">{{ format_price($order->grand_total) }}</td>
+                                <td class="fw-semibold text-primary price num">{{ order_price($order, $order->grand_total) }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('admin.orders.show', $order->id) }}" class="d-inline-flex align-items-center justify-content-center px-3 py-1 bg-body-tertiary small fw-semibold text-body rounded-2">
                                         Manage
@@ -147,7 +153,7 @@
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                fetch('{{ route('admin.chart.data') }}')
+                fetch('{{ route('admin.chart.data', ['currency' => $reportCurrency]) }}')
                     .then(res => res.json())
                     .then(data => {
                         const labels = data.map(item => item.date);
@@ -161,7 +167,7 @@
                             data: {
                                 labels: labels,
                                 datasets: [{
-                                    label: 'Daily revenue (PKR)',
+                                    label: @js('Daily revenue ('.$reportCurrency.')'),
                                     data: revenues,
                                     borderColor: color('--chart-revenue'),
                                     backgroundColor: 'rgba(79, 70, 229, 0.08)',

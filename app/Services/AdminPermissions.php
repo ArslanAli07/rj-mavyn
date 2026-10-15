@@ -10,7 +10,7 @@ final class AdminPermissions
 {
     public static function all(): array
     {
-        $permissions = ['dashboard.view', 'inventory.manage', 'orders.payment', 'orders.receipts', 'media.private', 'newsletter.export', 'staff.manage', 'audit.view', 'extensions.view', 'extensions.manage', 'themes.view', 'themes.manage'];
+        $permissions = ['pricing.view', 'pricing.manage', 'currencies.manage', 'dashboard.view', 'inventory.manage', 'orders.payment', 'orders.receipts', 'media.private', 'newsletter.export', 'staff.manage', 'audit.view', 'extensions.view', 'extensions.manage', 'themes.view', 'themes.manage'];
         foreach (['products', 'categories', 'occasions', 'home-slides', 'delivery-zones', 'orders', 'customers', 'coupons', 'testimonials', 'newsletter', 'faqs', 'contact-messages', 'seo', 'settings', 'media'] as $domain) {
             foreach (['view', 'manage', 'delete'] as $action) {
                 $permissions[] = $domain.'.'.$action;

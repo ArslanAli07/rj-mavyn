@@ -14,6 +14,7 @@ use App\Services\AdminMutation;
 use App\Services\CatalogSlugService;
 use App\Services\InventoryService;
 use App\Services\Media\MediaLibraryService;
+use App\Services\Pricing\PricingService;
 use App\Services\ProductAttributesService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -71,6 +72,7 @@ class ProductController extends Controller
         app(CatalogSlugService::class)->validate(Product::class, $data['slug'], 'title');
 
         DB::transaction(function () use ($request, $data) {
+            app(PricingService::class)->lock(true);
             DB::table('extension_runtime')->where('id', 1)->sharedLock()->first();
             if ($request->hasFile('main_image')) {
                 $data['main_image'] = $this->storeProductImage($request->file('main_image'), 800);
@@ -139,6 +141,7 @@ class ProductController extends Controller
         $data = $this->validateProduct($request, $product);
 
         DB::transaction(function () use ($request, $product, $data) {
+            app(PricingService::class)->lock(true);
             $product = $this->inventory->lockProducts([$product->id])->get($product->id);
             $this->inventory->configureProduct($product, $request->input('inventory_mode', $product->inventory_mode), (int) $data['stock_quantity'],
                 $request->has('inventory_version') ? $request->integer('inventory_version') : null, $request->user('admin'));
@@ -255,6 +258,7 @@ class ProductController extends Controller
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'display_order' => 'required|integer|min:0',
+            'price_currency' => 'sometimes|in:PKR,USD,EUR,GBP,AUD,CAD,AED,SAR,INR',
             'price' => 'required|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0|lt:price',
             'short_description' => 'nullable|string|max:500',
@@ -436,6 +440,7 @@ class ProductController extends Controller
             }
 
             $attributes = [
+                'price_currency' => $product->getRawOriginal('price_currency'),
                 'name' => $name,
                 'weight' => $name,
                 'price' => $payload['price'],
@@ -531,6 +536,7 @@ class ProductController extends Controller
 
             foreach (array_values($payload['values'] ?? []) as $valueIndex => $valuePayload) {
                 $valueAttributes = [
+                    'price_currency' => $product->getRawOriginal('price_currency'),
                     'name' => trim((string) $valuePayload['name']),
                     'price_adjustment' => isset($valuePayload['price_adjustment']) && $valuePayload['price_adjustment'] !== ''
                         ? $valuePayload['price_adjustment']
@@ -562,6 +568,7 @@ class ProductController extends Controller
     protected function deleteProduct(Product $product): void
     {
         DB::transaction(function () use ($product) {
+            app(PricingService::class)->lock(true);
             $this->inventory->lockProducts([$product->id]);
             $this->inventory->assertCanDeleteProduct($product);
             $product->delete();

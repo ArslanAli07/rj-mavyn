@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Services\Plugins\PluginRuntime;
+use App\Services\Pricing\PricingService;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -10,6 +12,8 @@ final class CartOwnerLockService
     public function synchronized(array $owners, callable $operation): mixed
     {
         return DB::transaction(function () use ($owners, $operation) {
+            app(PricingService::class)->lock();
+            app(PluginRuntime::class)->refresh();
             $this->lock($owners);
 
             return $operation();

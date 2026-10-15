@@ -13,7 +13,7 @@ class HomeController extends Controller
 {
     public function index(): View
     {
-        $homeCategories = Cache::remember('home_categories', 3600, fn () => Category::active()
+        $homeCategories = Category::active()
             ->where('show_on_homepage', true)
             ->orderBy('display_order')
             ->with(['products' => fn ($q) => $q->active()
@@ -22,8 +22,7 @@ class HomeController extends Controller
                 ->orderBy('display_order')
                 ->latest(),
             ])
-            ->get()
-        );
+            ->get();
 
         $testimonials = Cache::remember('home_testimonials', 3600, fn () => Testimonial::featured()->orderBy('display_order')->take(6)->get()
         );

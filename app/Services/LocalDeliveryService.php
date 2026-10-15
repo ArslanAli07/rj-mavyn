@@ -7,6 +7,7 @@ use Illuminate\Validation\ValidationException;
 use Mavyn\Contracts\Plugins\DeliveryZoneStore;
 use Mavyn\Contracts\Plugins\ShippingQuote;
 use Mavyn\Contracts\Plugins\ShippingRequest;
+use Mavyn\Contracts\Pricing\PriceBook;
 
 final class LocalDeliveryService
 {
@@ -26,8 +27,8 @@ final class LocalDeliveryService
         if (! in_array(strtolower(trim($country)), ['pakistan', 'pk'], true)) {
             throw ValidationException::withMessages(['country' => 'Local delivery is unavailable in this country.']);
         }
-        $quote = $registry->get('fulfillment', 'mavyn.local-delivery.zone')->quote(new ShippingRequest($subtotalMinor, 'PKR', 'PK', zone: (string) $zoneId));
-        if (! $quote || $quote->currency !== 'PKR') {
+        $quote = $registry->get('fulfillment', 'mavyn.local-delivery.zone')->quote(new ShippingRequest($subtotalMinor, app(PriceBook::class)->context()->currency, 'PK', zone: (string) $zoneId));
+        if (! $quote || $quote->currency !== app(PriceBook::class)->context()->currency) {
             throw ValidationException::withMessages(['delivery_zone_id' => 'Choose an available delivery zone.']);
         }
 

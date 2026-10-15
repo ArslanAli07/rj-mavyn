@@ -73,7 +73,7 @@
                                             {{ str_replace('_', ' ', $o->status) }}
                                         </span>
                                     </td>
-                                    <td class="fw-semibold text-primary price num">{{ format_price($o->grand_total) }}</td>
+                                    <td class="fw-semibold text-primary price num">{{ order_price($o, $o->grand_total) }}</td>
                                     <td class="text-end">
                                         <a href="{{ route('admin.orders.show', $o->id) }}" class="d-inline-flex align-items-center justify-content-center px-2 py-1 bg-body-tertiary small fw-semibold text-body rounded-2">
                                             Details

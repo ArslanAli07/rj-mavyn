@@ -47,13 +47,13 @@
                                 <td class="text-body font-monospace sku">{{ $c->code }}</td>
                                 <td class="fw-semibold text-body price num">
                                     @if($c->type === 'fixed')
-                                        {{ format_price($c->amount) }}
+                                        {{ ($c->price_currency ? format_price($c->amount, $c->price_currency) : 'Currency needs review') }}
                                     @else
                                         {{ (int) $c->amount }}%
                                     @endif
                                 </td>
-                                <td class="price num">{{ format_price($c->minimum_order ?? 0) }}</td>
-                                <td class="price num">{{ $c->maximum_discount ? format_price($c->maximum_discount) : 'N/A' }}</td>
+                                <td class="price num">{{ ($c->price_currency ? format_price($c->minimum_order ?? 0, $c->price_currency) : 'Currency needs review') }}</td>
+                                <td class="price num">{{ $c->maximum_discount !== null ? ($c->price_currency ? format_price($c->maximum_discount, $c->price_currency) : 'Currency needs review') : 'N/A' }}</td>
                                 <td>
                                     {{ $c->usage_count }} / {{ $c->usage_limit ?? '∞' }}
                                 </td>

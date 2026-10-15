@@ -41,7 +41,7 @@
                             <tr>
                                 <td class="admin-bulk-col"><x-admin.bulk-checkbox :value="$zone->id" :label="'Select ' . $zone->name" /></td>
                                 <td class="fw-semibold text-body small">{{ $zone->name }}</td>
-                                <td class="text-body fw-semibold small price num">{{ format_price($zone->delivery_fee) }}</td>
+                                <td class="text-body fw-semibold small price num">{{ ($zone->price_currency ? format_price($zone->delivery_fee, $zone->price_currency) : 'Currency needs review') }}</td>
                                 <td class="text-body-secondary fw-semibold">{{ $zone->display_order }}</td>
                                 <td>
                                     <span class="badge small px-2 py-1 rounded-pill fw-semibold {{ $zone->is_active ? 'bg-success-subtle text-success' : 'bg-body-secondary text-body-secondary' }}">

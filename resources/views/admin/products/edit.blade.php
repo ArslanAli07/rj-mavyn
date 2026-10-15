@@ -1,4 +1,5 @@
 <x-admin-layout title="Edit product — {{ $product->title }}">
+    @php($legacyCurrency = ($product ?? $coupon ?? $deliveryZone ?? null)?->getRawOriginal('price_currency') ?? app(\Mavyn\Contracts\Pricing\PriceBook::class)->context()->currency)
 
     {{-- Header --}}
     <div class="mb-5 d-flex align-items-center justify-content-between border-bottom border-light-subtle pb-3">
@@ -13,6 +14,7 @@
 
     <form action="{{ route('admin.products.update', $product->id) }}" method="POST" enctype="multipart/form-data" class="admin-stack-6">
         @csrf
+                @include('admin.partials.pricing-context')
         @method('PUT')
 
         <div class="d-grid admin-cols-1 admin-cols-lg-12 gap-5 align-items-start">

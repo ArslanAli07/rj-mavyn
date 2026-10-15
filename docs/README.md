@@ -15,6 +15,7 @@ These documents describe the platform and its implemented increments. The progre
 | [Inventory operations](INVENTORY_OPERATIONS.md) | Stock policies, reservations, staff adjustments, order transitions, and concurrency checks |
 | [Database setup](DATABASE_SETUP.md) | Required settings/admin initialization without demo catalog or media content |
 | [Admin operations](ADMIN_OPERATIONS.md) | Staff permissions, sensitive actions, retained audit history, and access assignment |
+| [Independent currency pricing](MULTI_CURRENCY.md) | Public price-book/quote contracts, currency eligibility, provenance migration, concurrency, and client upgrades |
 | [Checkout operations](CHECKOUT_OPERATIONS.md) | Checkout keys, coupon identity, receipt recovery, durable confirmations, and retry checks |
 | [Local browser testing](LOCAL_TESTING.md) | Admin setup, media worker, and product-image checks |
 | [Implementation progress](progress.md) | Completed increments, verification, setup requirements, and remaining work |

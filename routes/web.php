@@ -56,6 +56,8 @@ Route::get('/orders/track/{token}', [OrderController::class, 'trackGuestOrder'])
 Route::prefix('checkout')->name('checkout.')->group(function () {
     Route::middleware('ordering')->group(function () {
         Route::get('/', [CheckoutController::class, 'index'])->name('index');
+        Route::post('/quote', [CheckoutController::class, 'quote'])->name('quote')->middleware('throttle:60,1');
+        Route::post('/options', [CheckoutController::class, 'options'])->name('options')->middleware('throttle:60,1');
         Route::post('/place-order', [CheckoutController::class, 'placeOrder'])->name('place-order')->middleware('honeypot');
     });
     Route::get('/payment-instructions/{order}', [CheckoutController::class, 'paymentInstructions'])->name('payment-instructions');

@@ -8,6 +8,9 @@
         <section class="bg-white border rounded-2 p-4 mb-3">
             <h2 class="admin-section-title">{{ $plugin['manifest']['name'] }}</h2>
             <p class="small mb-3">{{ $plugin['version'] }} · {{ $active ? 'Active' : 'Disabled' }}</p>
+            @if($active && \Illuminate\Support\Facades\Route::has('plugin.'.$id.'.admin.index') && auth('admin')->user()->hasPermission($id.'.manage'))
+                <a class="btn btn-outline-primary mb-3" href="{{ route('plugin.'.$id.'.admin.index') }}">Manage {{ $plugin['manifest']['name'] }}</a>
+            @endif
             @if(auth('admin')->user()->hasPermission('extensions.manage'))
                 <form method="POST" action="{{ route('admin.extensions.update', $id) }}" class="mb-3">
                     @csrf @method('PUT')

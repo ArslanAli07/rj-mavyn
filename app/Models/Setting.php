@@ -4,14 +4,44 @@ namespace App\Models;
 
 use App\Models\Concerns\HasLibraryMedia;
 use App\Services\Plugins\LegacyCommerceSettings;
+use App\Services\Pricing\PricingService;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class Setting extends Model
 {
     use HasLibraryMedia;
 
     protected $fillable = ['key', 'value', 'group', 'type'];
+
+    public function save(array $options = [])
+    {
+        $pricing = app(PricingService::class);
+        if (! in_array($this->key, ['store_currency', 'store_currency_symbol', 'store_tax_rate', 'store_country', 'store_country_code', 'store_timezone'], true) || ! $pricing->installed()) {
+            return parent::save($options);
+        }
+
+        return DB::transaction(function () use ($pricing, $options) {
+            $context = $pricing->lock(true);
+            if (($this->key === 'store_currency' && $this->value !== $context->currency) ||
+                ($this->key === 'store_currency_symbol' && $this->value !== $context->symbol)) {
+                throw ValidationException::withMessages([$this->key => 'Change the selling currency from currency management.']);
+            }
+            if ($this->key === 'store_tax_rate' && (Money::minor($this->value) < 0 || Money::minor($this->value) > 10000)) {
+                throw ValidationException::withMessages([$this->key => 'Tax must be between zero and 100 percent.']);
+            }
+            $changed = $this->isDirty();
+            $saved = parent::save($options);
+            if ($saved && $changed) {
+                $pricing->bump();
+            }
+
+            return $saved;
+        });
+    }
 
     /**
      * Load ALL settings into a single cache entry.
@@ -32,6 +62,11 @@ class Setting extends Model
      */
     public static function get(string $key, mixed $default = null): mixed
     {
+        if (in_array($key, ['store_currency', 'store_currency_symbol'], true) && app(PricingService::class)->installed()) {
+            $context = app(PricingService::class)->context();
+
+            return $key === 'store_currency' ? $context->currency : $context->symbol;
+        }
         $bridge = app(LegacyCommerceSettings::class);
         if ($bridge->owns($key)) {
             return $bridge->read($key, $default);

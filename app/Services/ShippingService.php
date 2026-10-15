@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Services\Plugins\PluginRuntime;
+use App\Services\Pricing\PricingService;
 use Illuminate\Validation\ValidationException;
 use Mavyn\Contracts\Plugins\DeliveryZoneStore;
 use Mavyn\Contracts\Plugins\SelectableShippingProvider;
@@ -24,7 +25,7 @@ final class ShippingService
             throw ValidationException::withMessages(['country' => 'Use a supported country name or two-letter country code.']);
         }
 
-        return new ShippingRequest($subtotalMinor, (string) setting('store_currency', config('site.currency', 'PKR')), $code, $postalCode, $option);
+        return new ShippingRequest($subtotalMinor, app(PricingService::class)->assertReady()->currency, $code, $postalCode, $option);
     }
 
     public function choices(ShippingRequest $request): array
@@ -56,7 +57,7 @@ final class ShippingService
                     throw new RuntimeException('Duplicate shipping option.');
                 }
                 if ($option->currency !== $request->currency) {
-                    throw new RuntimeException('Shipping option currency does not match the store.');
+                    continue; // Unsupported denominations never become selected-currency options.
                 }
                 $choices[$token] = ['provider_key' => $key, 'option' => $option, 'legacy_zone_id' => $key === 'mavyn.local-delivery.zone' && ctype_digit($option->id) ? (int) $option->id : null];
             }

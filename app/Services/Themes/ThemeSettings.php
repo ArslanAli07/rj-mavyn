@@ -4,6 +4,7 @@ namespace App\Services\Themes;
 
 use App\Models\Admin;
 use App\Models\AdminAuditLog;
+use App\Services\Pricing\PricingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
@@ -59,6 +60,7 @@ final class ThemeSettings
         }
         $values = $this->normalize($id, $values);
         DB::transaction(function () use ($id, $values, $actor) {
+            app(PricingService::class)->lock(true);
             DB::table('extension_runtime')->where('id', 1)->lockForUpdate()->first();
             foreach ($values as $key => $value) {
                 DB::table('theme_settings')->upsert([['theme_id' => $id, 'key' => $key, 'value' => json_encode($value, JSON_THROW_ON_ERROR), 'created_at' => now(), 'updated_at' => now()]], ['theme_id', 'key'], ['value', 'updated_at']);

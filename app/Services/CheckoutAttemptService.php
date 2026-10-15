@@ -76,6 +76,7 @@ class CheckoutAttemptService
         $rows = $items->sortBy('id')->map(fn ($item) => [
             'id' => (int) $item->id, 'product_id' => (int) $item->product_id,
             'variant_id' => (int) $item->product_variant_id, 'quantity' => (int) $item->quantity,
+            'currency' => $item->currency, 'pricing_revision' => (int) $item->pricing_revision,
             'price' => (string) $item->price, 'configuration' => $item->configuration_signature,
             'options' => $item->options_snapshot ?? [], 'special_request' => $item->special_request,
         ])->values()->all();

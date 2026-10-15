@@ -5,6 +5,7 @@ namespace App\Services\Themes;
 use App\Models\Admin;
 use App\Models\AdminAuditLog;
 use App\Services\Plugins\InstalledPluginCatalog;
+use App\Services\Pricing\PricingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
@@ -54,6 +55,7 @@ final class ThemeManager
         }
         try {
             DB::transaction(function () use ($id, $actor) {
+                app(PricingService::class)->lock(true);
                 DB::table('extension_runtime')->where('id', 1)->lockForUpdate()->first();
                 $current = DB::table('theme_selection')->where('id', 1)->lockForUpdate()->first();
                 $this->validate($id);

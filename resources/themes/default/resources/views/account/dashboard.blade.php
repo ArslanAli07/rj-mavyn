@@ -58,7 +58,7 @@
                         <div class="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-xl">💰</div>
                         <div class="space-y-0.5">
                             <span class="text-espresso-400 text-[10px] font-semibold uppercase tracking-wider">Delivered Spent</span>
-                            <span class="text-2xl font-bold text-espresso-800 block">{{ format_price($totalSpent) }}</span>
+                            <span class="text-2xl font-bold text-espresso-800 block">@forelse($spentByCurrency as $code => $spent)<span>{{ $code }} {{ format_price($spent, $code) }}</span>@empty<span>{{ format_price(0) }}</span>@endforelse</span>
                         </div>
                     </div>
                     <div class="bg-white border border-cream-150 rounded-3xl p-6 shadow-sm flex items-center gap-4">
@@ -116,7 +116,7 @@
                                                     {{ str_replace('_', ' ', $o->status) }}
                                                 </span>
                                             </td>
-                                            <td class="px-4 py-3 text-primary-600 font-bold">{{ format_price($o->grand_total) }}</td>
+                                            <td class="px-4 py-3 text-primary-600 font-bold">{{ order_price($o, $o->grand_total) }}</td>
                                             <td class="px-4 py-3 text-right">
                                                 <a href="{{ route('orders.show', $o->id) }}" class="inline-flex items-center justify-center px-3 py-1.5 bg-cream-100 hover:bg-primary-500 hover:text-white transition-colors rounded-xl text-[10px] font-semibold text-espresso-800">
                                                     Details

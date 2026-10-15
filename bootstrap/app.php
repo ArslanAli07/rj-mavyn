@@ -6,6 +6,7 @@ use App\Http\Middleware\AuthorizePlugin;
 use App\Http\Middleware\EnsureOrderingEnabled;
 use App\Http\Middleware\EnsurePluginActive;
 use App\Http\Middleware\Honeypot;
+use App\Http\Middleware\PricingContext;
 use App\Http\Middleware\ThemePreview;
 use App\Services\Plugins\PluginRoutes;
 use Illuminate\Foundation\Application;
@@ -28,7 +29,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [ThemePreview::class]);
+        $middleware->web(append: [PricingContext::class, ThemePreview::class]);
         $middleware->alias([
             'admin' => AdminMiddleware::class,
             'admin.permissions' => AuthorizeAdmin::class,

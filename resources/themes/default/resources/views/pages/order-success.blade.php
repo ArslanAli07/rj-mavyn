@@ -23,7 +23,7 @@
                 </div>
                 <div class="text-right flex flex-col gap-0.5">
                     <span class="text-espresso-400 font-medium">Total Amount</span>
-                    <span class="text-primary-600 font-bold text-sm">{{ format_price($order->grand_total) }}</span>
+                    <span class="text-primary-600 font-bold text-sm">{{ order_price($order, $order->grand_total) }}</span>
                 </div>
             </div>
 

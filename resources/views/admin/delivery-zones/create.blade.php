@@ -1,4 +1,5 @@
 <x-admin-layout title="Create delivery zone">
+    @php($legacyCurrency = ($product ?? $coupon ?? $deliveryZone ?? null)?->getRawOriginal('price_currency') ?? app(\Mavyn\Contracts\Pricing\PriceBook::class)->context()->currency)
 
     {{-- Header --}}
     <div class="mb-5 d-flex align-items-center justify-content-between border-bottom border-light-subtle pb-3">
@@ -13,6 +14,7 @@
 
     <form action="{{ route('admin.delivery-zones.store') }}" method="POST" class="bg-white border border-light-subtle rounded-2 p-4 shadow-sm admin-max-width-2xl admin-stack-4">
         @csrf
+                @include('admin.partials.pricing-context')
 
         <div class="d-grid admin-cols-1 admin-cols-sm-2 gap-4">
             <div>
@@ -21,7 +23,7 @@
                 @error('name') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label for="delivery_fee" class="form-label">Delivery fee (PKR) *</label>
+                <label for="delivery_fee" class="form-label">Delivery fee ({{ $legacyCurrency }}) *</label>
                 <input type="number" step="0.01" id="delivery_fee" name="delivery_fee" value="{{ old('delivery_fee', 0) }}" placeholder="e.g. 150" required class="form-control small num">
                 @error('delivery_fee') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
             </div>

@@ -16,9 +16,10 @@ class DeliveryZoneRequest extends FormRequest
         $id = $this->route('delivery_zone') ? $this->route('delivery_zone')->id : null;
 
         return [
-            'name'          => 'required|string|max:100|unique:delivery_zones,name,' . $id,
-            'delivery_fee'  => 'required|numeric|min:0',
-            'is_active'     => 'boolean',
+            'name' => 'required|string|max:100|unique:delivery_zones,name,'.$id,
+            'price_currency' => 'sometimes|in:PKR,USD,EUR,GBP,AUD,CAD,AED,SAR,INR',
+            'delivery_fee' => 'required|numeric|min:0',
+            'is_active' => 'boolean',
             'display_order' => 'integer|min:0',
         ];
     }

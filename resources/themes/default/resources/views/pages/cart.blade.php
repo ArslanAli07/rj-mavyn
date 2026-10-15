@@ -60,7 +60,7 @@
                                     {{-- Price --}}
                                     <div class="col-span-4 sm:col-span-2 text-left sm:text-center mt-2 sm:mt-0">
                                         <span class="sm:hidden text-xs text-espresso-400 block font-medium">Price:</span>
-                                        <span class="font-semibold text-espresso-800">{{ format_price($item->price) }}</span>
+                                        <span class="font-semibold text-espresso-800">{{ $item->pricing_available === false ? 'Unavailable in this currency' : format_price($item->price, $item->currency) }}</span>
                                     </div>
 
                                     {{-- Quantity Selector --}}
@@ -84,7 +84,7 @@
                                     {{-- Total --}}
                                     <div class="col-span-4 sm:col-span-2 text-right mt-2 sm:mt-0">
                                         <span class="sm:hidden text-xs text-espresso-400 block font-medium">Total:</span>
-                                        <span class="font-bold text-primary-600">{{ format_price($item->line_total) }}</span>
+                                        <span class="font-bold text-primary-600">{{ $item->pricing_available === false ? 'Unavailable' : format_price($item->line_total, $item->currency) }}</span>
                                     </div>
                                 </div>
                             @endforeach

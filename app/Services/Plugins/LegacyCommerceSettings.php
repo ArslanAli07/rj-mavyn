@@ -4,6 +4,7 @@ namespace App\Services\Plugins;
 
 use App\Models\Admin;
 use App\Models\Setting;
+use App\Services\Pricing\PricingService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -67,6 +68,7 @@ final class LegacyCommerceSettings
         }
         $value = $definition->normalize($value);
         DB::transaction(function () use ($field, $key, $value, $actor) {
+            app(PricingService::class)->lock(true);
             DB::table('extension_runtime')->where('id', 1)->lockForUpdate()->first();
             if ($actor) {
                 abort_unless(DB::table('plugin_states')->where('plugin_id', $field['plugin'])->where('active', true)->lockForUpdate()->first() !== null, 409, 'Plugin is disabled.');

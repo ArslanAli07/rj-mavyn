@@ -8,6 +8,7 @@ use App\Services\LocalDeliveryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Mavyn\Contracts\Pricing\PriceBook;
 
 class AccountController extends Controller
 {
@@ -18,18 +19,17 @@ class AccountController extends Controller
         // Load last 5 orders for the recent orders list.
         $orders = $user->orders()->latest()->take(5)->get();
 
-        // Single aggregated query replaces 3 separate count()/sum() calls.
-        $orderStats = $user->orders()
-            ->selectRaw('COUNT(*) as total, SUM(CASE WHEN status = "delivered" THEN grand_total ELSE 0 END) as spent')
-            ->first();
+        $spentByCurrency = $user->orders()->where('status', 'delivered')->selectRaw('currency, SUM(grand_total) as spent')->groupBy('currency')->pluck('spent', 'currency')->all();
+        $totalOrders = $user->orders()->count();
 
         $wishlistCount = $user->wishlists()->count();
 
         return view('account.dashboard', [
             'user' => $user,
             'orders' => $orders,
-            'totalOrders' => $orderStats->total ?? 0,
-            'totalSpent' => $orderStats->spent ?? 0,
+            'totalOrders' => $totalOrders,
+            'spentByCurrency' => $spentByCurrency,
+            'totalSpent' => $spentByCurrency[app(PriceBook::class)->context()->currency] ?? '0.00',
             'wishlistCount' => $wishlistCount,
         ]);
     }

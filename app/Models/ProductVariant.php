@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCurrencyPrices;
 use App\Services\InventoryService;
+use App\Services\Pricing\PricingService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,18 +12,28 @@ use Illuminate\Support\Facades\DB;
 
 class ProductVariant extends Model
 {
+    use HasCurrencyPrices;
+
     protected $attributes = ['track_inventory' => false, 'in_stock' => true, 'stock_quantity' => 0, 'reserved_quantity' => 0, 'inventory_version' => 0];
 
     public function delete()
     {
         return DB::transaction(function () {
+            app(PricingService::class)->lock(true);
             app(InventoryService::class)->lockProducts([$this->product_id]);
 
-            return parent::delete();
+            $deleted = parent::delete();
+            if ($deleted && app(PricingService::class)->installed()) {
+                DB::table('currency_prices')->where('kind', $this->priceKind())->where('entity_id', $this->id)->delete();
+                app(PricingService::class)->bump();
+            }
+
+            return $deleted;
         });
     }
 
     protected $fillable = [
+        'price_currency',
         'product_id',
         'name',
         'weight',
@@ -74,14 +86,14 @@ class ProductVariant extends Model
         return $this->name ?: ($this->weight ?: 'Variant');
     }
 
-    public function getEffectivePriceAttribute(): string
+    public function getEffectivePriceAttribute(): ?string
     {
         return $this->discount_price ?? $this->price;
     }
 
     public function getIsOnSaleAttribute(): bool
     {
-        return $this->discount_price && $this->discount_price < $this->price;
+        return $this->discount_price !== null && $this->price !== null && $this->discount_price < $this->price;
     }
 
     public function getDiscountPercentageAttribute(): int
@@ -91,5 +103,15 @@ class ProductVariant extends Model
         }
 
         return (int) round((($this->price - $this->discount_price) / $this->price) * 100);
+    }
+
+    public function getPriceAttribute($value): ?string
+    {
+        return $this->currencyDecimal('price', $value);
+    }
+
+    public function getDiscountPriceAttribute($value): ?string
+    {
+        return $this->currencyDecimal('discount_price', $value);
     }
 }

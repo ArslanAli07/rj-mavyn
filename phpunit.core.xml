@@ -8,7 +8,10 @@
             <file>tests/Unit/PluginContractsTest.php</file>
             <file>tests/Unit/ThemeContractsTest.php</file>
             <file>tests/Unit/ProjectSetupTest.php</file>
+            <file>tests/Unit/PricingContractsTest.php</file>
             <file>tests/Feature/CloneBootstrapTest.php</file>
+            <file>tests/Feature/MultiCurrencyPricingTest.php</file>
+            <file>tests/Feature/PricingMigrationTest.php</file>
         </testsuite>
     </testsuites>
     <php>

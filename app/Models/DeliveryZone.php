@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCurrencyPrices;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class DeliveryZone extends Model
 {
+    use HasCurrencyPrices;
+
     protected $fillable = [
-        'name', 'delivery_fee', 'is_active', 'display_order'
+        'price_currency',
+        'name', 'delivery_fee', 'is_active', 'display_order',
     ];
 
     protected function casts(): array
@@ -34,5 +38,10 @@ class DeliveryZone extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function getDeliveryFeeAttribute($value): ?string
+    {
+        return $this->currencyDecimal('delivery_fee', $value);
     }
 }

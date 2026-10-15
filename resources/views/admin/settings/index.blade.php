@@ -18,14 +18,15 @@
 
     <form action="{{ route('admin.settings.update') }}" method="POST" class="admin-stack-6" x-data="{ activeTab: 'general' }">
         @csrf
+        <input type="hidden" name="pricing_revision" value="{{ app(\Mavyn\Contracts\Pricing\PriceBook::class)->context()->revision }}">
         @method('PUT')
 
         <details class="card bg-white border rounded-2 p-4">
             <summary class="fw-semibold">Regional and financial settings</summary>
-            <p class="small text-body-secondary mt-3">Tax is added to discounted merchandise; fulfillment charges are excluded. Currency is fixed once products or orders exist.</p>
+            <p class="small text-body-secondary mt-3">Tax is added to discounted merchandise; fulfillment charges are excluded. Manage selling currencies and their prices from the currency-management plugin.</p>
             @foreach(['store_currency' => 'Currency code', 'store_currency_symbol' => 'Currency symbol', 'store_tax_rate' => 'Tax rate (%)', 'store_country' => 'Country', 'store_country_code' => 'Country code (two letters)', 'store_timezone' => 'Timezone', 'store_locale' => 'Language (en)'] as $key => $label)
                 <label class="d-block mt-3">{{ $label }}
-                    <input class="form-control mt-1" name="{{ $key }}" value="{{ old($key, $settings->get($key)?->value) }}" required>
+                    <input class="form-control mt-1" name="{{ $key }}" value="{{ old($key, $settings->get($key)?->value) }}" @readonly(in_array($key, ['store_currency', 'store_currency_symbol'], true)) required>
                 </label>
                 @error($key)<p class="text-danger small">{{ $message }}</p>@enderror
             @endforeach

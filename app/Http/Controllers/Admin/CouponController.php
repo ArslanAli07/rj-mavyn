@@ -30,6 +30,7 @@ class CouponController extends Controller
         $data = $request->validate([
             'code' => 'required|string|max:50|unique:coupons,code',
             'type' => 'required|in:fixed,percentage',
+            'price_currency' => 'sometimes|in:PKR,USD,EUR,GBP,AUD,CAD,AED,SAR,INR',
             'amount' => 'required|numeric|min:0',
             'minimum_order' => 'nullable|numeric|min:0',
             'maximum_discount' => 'nullable|numeric|min:0',
@@ -55,6 +56,7 @@ class CouponController extends Controller
     {
         $data = $request->validate([
             'type' => 'required|in:fixed,percentage',
+            'price_currency' => 'sometimes|in:PKR,USD,EUR,GBP,AUD,CAD,AED,SAR,INR',
             'amount' => 'required|numeric|min:0',
             'minimum_order' => 'nullable|numeric|min:0',
             'maximum_discount' => 'nullable|numeric|min:0',

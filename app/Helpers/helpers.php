@@ -5,8 +5,10 @@ use App\Models\Setting;
 use App\Services\CartService;
 use App\Services\Media\ContentMediaService;
 use App\Services\Plugins\PluginRuntime;
+use App\Services\Pricing\PricingService;
 use App\Services\StoreAvailabilityService;
 use App\Services\Themes\ThemeRuntime;
+use Mavyn\Core\Currencies;
 use Mavyn\Core\Money;
 
 if (! function_exists('plugin_active')) {
@@ -20,9 +22,14 @@ if (! function_exists('format_price')) {
     /**
      * Format current catalog prices with the configured store symbol.
      */
-    function format_price(float|int|string $amount): string
+    function format_price(float|int|string|null $amount, ?string $currency = null): string
     {
-        return Money::format(Money::minor($amount), (string) setting('store_currency_symbol', config('site.currency_symbol', 'Rs.')));
+        if ($amount === null) {
+            return 'Unavailable';
+        }
+        $context = app(PricingService::class)->context();
+
+        return Money::format(Money::minor($amount), $currency ? Currencies::symbol($currency) : $context->symbol);
     }
 }
 

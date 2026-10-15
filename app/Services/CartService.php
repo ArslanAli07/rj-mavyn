@@ -6,6 +6,7 @@ use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\Pricing\PricingService;
 use App\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -107,6 +108,8 @@ class CartService
         $item->weight = $config['weight'];
         $item->options_snapshot = $config['options_snapshot'];
         $item->special_request = $config['special_request'];
+        $item->currency = $config['currency'];
+        $item->pricing_revision = $config['pricing_revision'];
         $item->price = $config['unit_price'];
         $item->quantity = ($item->exists ? $item->quantity : 0) + $quantity;
         $this->assertCartStock($product, $config['variant'], $item->quantity, $item->exists ? [$item->id] : []);
@@ -168,6 +171,8 @@ class CartService
             if ($existing) {
                 $this->assertCartStock($item->product, $config['variant'], $existing->quantity + $item->quantity, [$existing->id, $item->id]);
                 $existing->quantity += $item->quantity;
+                $existing->currency = $config['currency'];
+                $existing->pricing_revision = $config['pricing_revision'];
                 $existing->price = $config['unit_price'];
                 $existing->weight = $config['weight'];
                 $existing->options_snapshot = $config['options_snapshot'];
@@ -184,6 +189,8 @@ class CartService
             $item->options_snapshot = $config['options_snapshot'];
             $item->special_request = $config['special_request'];
             $item->configuration_signature = $config['configuration_signature'];
+            $item->currency = $config['currency'];
+            $item->pricing_revision = $config['pricing_revision'];
             $item->price = $config['unit_price'];
         }
 
@@ -228,10 +235,16 @@ class CartService
 
     public function items(): Collection
     {
+        if (! app(PricingService::class)->context()->ready) {
+            return collect();
+        }
         if ($this->cachedItems === null) {
-            $this->cachedItems = $this->query()
-                ->with(['product.category', 'product.variants', 'product.optionGroups.values', 'variant'])
-                ->get();
+            $this->cachedItems = $this->ownerLocks->synchronized([$this->checkoutOwner()], function () {
+                $items = $this->query()->with(['product.category', 'product.variants', 'product.optionGroups.values', 'variant'])->orderBy('id')->lockForUpdate()->get();
+                $this->reprice($items);
+
+                return $items;
+            });
         }
 
         return $this->cachedItems;
@@ -253,6 +266,9 @@ class CartService
 
     public function count(): int
     {
+        if (! app(PricingService::class)->context()->ready) {
+            return 0;
+        }
         if ($this->cachedCount === null) {
             if ($this->cachedItems !== null) {
                 $this->cachedCount = $this->cachedItems->sum('quantity');
@@ -266,22 +282,46 @@ class CartService
 
     public function subtotal(): string
     {
-        if ($this->cachedSubtotal === null) {
-            if ($this->cachedItems !== null) {
-                $this->cachedSubtotal = Money::decimal($this->cachedItems->sum(fn ($item) => Money::minor($item->price) * $item->quantity));
-            } else {
-                $this->cachedSubtotal = Money::decimal($this->query()->get()->sum(fn ($item) => Money::minor($item->price) * $item->quantity));
+        return Money::decimal($this->items()->filter(fn ($item) => $item->pricing_available !== false)->sum(fn ($item) => Money::minor($item->price) * $item->quantity));
+    }
+
+    public function reprice(Collection $items, ?Collection $products = null, bool $strict = false): void
+    {
+        $context = app(PricingService::class)->assertReady();
+        foreach ($items as $item) {
+            try {
+                $product = $products ? $products->get($item->product_id) : $item->product;
+                if (! $product || ! $product->is_active || ! $product->in_stock) {
+                    throw ValidationException::withMessages(['cart' => 'A product is unavailable.']);
+                }
+                $config = $this->configurations->resolve($product, $item->product_variant_id,
+                    collect($item->options_snapshot ?? [])->pluck('value_id')->all(), $item->special_request);
+                $item->price = $config['unit_price'];
+                $item->currency = $context->currency;
+                $item->pricing_revision = $context->revision;
+                $item->options_snapshot = $config['options_snapshot'];
+                $item->weight = $config['variant_name'];
+                // Save only persisted fields; availability is request-only view data.
+                unset($item->pricing_available);
+                if ($item->isDirty()) {
+                    $item->save();
+                }
+                $item->setAttribute('pricing_available', true);
+            } catch (ValidationException $e) {
+                if ($strict) {
+                    throw $e;
+                }
+                $item->setAttribute('pricing_available', false);
+                $item->price = null;
             }
         }
-
-        return $this->cachedSubtotal;
     }
 
     public function applyCoupon(string $code, ?string $email = null): array
     {
         $coupon = Coupon::where('code', strtoupper($code))->first();
 
-        if (! $coupon || ! $coupon->is_valid) {
+        if (! $coupon || ! $coupon->is_valid || ! $coupon->currencyRule()) {
             return ['success' => false, 'message' => 'Invalid or expired coupon code.'];
         }
 
@@ -331,11 +371,14 @@ class CartService
         if ($this->cachedTotals === null) {
             $subtotal = $this->subtotal();
             $coupon = $this->getAppliedCoupon();
-            $discount = $coupon && $coupon->is_valid ? $coupon->calculateDiscount($subtotal) : '0.00';
+            $discount = $coupon && $coupon->is_valid && $coupon->currencyRule() ? $coupon->calculateDiscount($subtotal) : '0.00';
             $tax = app(StoreFinancials::class)->taxMinor(Money::minor($subtotal), Money::minor($discount));
             $grandTotal = Money::decimal(max(0, Money::minor($subtotal) - Money::minor($discount)) + $tax);
 
             $this->cachedTotals = [
+                'currency' => app(PricingService::class)->context()->currency,
+                'pricing_revision' => app(PricingService::class)->context()->revision,
+                'has_unavailable' => $this->items()->contains(fn ($item) => $item->pricing_available === false),
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'delivery_fee' => null,

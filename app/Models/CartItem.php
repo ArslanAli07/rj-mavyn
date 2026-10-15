@@ -18,7 +18,7 @@ class CartItem extends Model
         'options_snapshot',
         'special_request',
         'quantity',
-        'price',
+        'price', 'currency', 'pricing_revision',
     ];
 
     protected function casts(): array

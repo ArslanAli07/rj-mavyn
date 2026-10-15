@@ -610,7 +610,7 @@
 
                 try {
                     const notification = new Notification('New order ' + number, {
-                        body: name + ' · Rs. ' + total.toLocaleString() + extra,
+                        body: name + ' · ' + String(order.currency || '') + ' ' + total.toLocaleString() + extra,
                         icon: notificationIcon,
                         tag: 'store-new-order',
                         renotify: true,
@@ -670,7 +670,7 @@
                             '<div class="flex-grow-1 admin-min-width-0">' +
                                 '<p class="small admin-letter-spacing text-primary fw-semibold">New order received</p>' +
                                 '<p class="admin-heading fw-semibold fs-6 text-truncate">' + escapeHtml(name) +
-                                    ' <span class="fw-medium small text-body-secondary">· ' + escapeHtml(number) + ' · Rs. ' + total.toLocaleString() + '</span></p>' +
+                                    ' <span class="fw-medium small text-body-secondary">· ' + escapeHtml(number) + ' · ' + escapeHtml(String(order.currency || '')) + ' ' + total.toLocaleString() + '</span></p>' +
                                 extra +
                             '</div>' +
                             '<div class="d-flex align-items-center gap-2 flex-shrink-0">' +

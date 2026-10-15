@@ -77,7 +77,7 @@
                                                     {{ str_replace('_', ' ', $o->status) }}
                                                 </span>
                                             </td>
-                                            <td class="px-4 py-3.5 text-primary-600 font-bold">{{ format_price($o->grand_total) }}</td>
+                                            <td class="px-4 py-3.5 text-primary-600 font-bold">{{ order_price($o, $o->grand_total) }}</td>
                                             <td class="px-4 py-3.5 text-right">
                                                 <a href="{{ route('orders.show', $o->id) }}" class="inline-flex items-center justify-center px-4 py-2 bg-cream-100 hover:bg-primary-500 hover:text-white transition-colors rounded-xl text-xs font-semibold text-espresso-800">
                                                     View Details

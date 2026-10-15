@@ -60,7 +60,7 @@
 
                     {{-- Price range --}}
                     <div>
-                        <h3 class="font-heading font-bold text-espresso-800 text-sm mb-3">Price Range (PKR)</h3>
+                        <h3 class="font-heading font-bold text-espresso-800 text-sm mb-3">Price Range ({{ app(\Mavyn\Contracts\Pricing\PriceBook::class)->context()->currency }})</h3>
                         <div class="flex items-center gap-2">
                             <input type="number" name="min_price" value="{{ request('min_price') }}" placeholder="Min" 
                                    class="w-full px-2.5 py-1.5 border border-cream-200 rounded-xl text-xs focus:ring-primary-300 focus:border-primary-400">
@@ -184,7 +184,7 @@
 
                         {{-- Price range --}}
                         <div>
-                            <h3 class="font-heading font-bold text-espresso-800 text-sm mb-3">Price Range (PKR)</h3>
+                            <h3 class="font-heading font-bold text-espresso-800 text-sm mb-3">Price Range ({{ app(\Mavyn\Contracts\Pricing\PriceBook::class)->context()->currency }})</h3>
                             <div class="flex items-center gap-2">
                                 <input type="number" name="min_price" value="{{ request('min_price') }}" placeholder="Min" 
                                        class="w-full px-2.5 py-1.5 border border-cream-200 rounded-xl text-xs focus:ring-primary-300 focus:border-primary-400">

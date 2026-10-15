@@ -24,7 +24,7 @@
                 </div>
                 <div class="text-right flex flex-col gap-0.5">
                     <span class="text-espresso-400 font-medium">Amount to Pay</span>
-                    <span class="text-primary-600 font-bold text-sm">{{ format_price($order->grand_total) }}</span>
+                    <span class="text-primary-600 font-bold text-sm">{{ order_price($order, $order->grand_total) }}</span>
                 </div>
             </div>
 
@@ -41,7 +41,7 @@
             {{-- Instructions List --}}
             <div class="text-left text-xs text-espresso-600 bg-cream-50 p-5 rounded-2xl border border-cream-150 mb-8 space-y-2 leading-relaxed">
                 <span class="font-bold text-espresso-800 text-sm block mb-1">How to Complete Your Order:</span>
-                <p>1. Open your banking or wallet app and make the transfer of <span class="font-bold text-primary-600">{{ format_price($order->grand_total) }}</span> to the account listed above.</p>
+                <p>1. Open your banking or wallet app and make the transfer of <span class="font-bold text-primary-600">{{ order_price($order, $order->grand_total) }}</span> to the account listed above.</p>
                 <p>2. Take a screenshot of the successful payment transaction screen.</p>
                 <p>3. Click the WhatsApp button below to open a chat with us. Paste the screenshot and send the pre-filled order text.</p>
                 <p>4. Our team will verify the payment and change your order status from **Pending** to **Confirmed** within a few minutes.</p>
@@ -54,16 +54,16 @@
                 // Construct Order Details text block
                 $itemsText = "";
                 foreach ($order->items as $item) {
-                    $itemsText .= "• " . $item->product_title . " (Qty: " . $item->quantity . ") — " . format_price($item->total_price) . "\n";
+                    $itemsText .= "• " . $item->product_title . " (Qty: " . $item->quantity . ") — " . order_price($order, $item->total_price) . "\n";
                 }
 
                 $messageString = "Hi, I have transferred payment for order *" . $order->order_number . "*.\n\n"
                     . "*Order Summary:*\n"
                     . $itemsText . "\n"
-                    . "*Subtotal:* " . format_price($order->subtotal) . "\n"
-                    . ($order->discount_amount > 0 ? "*Discount:* -" . format_price($order->discount_amount) . "\n" : "")
-                    . "*Delivery Fee:* " . ($order->delivery_fee > 0 ? format_price($order->delivery_fee) : (is_null($order->delivery_zone_id) ? "To be confirmed" : "Free")) . "\n"
-                    . "*Grand Total:* *" . format_price($order->grand_total) . "*\n\n"
+                    . "*Subtotal:* " . order_price($order, $order->subtotal) . "\n"
+                    . ($order->discount_amount > 0 ? "*Discount:* -" . order_price($order, $order->discount_amount) . "\n" : "")
+                    . "*Delivery Fee:* " . ($order->delivery_fee > 0 ? order_price($order, $order->delivery_fee) : (is_null($order->delivery_zone_id) ? "To be confirmed" : "Free")) . "\n"
+                    . "*Grand Total:* *" . order_price($order, $order->grand_total) . "*\n\n"
                     . "*Customer Details:*\n"
                     . "Name: " . $order->customer_name . "\n"
                     . "Phone: " . $order->customer_phone . "\n"

@@ -84,10 +84,10 @@
                                 <td class="text-body-secondary fw-semibold">{{ $p->display_order }}</td>
                                 <td class="price num">
                                     @if($p->is_on_sale)
-                                        <span class="text-body fw-semibold d-block price num">{{ format_price($p->effective_price) }}</span>
-                                        <span class="small text-body-secondary text-decoration-line-through price num">{{ format_price($p->price) }}</span>
+                                        <span class="text-body fw-semibold d-block price num">{{ ($p->price_currency ? format_price($p->effective_price, $p->price_currency) : 'Currency needs review') }}</span>
+                                        <span class="small text-body-secondary text-decoration-line-through price num">{{ ($p->price_currency ? format_price($p->price, $p->price_currency) : 'Currency needs review') }}</span>
                                     @else
-                                        <span class="fw-semibold text-body price num">{{ format_price($p->price) }}</span>
+                                        <span class="fw-semibold text-body price num">{{ ($p->price_currency ? format_price($p->price, $p->price_currency) : 'Currency needs review') }}</span>
                                     @endif
                                 </td>
                                 <td>

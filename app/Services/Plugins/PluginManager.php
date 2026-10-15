@@ -4,6 +4,7 @@ namespace App\Services\Plugins;
 
 use App\Models\Admin;
 use App\Models\AdminAuditLog;
+use App\Services\Pricing\PricingService;
 use App\Services\Themes\ThemeManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -23,6 +24,7 @@ final class PluginManager
         }
         try {
             DB::transaction(function () use ($id, $active, $actor) {
+                app(PricingService::class)->lock(true);
                 DB::table('extension_runtime')->where('id', 1)->lockForUpdate()->first();
                 $catalog = $this->catalogs->load();
                 $package = $catalog->get($id);

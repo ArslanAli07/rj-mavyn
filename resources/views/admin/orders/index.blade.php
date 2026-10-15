@@ -105,7 +105,7 @@
                                         {{ ucfirst(str_replace('_', ' ', $o->status)) }}
                                     </span>
                                 </td>
-                                <td class="fw-semibold text-primary small price num">{{ format_price($o->grand_total) }}</td>
+                                <td class="fw-semibold text-primary small price num">{{ order_price($o, $o->grand_total) }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2 justify-content-end">
                                         <a href="{{ route('admin.orders.show', $o->id) }}" class="px-2 py-2 bg-body-tertiary rounded-2 fw-semibold">Manage</a>

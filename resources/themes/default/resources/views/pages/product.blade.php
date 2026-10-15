@@ -66,10 +66,11 @@
                 return total / 100;
             },
             get unitPrice() {
-                const base = this.selectedVariant ? Number(this.selectedVariant.effective_price) : {{ (float) $product->effective_price }};
+                const base = this.selectedVariant ? Number(this.selectedVariant.effective_price) : {{ $product->effective_price === null ? 'null' : (float) $product->effective_price }};
                 return (Math.round(base * 100) + Math.round(this.optionsTotal * 100)) / 100;
             },
             formatMoney(amount) {
+                if (amount === null || !this.selectedVariant) return 'Unavailable in this currency';
                 return this.currencySymbol + ' ' + Number(amount).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
             },
             selectSingleOption(group, valueId) {

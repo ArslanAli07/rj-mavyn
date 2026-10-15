@@ -3,12 +3,14 @@
 namespace App\Observers;
 
 use App\Models\AdminAuditLog;
+use App\Services\Pricing\PricingService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class AdminAuditObserver
 {
     private const FIELDS = ['password', 'name', 'title', 'slug', 'role', 'permissions', 'is_active', 'price', 'discount_price',
-        'inventory_mode', 'track_inventory', 'stock_quantity', 'reserved_quantity', 'inventory_version', 'in_stock',
+        'price_currency', 'inventory_mode', 'track_inventory', 'stock_quantity', 'reserved_quantity', 'inventory_version', 'in_stock',
         'status', 'status_revision', 'payment_status', 'admin_notes', 'delivery_fee', 'code', 'type', 'amount', 'minimum_order',
         'maximum_discount', 'usage_limit', 'per_user_limit', 'is_approved', 'is_featured', 'is_resolved',
         'key', 'group', 'value', 'quantity', 'reserved_delta', 'stock_delta', 'stock_after', 'reserved_after', 'stock_type', 'stock_id', 'reason', 'order_id', 'product_id',
@@ -41,6 +43,11 @@ class AdminAuditObserver
             $redacted = in_array($field, ['password', 'value', 'admin_notes', 'reason'], true);
             $changes[$field] = ['before' => $redacted && array_key_exists($field, $before) ? '[redacted]' : ($before[$field] ?? null),
                 'after' => $redacted && array_key_exists($field, $after) ? '[redacted]' : ($after[$field] ?? null)];
+        }
+        if (in_array($model->getTable(), PricingService::TABLES, true) && array_intersect($fields, ['price', 'discount_price', 'price_adjustment', 'delivery_fee', 'amount', 'minimum_order', 'maximum_discount'])) {
+            $changes['_pricing'] = ['currency' => $model->getAttributes()['price_currency'] ?? null,
+                'revision_before' => app(PricingService::class)->context()->revision,
+                'operation_id' => request()->attributes->get('pricing_operation_id') ?? (string) Str::uuid()];
         }
         AdminAuditLog::create(['actor_id' => $actor->id, 'actor_name' => $actor->name,
             'route' => request()->route()->getName(), 'action' => $action,

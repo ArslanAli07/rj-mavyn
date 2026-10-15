@@ -86,9 +86,9 @@
                             <div class="flex-1 min-w-0">
                                 <p class="font-bold text-espresso-800 truncate">{{ $item->product_title }}</p>
                                 @include('components.item-configuration', ['item' => $item, 'class' => 'mt-0.5 space-y-0.5', 'labelClass' => 'text-xs text-espresso-600', 'optionClass' => 'text-xs text-espresso-600'])
-                                <p class="text-espresso-450 mt-0.5">SKU: {{ $item->product_sku }} · Qty: {{ $item->quantity }} @ {{ format_price($item->unit_price) }}</p>
+                                <p class="text-espresso-450 mt-0.5">SKU: {{ $item->product_sku }} · Qty: {{ $item->quantity }} @ {{ order_price($order, $item->unit_price) }}</p>
                             </div>
-                            <span class="font-bold text-espresso-800 shrink-0">{{ format_price($item->total_price) }}</span>
+                            <span class="font-bold text-espresso-800 shrink-0">{{ order_price($order, $item->total_price) }}</span>
                         </div>
                     @endforeach
                 </div>
@@ -97,19 +97,19 @@
                 <div class="bg-cream-50/50 rounded-2xl p-5 border border-cream-100 max-w-md ml-auto text-xs sm:text-sm space-y-2.5">
                     <div class="flex justify-between text-espresso-600">
                         <span>Subtotal:</span>
-                        <span class="font-semibold text-espresso-800">{{ format_price($order->subtotal) }}</span>
+                        <span class="font-semibold text-espresso-800">{{ order_price($order, $order->subtotal) }}</span>
                     </div>
                     @if($order->discount_amount > 0)
                         <div class="flex justify-between text-green-600 font-medium">
                             <span>Discount:</span>
-                            <span>-{{ format_price($order->discount_amount) }}</span>
+                            <span>-{{ order_price($order, $order->discount_amount) }}</span>
                         </div>
                     @endif
                     <div class="flex justify-between text-espresso-600">
                         <span>Delivery Fee:</span>
                         <span class="font-semibold text-espresso-800">
                             @if($order->delivery_fee > 0)
-                                {{ format_price($order->delivery_fee) }}
+                                {{ order_price($order, $order->delivery_fee) }}
                             @elseif(is_null($order->delivery_zone_id))
                                 To be confirmed
                             @else
@@ -119,7 +119,7 @@
                     </div>
                     <div class="flex justify-between font-bold text-espresso-800 text-base border-t border-cream-150 pt-2">
                         <span>Grand Total:</span>
-                        <span class="text-primary-650">{{ format_price($order->grand_total) }}</span>
+                        <span class="text-primary-650">{{ order_price($order, $order->grand_total) }}</span>
                     </div>
                 </div>
             </div>

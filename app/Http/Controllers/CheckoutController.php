@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Mavyn\Contracts\Plugins\PaymentInstructions;
+use Mavyn\Contracts\Pricing\CheckoutReview;
 
 class CheckoutController extends Controller
 {
@@ -44,8 +45,8 @@ class CheckoutController extends Controller
         $totals = $this->cart->totals();
         $items = $this->cart->items();
         // Eager-load addresses so default_address accessor costs 0 extra queries.
-        $addresses = auth()->check() ? auth()->user()->load('addresses')->addresses : collect();
-        $defaultAddr = auth()->check() ? auth()->user()->default_address : null;
+        $addresses = auth('web')->check() ? auth('web')->user()->load('addresses')->addresses : collect();
+        $defaultAddr = auth('web')->check() ? auth('web')->user()->default_address : null;
         $shipping = app(ShippingService::class);
         $shippingChoices = $shipping->choices($shipping->request(Money::minor($totals['subtotal']), (string) setting('store_country', config('site.country'))));
         $shippingOptions = collect($shippingChoices)->map(fn ($choice, $token) => (object) ['id' => $token, 'name' => $choice['option']->label, 'delivery_fee' => Money::decimal($choice['option']->feeMinor), 'legacy_zone_id' => $choice['legacy_zone_id']]);
@@ -59,9 +60,38 @@ class CheckoutController extends Controller
         return view('pages.checkout', compact('totals', 'items', 'addresses', 'defaultAddr', 'zones', 'shippingOptions', 'enabledPaymentMethods', 'checkoutKey', 'paymentChoices', 'defaultShippingOption'));
     }
 
+    public function quote(Request $request): JsonResponse
+    {
+        $input = $request->validate([
+            'idempotency_key' => 'required|string|uuid',
+            'first_name' => 'required|string|max:100', 'last_name' => 'required|string|max:100',
+            'email' => 'required|email|max:255', 'phone' => 'required|string|max:20',
+            'country' => 'required|string|max:100', 'city' => 'required|string|max:100',
+            'address_line' => 'required|string|max:500', 'map_link' => 'nullable|string|max:500',
+            'shipping_option' => 'nullable|string|max:255', 'delivery_zone_id' => 'nullable|integer|min:1',
+            'postal_code' => 'nullable|string|max:30', 'payment_method' => 'required|string|max:100', 'order_notes' => 'nullable|string|max:1000',
+        ]);
+
+        return response()->json(app(CheckoutReview::class)->issue($input));
+    }
+
+    public function options(Request $request): JsonResponse
+    {
+        $input = $request->validate(['country' => 'required|string|max:100', 'postal_code' => 'nullable|string|max:30']);
+        $shipping = app(ShippingService::class);
+        $totals = $this->cart->totals();
+        $choices = $shipping->choices($shipping->request(Money::minor($totals['subtotal']), $input['country'], postalCode: $input['postal_code'] ?? null));
+
+        return response()->json(['currency' => $totals['currency'],
+            'shipping' => collect($choices)->map(fn ($choice, $token) => ['id' => $token, 'label' => $choice['option']->label, 'fee_minor' => $choice['option']->feeMinor])->values(),
+            'payments' => collect($this->payments->choices())->map(fn ($choice, $method) => ['id' => $method, 'label' => $choice['instructions']->label,
+                'instructions' => $choice['instructions']->instructions, 'requires_receipt' => $choice['instructions']->requiresReceipt])->values()]);
+    }
+
     public function placeOrder(Request $request): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
+            'review_token' => 'nullable|string|max:128',
             'idempotency_key' => 'required|string|uuid',
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',

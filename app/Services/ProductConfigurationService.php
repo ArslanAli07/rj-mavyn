@@ -6,9 +6,11 @@ use App\Models\Product;
 use App\Models\ProductOptionGroup;
 use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
+use App\Services\Pricing\PricingService;
 use App\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Mavyn\Core\Currencies;
 use Mavyn\Core\ProductConfiguration;
 
 class ProductConfigurationService
@@ -34,8 +36,15 @@ class ProductConfigurationService
             'optionGroups.values',
         ]);
 
+        $pricing = app(PricingService::class);
+        $context = $pricing->assertReady();
         $variant = $this->resolveVariant($product, $variantId);
         $selectedValues = $this->resolveSelectedValues($product, $optionValueIds);
+        $variantPrice = $pricing->price('variant', $variant->id);
+        $optionPrices = $pricing->read('option', $selectedValues->pluck('id')->all(), $context->currency);
+        if (! $variantPrice || $selectedValues->contains(fn ($v) => ! isset($optionPrices[$v->id]))) {
+            throw ValidationException::withMessages(['price' => 'This configuration is unavailable in '.$context->currency.'.']);
+        }
         $this->assertGroupRules($product, $selectedValues);
 
         $optionsSnapshot = $selectedValues
@@ -51,20 +60,22 @@ class ProductConfigurationService
                 'group_id' => $value->product_option_group_id,
                 'group_name' => $value->group->name,
                 'value_name' => $value->name,
-                'price_adjustment' => Money::decimal(Money::minor($value->price_adjustment)),
+                'price_adjustment' => Money::decimal($optionPrices[$value->id]['amount_minor']),
             ])
             ->all();
 
         $optionsTotal = collect($optionsSnapshot)->sum(fn ($option) => Money::minor($option['price_adjustment']));
-        $unitMinor = Money::minor($variant->discount_price ?? $variant->price) + $optionsTotal;
+        $unitMinor = ($variantPrice['sale_minor'] ?? $variantPrice['amount_minor']) + $optionsTotal;
         if ($unitMinor < 0) {
             throw ValidationException::withMessages(['option_value_ids' => 'These options would produce a negative price. Choose another configuration.']);
         }
+        Currencies::amount($unitMinor);
         $unitPrice = Money::decimal($unitMinor);
         $specialRequest = $this->normalizeSpecialRequest($specialRequest);
         $variantName = $variant->display_name;
 
         return [
+            'currency' => $context->currency, 'pricing_revision' => $context->revision,
             'variant' => $variant,
             'unit_price' => $unitPrice,
             'weight' => $variantName,
@@ -90,7 +101,7 @@ class ProductConfigurationService
 
     protected function resolveVariant(Product $product, ?int $variantId): ProductVariant
     {
-        $variants = $product->variants->where('is_active', true)->values();
+        $variants = $product->variants->where('is_active', true)->filter(fn ($v) => app(PricingService::class)->effective('variant', $v->id) !== null)->sortBy(fn ($v) => [$v->sort_order, $v->id])->values();
 
         if ($variants->isEmpty()) {
             throw ValidationException::withMessages([

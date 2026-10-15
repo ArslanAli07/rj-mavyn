@@ -200,7 +200,7 @@
                             <select id="modal_delivery_zone_id" name="delivery_zone_id" x-model="deliveryZoneId" required class="input-luxury text-sm">
                                 <option value="">Select Delivery Zone</option>
                                 @foreach($zones as $zone)
-                                    <option value="{{ $zone->id }}">{{ $zone->name }} (Rs. {{ number_format($zone->delivery_fee, 0) }})</option>
+                                    <option value="{{ $zone->id }}">{{ $zone->name }} ({{ format_price($zone->delivery_fee) }})</option>
                                 @endforeach
                             </select>
                         </div>

@@ -13,8 +13,10 @@ use Database\Seeders\DemoDatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use LogicException;
+use Mavyn\Contracts\Pricing\PriceBook;
 use Tests\TestCase;
 
 class DatabaseBootstrapTest extends TestCase
@@ -64,8 +66,13 @@ class DatabaseBootstrapTest extends TestCase
     {
         config(['site.currency' => 'USD', 'site.currency_symbol' => '$', 'site.tax_rate' => '8.25',
             'site.country' => 'United States', 'site.country_code' => 'US', 'site.timezone' => 'America/New_York']);
+        $actor = Admin::create(['name' => 'Existing owner', 'email' => 'usd-owner@example.test', 'password' => self::PASSWORD, 'role' => 'super_admin', 'is_active' => true]);
+        $this->actingAs($actor, 'admin');
+        $prices = app(PriceBook::class);
+        $prices->enable(['PKR', 'USD'], $prices->context()->revision, (string) Str::uuid());
+        $prices->select('USD', $prices->context()->revision, (string) Str::uuid());
         $category = Category::create(['name' => 'Existing USD catalog']);
-        $product = Product::create(['category_id' => $category->id, 'title' => 'Existing product', 'price' => '10.00']);
+        $product = Product::create(['category_id' => $category->id, 'title' => 'Existing product', 'price_currency' => 'USD', 'price' => '10.00']);
         $this->bootstrap();
         $this->assertSame('USD', Setting::get('store_currency'));
         $this->assertSame('$', Setting::get('store_currency_symbol'));

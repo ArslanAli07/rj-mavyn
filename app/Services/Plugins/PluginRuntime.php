@@ -2,6 +2,7 @@
 
 namespace App\Services\Plugins;
 
+use App\Services\Pricing\PricingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Mavyn\Contracts\Plugins\Plugin;
@@ -27,6 +28,7 @@ final class PluginRuntime
     {
         $hasState = Schema::hasTable('extension_runtime');
         DB::transaction(function () use ($hasState) {
+            app(PricingService::class)->lock();
             $revision = $hasState ? (int) DB::table('extension_runtime')->where('id', 1)->sharedLock()->value('revision') : 0;
             if ($this->revision === $revision) {
                 return;

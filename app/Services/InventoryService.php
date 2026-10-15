@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\Pricing\PricingService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -25,6 +26,7 @@ class InventoryService
     /** Shared lock order for checkout, order transitions, and catalog edits. Caller holds a transaction. */
     public function lockProducts(array $ids): Collection
     {
+        app(PricingService::class)->lock();
         $products = Product::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
         $variants = ProductVariant::whereIn('product_id', $products->keys())->orderBy('id')->lockForUpdate()->get()->groupBy('product_id');
         foreach ($products as $product) {

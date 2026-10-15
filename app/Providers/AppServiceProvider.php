@@ -22,6 +22,8 @@ use App\Services\Plugins\EloquentDeliveryZoneStore;
 use App\Services\Plugins\InstalledPluginCatalog;
 use App\Services\Plugins\LegacyCommerceSettings;
 use App\Services\Plugins\PluginRuntime;
+use App\Services\Pricing\CheckoutQuoteService;
+use App\Services\Pricing\PricingService;
 use App\Services\ProductAttributesService;
 use App\Services\SitemapService;
 use App\Services\Themes\ProductPresentation;
@@ -33,6 +35,8 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Mavyn\Contracts\Plugins\DeliveryZoneStore;
+use Mavyn\Contracts\Pricing\CheckoutReview;
+use Mavyn\Contracts\Pricing\PriceBook;
 use Mavyn\Contracts\SettingsStore;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -43,6 +47,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->scoped(PricingService::class);
+        $this->app->bind(PriceBook::class, fn () => app(PricingService::class));
+        $this->app->bind(CheckoutReview::class, CheckoutQuoteService::class);
         $this->app->scoped(ThemeRuntime::class);
         $this->app->bind('view.finder', fn ($app) => new ThemeViewFinder($app['files'], $app['config']['view.paths']));
         $this->app->bind(SettingsStore::class, EloquentSettingsStore::class);
@@ -125,16 +132,16 @@ class AppServiceProvider extends ServiceProvider
         View::composer('pages.product', function ($view) {
             $product = $view->getData()['product'];
             $data = app(ProductPresentation::class)->card($product);
-            $view->with($data)->with('currencySymbol', Setting::get('currency_symbol', 'Rs.'));
+            $view->with($data)->with('currencySymbol', app(PriceBook::class)->context()->symbol);
             $view->with('productVariantsPayload', $data['activeVariants']->map(fn ($v) => [
                 'id' => $v->id, 'available_quantity' => app(InventoryService::class)->availableQuantity($product, $v),
-                'name' => $v->display_name, 'price' => (float) $v->price, 'discount_price' => $v->discount_price ? (float) $v->discount_price : null,
-                'effective_price' => (float) $v->effective_price, 'formatted_price' => format_price($v->price), 'formatted_discount_price' => $v->discount_price ? format_price($v->discount_price) : null,
+                'name' => $v->display_name, 'price' => (float) $v->price, 'discount_price' => $v->discount_price !== null ? (float) $v->discount_price : null,
+                'effective_price' => (float) $v->effective_price, 'formatted_price' => format_price($v->price), 'formatted_discount_price' => $v->discount_price !== null ? format_price($v->discount_price) : null,
                 'servings' => app(ProductAttributesService::class)->has('variant', 'servings') ? $v->servings : null, 'is_on_sale' => $v->discount_price && $v->discount_price < $v->price,
             ])->values()->all());
             $view->with('productOptionGroupsPayload', $data['activeOptionGroups']->map(fn ($g) => [
                 'id' => $g->id, 'name' => $g->name, 'selection_type' => $g->selection_type, 'min_selections' => $g->effectiveMinSelections(), 'max_selections' => $g->effectiveMaxSelections(), 'is_required' => $g->effectiveMinSelections() > 0,
-                'values' => $g->values->where('is_active', true)->values()->map(fn ($v) => ['id' => $v->id, 'name' => $v->name, 'price_adjustment' => (float) $v->price_adjustment, 'formatted_adjustment' => ((float) $v->price_adjustment == 0) ? null : (((float) $v->price_adjustment > 0 ? '+' : '').format_price($v->price_adjustment))])->all(),
+                'values' => $g->values->where('is_active', true)->filter(fn ($v) => $v->price_adjustment !== null)->values()->map(fn ($v) => ['id' => $v->id, 'name' => $v->name, 'price_adjustment' => (float) $v->price_adjustment, 'formatted_adjustment' => ((float) $v->price_adjustment == 0) ? null : (((float) $v->price_adjustment > 0 ? '+' : '').format_price($v->price_adjustment))])->all(),
             ])->values()->all());
             $attributes = app(ProductAttributesService::class);
             $view->with('showIngredients', $attributes->has('product', 'ingredients'))->with('showAllergens', $attributes->has('product', 'allergens'))->with('showServings', $attributes->has('variant', 'servings'));

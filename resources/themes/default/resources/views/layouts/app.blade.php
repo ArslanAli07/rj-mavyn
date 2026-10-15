@@ -635,8 +635,8 @@
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-espresso-800 truncate">{{ $item->product?->title ?? 'Product' }}</p>
                             @include('components.item-configuration', ['item' => $item, 'class' => 'mt-0.5 space-y-0.5', 'labelClass' => 'text-[11px] text-espresso-500', 'optionClass' => 'text-[11px] text-espresso-500'])
-                            <p class="text-xs text-espresso-500 mt-0.5">{{ format_price($item->price) }} each</p>
-                            <p class="text-sm font-semibold text-primary-600 mt-1">{{ format_price($item->line_total) }}</p>
+                            <p class="text-xs text-espresso-500 mt-0.5">{{ $item->pricing_available === false ? 'Unavailable in this currency' : format_price($item->price, $item->currency) }} each</p>
+                            <p class="text-sm font-semibold text-primary-600 mt-1">{{ $item->pricing_available === false ? 'Unavailable' : format_price($item->line_total, $item->currency) }}</p>
                         </div>
                         <div class="flex flex-col items-end gap-2 shrink-0">
                             <span class="text-xs bg-cream-100 text-espresso-600 px-2 py-0.5 rounded-full">x{{ $item->quantity }}</span>

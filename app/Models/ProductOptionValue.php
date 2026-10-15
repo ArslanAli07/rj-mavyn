@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCurrencyPrices;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProductOptionValue extends Model
 {
+    use HasCurrencyPrices;
+
     protected $fillable = [
+        'price_currency',
         'product_option_group_id',
         'name',
         'price_adjustment',
@@ -33,5 +37,10 @@ class ProductOptionValue extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function getPriceAdjustmentAttribute($value): ?string
+    {
+        return $this->currencyDecimal('price_adjustment', $value);
     }
 }

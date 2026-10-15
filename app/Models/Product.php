@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCurrencyPrices;
 use App\Models\Concerns\HasLibraryMedia;
 use App\Services\InventoryService;
 use App\Services\Media\MediaLibraryService;
+use App\Services\Pricing\PricingService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +18,7 @@ use Illuminate\Support\Str;
 
 class Product extends Model
 {
+    use HasCurrencyPrices;
     use HasLibraryMedia;
 
     protected $attributes = ['inventory_mode' => 'untracked', 'stock_quantity' => 0, 'reserved_quantity' => 0, 'inventory_version' => 0];
@@ -23,13 +26,25 @@ class Product extends Model
     public function delete()
     {
         return DB::transaction(function () {
+            app(PricingService::class)->lock(true);
             app(InventoryService::class)->lockProducts([$this->id]);
 
-            return parent::delete();
+            $variantIds = $this->variants()->pluck('id');
+            $optionIds = DB::table('product_option_values')->join('product_option_groups', 'product_option_groups.id', '=', 'product_option_values.product_option_group_id')->where('product_option_groups.product_id', $this->id)->pluck('product_option_values.id');
+            $deleted = parent::delete();
+            if ($deleted && app(PricingService::class)->installed()) {
+                DB::table('currency_prices')->where('kind', 'variant')->whereIn('entity_id', $variantIds)->delete();
+                DB::table('currency_prices')->where('kind', 'option')->whereIn('entity_id', $optionIds)->delete();
+                DB::table('currency_prices')->where('kind', $this->priceKind())->where('entity_id', $this->id)->delete();
+                app(PricingService::class)->bump();
+            }
+
+            return $deleted;
         });
     }
 
     protected $fillable = [
+        'price_currency',
         'category_id', 'title', 'slug', 'sku', 'short_description', 'description',
         'meta_title', 'meta_description', 'meta_keywords',
         'ingredients', 'allergens', 'price', 'discount_price', 'weight', 'servings',
@@ -97,6 +112,15 @@ class Product extends Model
 
     public function getAvailableForSaleAttribute(): bool
     {
+        if ($this->effective_price === null) {
+            return false;
+        }
+        foreach ($this->optionGroups->where('is_active', true) as $group) {
+            if ($group->values->where('is_active', true)->filter(fn ($value) => $value->price_adjustment !== null)->count() < $group->effectiveMinSelections()) {
+                return false;
+            }
+        }
+
         return app(InventoryService::class)->available($this);
     }
 
@@ -197,8 +221,20 @@ class Product extends Model
 
     // ── Accessors ──────────────────────────────────────────────────────────────
 
-    public function getEffectivePriceAttribute(): string
+    public function getEffectivePriceAttribute(): ?string
     {
+        if (! request()->is('admin/*') && app(PricingService::class)->installed()) {
+            $variants = $this->relationLoaded('variants') ? $this->variants : $this->variants()->ordered()->get();
+            $ordered = $variants->where('is_active', true)->sortBy(fn ($v) => [! $v->is_default, $v->sort_order, $v->id]);
+            foreach ($ordered as $variant) {
+                if ($variant->effective_price !== null) {
+                    return $variant->effective_price;
+                }
+            }
+
+            return null;
+        }
+
         return $this->discount_price ?? $this->price;
     }
 
@@ -229,7 +265,7 @@ class Product extends Model
 
     public function getIsOnSaleAttribute(): bool
     {
-        return $this->discount_price && $this->discount_price < $this->price;
+        return $this->discount_price !== null && $this->price !== null && $this->discount_price < $this->price;
     }
 
     public function getDiscountPercentageAttribute(): int
@@ -266,5 +302,37 @@ class Product extends Model
     public function scopeInStock(Builder $query): Builder
     {
         return $query->where('in_stock', true);
+    }
+
+    public function getPriceAttribute($value): ?string
+    {
+        if ($this->exists && ! request()->is('admin/*') && app(PricingService::class)->installed()) {
+            $variant = $this->displayVariant();
+            if ($variant) {
+                return $variant->price;
+            }
+            $hasVariants = $this->relationLoaded('variants') ? $this->variants->isNotEmpty() : $this->variants()->exists();
+
+            return $hasVariants ? null : $this->currencyDecimal('price', $value);
+        }
+
+        return $this->currencyDecimal('price', $value);
+    }
+
+    public function getDiscountPriceAttribute($value): ?string
+    {
+        if ($this->exists && ! request()->is('admin/*') && app(PricingService::class)->installed()) {
+            return $this->displayVariant()?->discount_price;
+        }
+
+        return $this->currencyDecimal('discount_price', $value);
+    }
+
+    private function displayVariant(): ?ProductVariant
+    {
+        $variants = $this->relationLoaded('variants') ? $this->variants : $this->variants()->ordered()->get();
+
+        return $variants->where('is_active', true)->sortBy(fn ($v) => [! $v->is_default, $v->sort_order, $v->id])
+            ->first(fn ($v) => $v->effective_price !== null);
     }
 }

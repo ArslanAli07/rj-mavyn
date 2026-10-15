@@ -2,13 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCurrencyPrices;
+use App\Services\Pricing\PricingService;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Mavyn\Core\CouponPricing;
 
 class Coupon extends Model
 {
+    use HasCurrencyPrices;
+
     protected $fillable = [
+        'price_currency',
         'code', 'type', 'amount', 'minimum_order', 'maximum_discount',
         'usage_limit', 'usage_count', 'per_user_limit',
         'starts_at', 'expires_at', 'is_active',
@@ -49,8 +55,38 @@ class Coupon extends Model
         return true;
     }
 
+    public function currencyRule(): ?array
+    {
+        return app(PricingService::class)->price('coupon', $this->id);
+    }
+
     public function calculateDiscount(string|int|float $subtotal): string
     {
-        return (new CouponPricing)->discount($subtotal, $this->type, $this->amount, $this->minimum_order, $this->maximum_discount);
+        if (! $this->exists) {
+            return (new CouponPricing)->discount($subtotal, $this->type, $this->amount, $this->minimum_order, $this->maximum_discount);
+        }
+        $rule = $this->currencyRule();
+        if (! $rule) {
+            return '0.00';
+        }
+        $amount = $this->type === 'percentage' ? $this->getRawOriginal('amount') : Money::decimal($rule['amount_minor']);
+
+        return (new CouponPricing)->discount($subtotal, $this->type, $amount, Money::decimal($rule['minimum_minor'] ?? 0),
+            $rule['maximum_minor'] === null ? null : Money::decimal($rule['maximum_minor']));
+    }
+
+    public function getAmountAttribute($value): ?string
+    {
+        return $this->currencyDecimal('amount', $value);
+    }
+
+    public function getMinimumOrderAttribute($value): ?string
+    {
+        return $this->currencyDecimal('minimum_order', $value);
+    }
+
+    public function getMaximumDiscountAttribute($value): ?string
+    {
+        return $this->currencyDecimal('maximum_discount', $value);
     }
 }

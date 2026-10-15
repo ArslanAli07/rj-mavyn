@@ -50,14 +50,14 @@ class OrderController extends Controller
             $latest = Order::query()
                 ->where('id', '>', $afterId)
                 ->orderByDesc('id')
-                ->first(['id', 'order_number', 'customer_name', 'grand_total']);
+                ->first(['id', 'order_number', 'customer_name', 'grand_total', 'currency', 'currency_symbol']);
 
             if ($latest) {
                 $order = [
                     'id' => $latest->id,
                     'order_number' => $latest->order_number,
                     'customer_name' => $latest->customer_name,
-                    'grand_total' => $latest->grand_total,
+                    'grand_total' => $latest->grand_total, 'currency' => $latest->currency, 'currency_symbol' => $latest->currency_symbol,
                     'url' => route('admin.orders.show', $latest),
                 ];
             }

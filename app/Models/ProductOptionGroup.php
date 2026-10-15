@@ -2,13 +2,50 @@
 
 namespace App\Models;
 
+use App\Services\Pricing\PricingService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class ProductOptionGroup extends Model
 {
+    public function save(array $options = [])
+    {
+        $pricing = app(PricingService::class);
+        if (! $pricing->installed()) {
+            return parent::save($options);
+        }
+
+        return DB::transaction(function () use ($pricing, $options) {
+            $pricing->lock(true);
+            $changed = $this->isDirty();
+            $saved = parent::save($options);
+            if ($saved && $changed) {
+                $pricing->bump();
+            }
+
+            return $saved;
+        }, 3);
+    }
+
+    public function delete()
+    {
+        return DB::transaction(function () {
+            $pricing = app(PricingService::class);
+            $pricing->lock(true);
+            $ids = $this->values()->pluck('id');
+            $deleted = parent::delete();
+            if ($deleted && $pricing->installed()) {
+                DB::table('currency_prices')->where('kind', 'option')->whereIn('entity_id', $ids)->delete();
+                $pricing->bump();
+            }
+
+            return $deleted;
+        }, 3);
+    }
+
     protected $fillable = [
         'product_id',
         'name',

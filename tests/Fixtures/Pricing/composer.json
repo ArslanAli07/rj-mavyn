@@ -1,0 +1,26 @@
+{
+    "name": "test/pricing",
+    "type": "library",
+    "require": {
+        "php": "^8.3",
+        "mavyn/contracts": "^0.1"
+    },
+    "extra": {
+        "mavyn": {
+            "kind": "plugin",
+            "id": "test.pricing",
+            "name": "Pricing fixture",
+            "provider": "Tests\\Fixtures\\Pricing\\PricingPlugin",
+            "capabilities": [
+                "payment.provider",
+                "fulfillment.provider"
+            ],
+            "permissions": {
+                "test.pricing.manage": "Manage prices"
+            },
+            "routes": {
+                "admin": "routes/admin.php"
+            }
+        }
+    }
+}

@@ -86,3 +86,5 @@ For the resolved completeness findings, supported shipping/attributes/financial 
 Installed plugins support [local editing without repeated Composer updates](docs/PLUGIN_RUNTIME.md#local-development-without-repeated-composer-updates). With `APP_ENV=local`, PHP and platform-manifest changes load directly from the plugin package. New dependencies/autoload mappings still require Composer; new migrations require `php artisan migrate`.
 
 Default `php artisan migrate --seed` initializes only required platform data, including the first administrator and missing core settings. Store catalog/media/demo content is excluded. See [database setup](docs/DATABASE_SETUP.md) for credentials, unattended setup and idempotent behavior.
+
+Independent currency pricing and safe upgrades are documented in [Multi-currency operations](docs/MULTI_CURRENCY.md). Existing installations must merge the updated checkout theme and resolve price provenance before enabling currency switching.

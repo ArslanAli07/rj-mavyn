@@ -73,7 +73,7 @@
                             <div class="flex-grow-1 admin-min-width-0">
                                 <p class="fw-semibold text-body text-truncate">{{ $item->product_title }}</p>
                                 @include('components.item-configuration', ['item' => $item, 'class' => 'mt-1 admin-stack-1', 'labelClass' => 'small text-body-secondary', 'optionClass' => 'small text-body-secondary', 'titleClass' => 'fw-medium text-body', 'adjustmentClass' => 'text-body-secondary num'])
-                                <p class="text-body-secondary mt-1">SKU: <span class="sku">{{ $item->product_sku }}</span> · Qty: {{ $item->quantity }} @ {{ format_price($item->unit_price) }}</p>
+                                <p class="text-body-secondary mt-1">SKU: <span class="sku">{{ $item->product_sku }}</span> · Qty: {{ $item->quantity }} @ {{ order_price($order, $item->unit_price) }}</p>
                                 @if($allocation = $item->inventoryReservation)
                                     <p class="small text-body-secondary mt-1">Stock: {{ match($allocation->state) {
                                         'reserved' => 'Reserved pending staff confirmation', 'consumed' => 'Deducted from on-hand stock',
@@ -81,7 +81,7 @@
                                     } }}</p>
                                 @endif
                             </div>
-                            <span class="fw-semibold text-body flex-shrink-0 price num">{{ format_price($item->total_price) }}</span>
+                            <span class="fw-semibold text-body flex-shrink-0 price num">{{ order_price($order, $item->total_price) }}</span>
                         </div>
                     @endforeach
                 </div>
@@ -89,21 +89,21 @@
                 <div class="bg-body-tertiary border border-light-subtle rounded-2 p-4 admin-max-width-sm ms-auto admin-stack-2">
                     <div class="d-flex justify-content-between text-body-secondary">
                         <span>Subtotal:</span>
-                        <span class="fw-semibold text-body price num">{{ format_price($order->subtotal) }}</span>
+                        <span class="fw-semibold text-body price num">{{ order_price($order, $order->subtotal) }}</span>
                     </div>
                     @if($order->discount_amount > 0)
                         <div class="d-flex justify-content-between text-success">
                             <span>Discount (Coupon):</span>
-                            <span class="fw-semibold price num">-{{ format_price($order->discount_amount) }}</span>
+                            <span class="fw-semibold price num">-{{ order_price($order, $order->discount_amount) }}</span>
                         </div>
                     @endif
                     <div class="d-flex justify-content-between text-body-secondary">
                         <span>Delivery Fee:</span>
-                        <span class="fw-semibold text-body price num">{{ format_price($order->delivery_fee) }}</span>
+                        <span class="fw-semibold text-body price num">{{ order_price($order, $order->delivery_fee) }}</span>
                     </div>
                     <div class="d-flex justify-content-between fw-semibold text-body border-top border-light-subtle pt-2">
                         <span>Grand Total:</span>
-                        <span class="text-primary price num">{{ format_price($order->grand_total) }}</span>
+                        <span class="text-primary price num">{{ order_price($order, $order->grand_total) }}</span>
                     </div>
                 </div>
             </div>

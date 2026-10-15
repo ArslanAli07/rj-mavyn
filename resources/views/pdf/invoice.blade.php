@@ -85,7 +85,7 @@
 @php
     $optLine = '  ' . ($option['group_name'] ?? 'Option') . ': ' . ($option['value_name'] ?? '');
     if (!empty($option['price_adjustment']) && (float) $option['price_adjustment'] != 0) {
-        $optLine .= ' (' . ((float) $option['price_adjustment'] > 0 ? '+' : '') . format_price($option['price_adjustment']) . ')';
+        $optLine .= ' (' . ((float) $option['price_adjustment'] > 0 ? '+' : '') . order_price($order, $option['price_adjustment']) . ')';
     }
 @endphp
 <div>{{ $optLine }}</div>

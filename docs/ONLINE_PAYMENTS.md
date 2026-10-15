@@ -1,8 +1,8 @@
-# Generic online payment foundation (0.1.2)
+# Generic online payment foundation (0.1.3)
 
 This is core infrastructure for gateway plugins. It contains no gateway SDK,
 provider API credentials, provider event names, or production payment plugin.
-A gateway plugin requires `mavyn/core` and `mavyn/contracts` at `^0.1.2`.
+A gateway plugin requires `mavyn/core` at `^0.1.3` and `mavyn/contracts` at `^0.1.2`.
 Currency management uses the existing `PriceBook` API documented in
 [MULTI_CURRENCY.md](MULTI_CURRENCY.md).
 
@@ -93,9 +93,27 @@ Confirmed expiry/cancellation releases a pending order's reservations when no ot
 active attempt remains. Browser cancellation alone does not supply that evidence.
 A late success on a cancelled order records the money and raises `needs_review`
 without reopening fulfillment or consuming released stock. Multiple captures for
-one order also raise review rather than fulfilling twice. A verified dispute raises
-review; `review_cleared` can clear that hold after verified resolution, without
-reopening a cancelled order. Plugin admin pages can show these flags through history.
+one order also raise review rather than fulfilling twice. Review reasons are recorded separately: `dispute`, `duplicate_capture`,
+`late_capture`, `refund_conflict`, and `legacy_review`. The existing `needs_review`
+flag is their aggregate. A verified dispute raises its own hold; `review_cleared`
+removes **only** the dispute reason. It cannot release an unrelated duplicate-charge,
+late-capture, or refund-capacity hold. It never reopens a cancelled order.
+Plugin admin pages can show the safe `review_reasons` array through history.
+
+Core recomputes order payment status from all captured attempts and confirmed
+refunds after applying each verified result. A new capture after a full refund
+changes the payment status back to paid and raises late-capture review without
+consuming stock again or advancing fulfillment. `refunded` requires repayment of
+all captured funds. Partial refunds continue to leave payment status paid.
+
+Duplicate-capture holds resolve when confirmed refunds remove the excess over the
+saved order total. A late-capture hold resolves when that attempt is fully refunded.
+Refund-capacity conflicts remain held while pending/confirmed requests exceed the
+attempt's capture. Such conflicts block new remote refund initiation, while the
+other hold reasons permit the refund needed to resolve them. Existing remote
+operations remain reconcilable. A full refund does not clear an unresolved dispute.
+The additive 0.1.3 migration preserves preexisting unknown holds as `legacy_review`;
+these require a reviewed recovery decision and cannot be cleared by a dispute event.
 
 ## Verified callbacks and deactivation
 
@@ -189,8 +207,8 @@ php artisan optimize:clear
 
 Preserve the application key and private client dependencies. Do not use fresh
 `composer setup` on an existing store. Run currency provenance recovery as needed
-before reopening selling. The two new migrations retain deliberate price deletions
-and create generic payment/refund/event journals; they do not select USD, create
+before reopening selling. The payment/pricing migrations retain deliberate price deletions,
+create generic payment/refund/event journals, and preserve separate review reasons; they do not select USD, create
 sample data, alter merchant prices, or configure a gateway. Existing deletions made
 before the exclusion journal existed cannot be reconstructed automatically; review
 those against a prior deployment backup before running a legacy backfill again.

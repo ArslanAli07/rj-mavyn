@@ -16,6 +16,7 @@ use App\Services\Plugins\PluginRuntime;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Mavyn\Contracts\Payments\PaymentResult;
@@ -312,5 +313,112 @@ class GatewayPaymentsTest extends TestCase
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('order', $e->errors());
         }
+    }
+
+    public function test_dispute_resolution_preserves_duplicate_capture_hold_until_excess_is_refunded(): void
+    {
+        [$order, $first] = $this->place();
+        $payments = app(Payments::class);
+        $payments->apply('test.gateway.card', $this->verifiedResult($first, 'failed', 'declined'));
+        app(PaymentService::class)->start($order);
+        $second = app(PaymentService::class)->forOrder($order->id)->id;
+        $payments->apply('test.gateway.card', $this->verifiedResult($first, 'paid', 'first-paid'));
+        $payments->apply('test.gateway.card', $this->verifiedResult($second, 'paid', 'second-paid'));
+        $payments->apply('test.gateway.card', $this->verifiedResult($second, 'disputed', 'dispute-open'));
+        $payments->apply('test.gateway.card', $this->verifiedResult($second, 'review_cleared', 'dispute-resolved'));
+        $history = $payments->history($order->id);
+        $this->assertContains('duplicate_capture', $history[1]['review_reasons']);
+        $this->assertNotContains('dispute', $history[1]['review_reasons']);
+        try {
+            app(OrderStateService::class)->updateMany([$order->id], ['status' => 'confirmed'], $this->actor);
+            $this->fail('Unresolved duplicate payment allowed fulfillment.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('status', $e->errors());
+        }
+        // Holds must not prevent the refund needed to resolve an excess capture.
+        $payments->requestRefund($second, 15500, (string) Str::uuid());
+        app(PaymentService::class)->processDue();
+        $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertFalse(DB::table('gateway_payment_attempts')->where('order_id', $order->id)->where('needs_review', true)->exists());
+        app(OrderStateService::class)->updateMany([$order->id], ['status' => 'confirmed'], $this->actor);
+        $this->assertSame('confirmed', $order->fresh()->status);
+        $this->assertSame(4, $this->product->fresh()->stock_quantity);
+    }
+
+    public function test_capture_after_full_refund_recomputes_payment_status_without_consuming_stock_again(): void
+    {
+        [$order, $first] = $this->place();
+        $payments = app(Payments::class);
+        $payments->apply('test.gateway.card', $this->verifiedResult($first, 'failed', 'declined'));
+        app(PaymentService::class)->start($order);
+        $second = app(PaymentService::class)->forOrder($order->id)->id;
+        $payments->apply('test.gateway.card', $this->verifiedResult($first, 'paid', 'first-paid'));
+        $payments->requestRefund($first, 15500, (string) Str::uuid());
+        app(PaymentService::class)->processDue();
+        $this->assertSame('refunded', $order->fresh()->payment_status);
+        $payments->apply('test.gateway.card', $this->verifiedResult($second, 'paid', 'late-second-paid'));
+        $payments->apply('test.gateway.card', $this->verifiedResult($second, 'paid', 'paid-poll'));
+        $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertContains('late_capture', $payments->history($order->id)[1]['review_reasons']);
+        $this->assertSame(4, $this->product->fresh()->stock_quantity);
+        $this->assertSame('pending', $order->fresh()->status);
+        $payments->requestRefund($second, 15500, (string) Str::uuid());
+        app(PaymentService::class)->processDue();
+        $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertSame([], $payments->history($order->id)[1]['review_reasons']);
+        $this->assertSame(4, $this->product->fresh()->stock_quantity);
+    }
+
+    public function test_full_external_refund_preserves_refund_capacity_hold_and_blocks_new_remote_refunds(): void
+    {
+        [$order, $id] = $this->place();
+        $payments = app(Payments::class);
+        $payments->apply('test.gateway.card', $this->verifiedResult($id, 'paid', 'paid'));
+        $payments->requestRefund($id, 10000, (string) Str::uuid());
+        $payments->applyRefund('test.gateway.card', new RefundResult((string) Str::uuid(), 'external-full', 'succeeded', 15500, 'PKR', 'external-full-reference', $id));
+        $payments->apply('test.gateway.card', $this->verifiedResult($id, 'disputed', 'dispute-open'));
+        $payments->apply('test.gateway.card', $this->verifiedResult($id, 'review_cleared', 'dispute-resolved'));
+        $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertSame(['refund_conflict'], $payments->history($order->id)[0]['review_reasons']);
+        app(PaymentService::class)->processDue();
+        $this->assertSame([], FakeGateway::$refunds);
+        $this->assertDatabaseHas('gateway_refunds', ['attempt_id' => $id, 'amount_minor' => 10000, 'status' => 'created']);
+    }
+
+    public function test_refund_does_not_clear_an_unresolved_dispute(): void
+    {
+        [$order, $id] = $this->place();
+        $payments = app(Payments::class);
+        $payments->apply('test.gateway.card', $this->verifiedResult($id, 'paid', 'paid'));
+        $payments->apply('test.gateway.card', $this->verifiedResult($id, 'disputed', 'dispute-open'));
+        $payments->requestRefund($id, 15500, (string) Str::uuid());
+        app(PaymentService::class)->processDue();
+        $this->assertSame('refunded', $order->fresh()->payment_status);
+        $this->assertSame(['dispute'], $payments->history($order->id)[0]['review_reasons']);
+        $payments->apply('test.gateway.card', $this->verifiedResult($id, 'review_cleared', 'dispute-resolved'));
+        $this->assertSame([], $payments->history($order->id)[0]['review_reasons']);
+    }
+
+    public function test_review_reason_upgrade_preserves_unknown_existing_holds(): void
+    {
+        [$order, $id] = $this->place();
+        app(Payments::class)->apply('test.gateway.card', $this->verifiedResult($id, 'paid', 'paid'));
+        Schema::table('gateway_payment_attempts', fn ($table) => $table->dropColumn('review_reasons'));
+        DB::table('gateway_payment_attempts')->where('id', $id)->update(['needs_review' => true]);
+        (require database_path('migrations/2026_10_15_000004_add_gateway_review_reasons.php'))->up();
+        app(Payments::class)->apply('test.gateway.card', $this->verifiedResult($id, 'review_cleared', 'dispute-resolved'));
+        $this->assertSame(['legacy_review'], app(Payments::class)->history($order->id)[0]['review_reasons']);
+        $this->assertDatabaseHas('gateway_payment_attempts', ['id' => $id, 'needs_review' => true]);
+    }
+
+    public function test_zero_amount_confirmation_is_paid_rather_than_refunded(): void
+    {
+        $this->product->variants()->firstOrFail()->update(['price' => '0.00']);
+        DeliveryZone::firstOrFail()->update(['delivery_fee' => '0.00']);
+        [$order, $id] = $this->place();
+        app(Payments::class)->apply('test.gateway.card', $this->verifiedResult($id, 'paid', 'zero-confirmation'));
+        $this->assertSame('0.00', $order->fresh()->grand_total);
+        $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertSame(4, $this->product->fresh()->stock_quantity);
     }
 }

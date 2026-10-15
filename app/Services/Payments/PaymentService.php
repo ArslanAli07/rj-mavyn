@@ -155,19 +155,18 @@ final class PaymentService implements Payments
             }
             $order = Order::lockForUpdate()->findOrFail($row->order_id);
             $changes = ['updated_at' => now(), 'reference' => $result->reference ?? $row->reference];
+            $reasons = $this->reviewReasons($row);
             if ($result->status === 'paid') {
-                $otherCapture = DB::table('gateway_payment_attempts')->where('order_id', $order->id)->where('id', '!=', $row->id)->where('captured', true)->lockForUpdate()->get(['id'])->isNotEmpty();
-                $review = $order->status === 'cancelled' || $otherCapture;
-                $changes += ['captured' => true, 'status' => 'paid', 'needs_review' => $row->needs_review || $review, 'reference' => $result->reference, 'action' => null];
-                if (! $otherCapture && ! $row->captured && $order->payment_status !== 'refunded') {
-                    $this->orderState($order, ['payment_status' => 'paid']);
+                if (! $row->captured && ($order->status === 'cancelled' || $order->payment_status === 'refunded')) {
+                    $reasons[] = 'late_capture';
                 }
+                $changes += ['captured' => true, 'status' => 'paid', 'reference' => $result->reference, 'action' => null];
             } elseif ($result->status === 'review_cleared') {
                 abort_unless($row->captured, 409, 'Review resolution requires a captured payment.');
-                $changes += ['needs_review' => false];
+                $reasons = array_values(array_diff($reasons, ['dispute']));
             } elseif ($result->status === 'disputed') {
                 abort_unless($row->captured, 409, 'A dispute requires a captured payment.');
-                $changes += ['needs_review' => true];
+                $reasons[] = 'dispute';
             } elseif (! $row->captured && (in_array($row->status, self::OPEN, true) || ($row->status === 'failed' && in_array($result->status, ['expired', 'cancelled'], true)))) {
                 $changes += ['status' => $result->status];
                 if (in_array($result->status, ['expired', 'cancelled'], true)) {
@@ -178,7 +177,8 @@ final class PaymentService implements Payments
                 }
                 // A retryable failure stays pending on the order and retains its reservation.
             }
-            DB::table('gateway_payment_attempts')->where('id', $row->id)->update($changes);
+            DB::table('gateway_payment_attempts')->where('id', $row->id)->update($changes + $this->reviewChanges($reasons));
+            $this->refreshFinancialState($order->id);
         }, 3);
     }
 
@@ -224,10 +224,6 @@ final class PaymentService implements Payments
                 DB::table('gateway_refunds')->insert(['id' => $result->refundId, 'attempt_id' => $attempt->id, 'actor_id' => null,
                     'amount_minor' => $result->amountMinor, 'currency' => $result->currency, 'status' => 'pending',
                     'reference' => $result->reference, 'created_at' => now(), 'updated_at' => now()]);
-                $reserved = (int) DB::table('gateway_refunds')->where('attempt_id', $attempt->id)->whereIn('status', ['created', 'pending', 'succeeded'])->lockForUpdate()->get(['amount_minor'])->sum('amount_minor');
-                if ($reserved > (int) $attempt->amount_minor) {
-                    DB::table('gateway_payment_attempts')->where('id', $attempt->id)->update(['needs_review' => true]);
-                }
                 $refund = DB::table('gateway_refunds')->where('id', $result->refundId)->first();
             }
             $attempt = DB::table('gateway_payment_attempts')->where('id', $refund->attempt_id)->lockForUpdate()->first();
@@ -238,14 +234,7 @@ final class PaymentService implements Payments
                 return;
             }
             DB::table('gateway_refunds')->where('id', $refund->id)->update(['status' => $result->status, 'reference' => $result->reference ?? $refund->reference, 'updated_at' => now()]);
-            if ($result->status === 'succeeded') {
-                $captured = (int) DB::table('gateway_payment_attempts')->where('order_id', $attempt->order_id)->where('captured', true)->lockForUpdate()->get(['amount_minor'])->sum('amount_minor');
-                $returned = (int) DB::table('gateway_refunds as r')->join('gateway_payment_attempts as p', 'p.id', '=', 'r.attempt_id')->where('p.order_id', $attempt->order_id)->where('r.status', 'succeeded')->lockForUpdate()->get(['r.amount_minor'])->sum('amount_minor');
-                if ($returned === $captured) {
-                    $this->orderState(Order::findOrFail($attempt->order_id), ['payment_status' => 'refunded']);
-                    DB::table('gateway_payment_attempts')->where('order_id', $attempt->order_id)->update(['needs_review' => false]);
-                }
-            }
+            $this->refreshFinancialState($attempt->order_id);
         }, 3);
     }
 
@@ -259,6 +248,7 @@ final class PaymentService implements Payments
             return ['id' => $row->id, 'provider_key' => $row->provider_key, 'sequence' => (int) $row->sequence,
                 'amount_minor' => (int) $row->amount_minor, 'currency' => $row->currency, 'status' => $row->status,
                 'reference' => $row->reference, 'captured' => (bool) $row->captured, 'needs_review' => (bool) $row->needs_review,
+                'review_reasons' => $this->reviewReasons($row),
                 'last_error_class' => $row->last_error_class,
                 'refunds' => DB::table('gateway_refunds')->where('attempt_id', $row->id)->orderBy('created_at')->get(['id', 'amount_minor', 'currency', 'status', 'reference'])->map(fn ($refund) => [
                     'id' => $refund->id, 'amount_minor' => (int) $refund->amount_minor, 'currency' => $refund->currency,
@@ -306,7 +296,7 @@ final class PaymentService implements Payments
             if ($lease = $this->claim('gateway_refunds', $row->id, ['created', 'pending'])) {
                 try {
                     $context = $this->refundContext($row->id);
-                    if ($row->status === 'created' && DB::table('gateway_payment_attempts')->where('id', $row->attempt_id)->where('needs_review', true)->exists()) {
+                    if ($row->status === 'created' && in_array('refund_conflict', $this->reviewReasons(DB::table('gateway_payment_attempts')->where('id', $row->attempt_id)->first()), true)) {
                         $this->release('gateway_refunds', $row->id, $lease);
 
                         continue;
@@ -326,6 +316,55 @@ final class PaymentService implements Payments
         }
 
         return ['processed' => $processed, 'review_required' => DB::table('gateway_payment_attempts')->where('needs_review', true)->count()];
+    }
+
+    /** Caller holds the currency/extension locks; all accounting uses current locking reads. */
+    private function refreshFinancialState(int $orderId): void
+    {
+        $order = Order::lockForUpdate()->findOrFail($orderId);
+        $attempts = DB::table('gateway_payment_attempts')->where('order_id', $orderId)->orderBy('sequence')->lockForUpdate()->get();
+        $refunds = DB::table('gateway_refunds')->whereIn('attempt_id', $attempts->pluck('id'))->lockForUpdate()->get();
+        $captured = (int) $attempts->where('captured', true)->sum('amount_minor');
+        $returned = (int) $refunds->where('status', 'succeeded')->sum('amount_minor');
+        $excess = $captured - $returned > Money::minor($order->grand_total);
+        foreach ($attempts as $attempt) {
+            $ownRefunds = $refunds->where('attempt_id', $attempt->id);
+            $ownReturned = (int) $ownRefunds->where('status', 'succeeded')->sum('amount_minor');
+            $reserved = (int) $ownRefunds->whereIn('status', ['created', 'pending', 'succeeded'])->sum('amount_minor');
+            $reasons = array_values(array_diff($this->reviewReasons($attempt), ['duplicate_capture', 'refund_conflict']));
+            if ($excess && $attempt->captured && $ownReturned < (int) $attempt->amount_minor) {
+                $reasons[] = 'duplicate_capture';
+            }
+            if ($reserved > (int) $attempt->amount_minor) {
+                $reasons[] = 'refund_conflict';
+            }
+            if ($attempt->captured && $ownReturned >= (int) $attempt->amount_minor) {
+                $reasons = array_values(array_diff($reasons, ['late_capture']));
+            }
+            DB::table('gateway_payment_attempts')->where('id', $attempt->id)->update($this->reviewChanges($reasons));
+        }
+        if ($attempts->where('captured', true)->isNotEmpty()) {
+            $payment = $captured > 0 && $returned >= $captured ? 'refunded' : 'paid';
+            if ($order->payment_status !== $payment) {
+                $this->orderState($order, ['payment_status' => $payment]);
+            }
+        }
+    }
+
+    private function reviewReasons(object $row): array
+    {
+        // Preserve holds whose cause predates the reason journal; never guess that they were disputes.
+        return $row->review_reasons === null
+            ? ($row->needs_review ? ['legacy_review'] : [])
+            : json_decode($row->review_reasons, true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    private function reviewChanges(array $reasons): array
+    {
+        $reasons = array_values(array_unique($reasons));
+        sort($reasons);
+
+        return ['needs_review' => $reasons !== [], 'review_reasons' => json_encode($reasons, JSON_THROW_ON_ERROR)];
     }
 
     private function provider(string $id): GatewayProvider

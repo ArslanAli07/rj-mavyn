@@ -3,18 +3,25 @@
 namespace App\Models;
 
 use App\Services\InventoryService;
+use App\Services\Pricing\PricingService;
 use App\Services\StoreIdentity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class Order extends Model
 {
     public function delete()
     {
         return DB::transaction(function () {
+            app(PricingService::class)->lock(true);
+            if (Schema::hasTable('gateway_payment_attempts') && DB::table('gateway_payment_attempts')->where('order_id', $this->id)->exists()) {
+                throw ValidationException::withMessages(['order' => 'Orders with online payment history must be retained.']);
+            }
             $ids = InventoryReservation::where('order_id', $this->id)->whereNotNull('product_id')->pluck('product_id')->all();
             app(InventoryService::class)->lockProducts($ids);
             static::whereKey($this->id)->lockForUpdate()->first();

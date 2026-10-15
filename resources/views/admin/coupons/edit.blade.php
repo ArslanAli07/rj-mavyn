@@ -1,4 +1,5 @@
-<x-admin-layout title="Edit coupon: {{ $coupon->code }}">
+<x-admin-layout title="Edit coupon: {{ $coupon->
+    <p class="small text-muted">Changing the discount type clears other currencies’ coupon rules. Configure those rules again through currency management.</p>code }}">
     @php($legacyCurrency = ($product ?? $coupon ?? $deliveryZone ?? null)?->getRawOriginal('price_currency') ?? app(\Mavyn\Contracts\Pricing\PriceBook::class)->context()->currency)
 
     {{-- Header --}}

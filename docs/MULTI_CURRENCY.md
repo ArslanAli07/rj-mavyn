@@ -2,8 +2,8 @@
 
 Phase A supplies the core foundation for a currency-management plugin. It does
 not implement that plugin, exchange rates, customer currency selectors, or online
-payment initiation. Phase B of `CORE_MULTI_CURRENCY_REQUIREMENTS.md` remains a
-separate, unimplemented Stripe readiness gate.
+payment initiation. The additive generic online-payment foundation is documented in
+[ONLINE_PAYMENTS.md](ONLINE_PAYMENTS.md); the real gateway plugin remains separate.
 
 ## Public contracts
 
@@ -317,3 +317,16 @@ that fixture's fee; confirming the old review must reject, and a fresh review
 must display the new total. `inspect` reports fixture order/outbox counts. Stop
 the temporary server and remove that fixture directory after testing. Its SQLite
 database, sessions, compiled views and generated identity are isolated under `/tmp`.
+
+## Currency integrity fixes (0.1.2)
+
+Changing a coupon between fixed and percentage always rewrites its original-
+currency rule, even when the numeric amount is unchanged. Other currencies
+become ineligible until their rules are explicitly configured again. Invalid
+legacy rules left by older code fail closed instead of raising a checkout error.
+
+Deleting a price through `PriceBook` also records a permanent legacy-backfill
+exclusion. Re-running backfill cannot restore that deliberately removed price.
+An explicit management/model write may still create a new canonical price;
+backfill remains excluded from recreating it on its own. Apply the additive
+exclusion migration before using deletion in the updated management plugin.

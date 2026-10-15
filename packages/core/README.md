@@ -18,3 +18,5 @@ Root Composer uses versioned path repositories for development. Production insta
 Persistence, locking, inventory reservations, outbox delivery, shared admin routes/views, and migrations remain host adapters for now. Extraction is incremental: compatibility wrappers preserve `App` names and existing serialized jobs/model identities. The Plugins namespace now implements catalog validation/dependency ordering, typed settings normalization, hooks, provider registries, and registration contexts. Discovery/state/routes/admin are host adapters. See ../../docs/PLUGIN_RUNTIME.md for implemented extension APIs. This package is not a complete standalone storefront.
 
 Version 0.1.1 adds the supported currency definitions/bounds and `Pricing\QuoteFingerprint`, including canonical object-key ordering for SQL JSON storage. See [Independent currency pricing](../../docs/MULTI_CURRENCY.md) for the host integration.
+
+Version 0.1.2 supports the additive payment callback route scope. The host owns gateway operation journals, settlement and refund invariants; gateway implementations remain optional plugins.

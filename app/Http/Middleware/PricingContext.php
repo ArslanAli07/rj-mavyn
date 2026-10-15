@@ -26,6 +26,11 @@ final class PricingContext
             return $next($request);
         }
 
+        // Gateway calls acquire their own short transactions and must run after commit.
+        if ($request->routeIs('payments.start')) {
+            return $next($request);
+        }
+
         return DB::transaction(function () use ($request, $next, $pricing) {
             $context = $pricing->lock(! $request->isMethodSafe());
             if (! $request->isMethodSafe() && $request->is('admin/*') && $request->has('pricing_revision')) {

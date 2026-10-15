@@ -245,6 +245,7 @@ final class PricingService implements PriceBook
             foreach ($validated as [$kind, $id, $values]) {
                 $key = ['kind' => $kind, 'entity_id' => $id, 'currency' => $currency];
                 if ($values === null) {
+                    DB::table('currency_price_backfill_exclusions')->insertOrIgnore($key);
                     DB::table('currency_prices')->where($key)->delete();
                 } else {
                     DB::table('currency_prices')->updateOrInsert($key, $values);

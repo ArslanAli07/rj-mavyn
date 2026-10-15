@@ -7,3 +7,5 @@ Core services depend on this interface. The host binds an Eloquent-backed adapte
 Changes to public signatures follow semantic versioning. The development host assigns version `0.1.1` through its Composer path repository. Release consumers should use tagged packages from their Composer repository; no public release has been published.
 
 Version 0.1.1 adds `Pricing\PriceBook`, `Pricing\CurrencyContext`, `Pricing\CheckoutReview`, and the additive `Plugins\CurrencyPaymentProvider`. The host bindings, permissions, money bounds and versioned upgrade path are documented in [Independent currency pricing](../../docs/MULTI_CURRENCY.md).
+
+`Payments\GatewayProvider` and optional `RefundProvider` extend selectable/currency-aware payments. `Payments\Payments` exposes verified result/refund operations and permissioned history. See `docs/ONLINE_PAYMENTS.md` in the host for transaction and callback requirements. These contracts require core/contracts 0.1.2 or newer.

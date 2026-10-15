@@ -144,6 +144,12 @@
             originalPlacement ||= new FormData(form);
             try {
                 const result = await post(form.action, originalPlacement);
+                if (result.payment_action?.type === 'redirect') {
+                    const payment = new URL(result.payment_action.url, location.origin);
+                    if (payment.origin !== location.origin) throw new Error('Invalid payment continuation URL.');
+                    location.assign(payment.href);
+                    return;
+                }
                 form.hidden = true;
                 message.replaceChildren(document.createTextNode('Order placed. '));
                 const tracking = new URL(result.tracking_url, location.origin);

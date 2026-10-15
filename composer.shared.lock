@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e5eb298b2944917112c66d923572faf0",
+    "content-hash": "14b717db5b9a44e8524f7cec94a1cd74",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -2780,11 +2780,11 @@
         },
         {
             "name": "mavyn/contracts",
-            "version": "0.1.1",
+            "version": "0.1.2",
             "dist": {
                 "type": "path",
                 "url": "packages/contracts",
-                "reference": "eb1cab2f2c98272ecd0912d9e163f8ededfd472b"
+                "reference": "ae34e0c9f777cb8c4d2f7aa6b531b0210e371b75"
             },
             "require": {
                 "php": "^8.3"
@@ -2806,16 +2806,16 @@
         },
         {
             "name": "mavyn/core",
-            "version": "0.1.1",
+            "version": "0.1.2",
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "bcbf9ddfe23e1d6e24f38baa5e3e39eca155020e"
+                "reference": "b7346f2e56301615c79d24a3f76c99bdfac7e861"
             },
             "require": {
                 "composer/semver": "^3.4",
                 "ext-mbstring": "*",
-                "mavyn/contracts": "^0.1.1",
+                "mavyn/contracts": "^0.1.2",
                 "php": "^8.3"
             },
             "type": "library",
@@ -2839,11 +2839,11 @@
             "dist": {
                 "type": "path",
                 "url": "themes/default",
-                "reference": "e90d58ae4cf04207df33e3de5fe4e3c93c03414e"
+                "reference": "44dd99dd70d6f80b3d02c83493a9ab3a32125eee"
             },
             "require": {
-                "mavyn/contracts": "^0.1.1",
-                "mavyn/core": "^0.1.1",
+                "mavyn/contracts": "^0.1.2",
+                "mavyn/core": "^0.1.2",
                 "php": "^8.3"
             },
             "type": "library",

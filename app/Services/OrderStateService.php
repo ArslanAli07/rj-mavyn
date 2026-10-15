@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\Admin;
 use App\Models\InventoryReservation;
 use App\Models\Order;
+use App\Services\Pricing\PricingService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class OrderStateService
@@ -23,9 +25,10 @@ class OrderStateService
 
     public function __construct(private InventoryService $inventory) {}
 
-    public function updateMany(array $ids, array $data, ?Admin $actor, bool $notifyCustomer = false): Collection
+    public function updateMany(array $ids, array $data, ?Admin $actor, bool $notifyCustomer = false, bool $verifiedGateway = false): Collection
     {
-        return DB::transaction(function () use ($ids, $data, $actor, $notifyCustomer) {
+        return DB::transaction(function () use ($ids, $data, $actor, $notifyCustomer, $verifiedGateway) {
+            app(PricingService::class)->lock();
             $productIds = InventoryReservation::whereIn('order_id', $ids)->whereNotNull('product_id')->pluck('product_id')->unique()->all();
             $this->inventory->lockProducts($productIds);
             $orders = Order::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
@@ -36,8 +39,15 @@ class OrderStateService
                 if ($actor && array_key_exists('payment_status', $data) && $data['payment_status'] !== $order->payment_status) {
                     abort_unless($actor->hasPermission('orders.payment'), 403);
                 }
+                $online = Schema::hasTable('gateway_payment_attempts') && DB::table('gateway_payment_attempts')->where('order_id', $order->id)->lockForUpdate()->get(['id'])->isNotEmpty();
+                if ($online && ! $verifiedGateway && isset($data['payment_status']) && $data['payment_status'] !== $order->payment_status) {
+                    throw ValidationException::withMessages(['payment_status' => 'Online payment status changes require a verified gateway result or refund operation.']);
+                }
                 $status = $data['status'] ?? $order->status;
                 $payment = $data['payment_status'] ?? $order->payment_status;
+                if ($online && $status !== $order->status && ! in_array($status, ['pending', 'cancelled'], true) && ($payment !== 'paid' || DB::table('gateway_payment_attempts')->where('order_id', $order->id)->where('needs_review', true)->lockForUpdate()->get(['id'])->isNotEmpty())) {
+                    throw ValidationException::withMessages(['status' => 'Verified payment and resolution of payment review are required before fulfillment.']);
+                }
                 if (! array_key_exists($status, Order::STATUSES) || ! in_array($payment, ['pending', 'paid', 'failed', 'refunded'], true)) {
                     throw ValidationException::withMessages(['status' => 'Unsupported order or payment status.']);
                 }

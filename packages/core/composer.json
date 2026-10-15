@@ -5,7 +5,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
-        "mavyn/contracts": "^0.1.1",
+        "mavyn/contracts": "^0.1.2",
         "ext-mbstring": "*",
         "composer/semver": "^3.4"
     },

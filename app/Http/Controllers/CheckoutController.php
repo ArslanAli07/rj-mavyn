@@ -8,6 +8,7 @@ use App\Services\CheckoutAttemptService;
 use App\Services\OrderAccessService;
 use App\Services\OrderPlacementService;
 use App\Services\PaymentMethodService;
+use App\Services\Payments\PaymentService;
 use App\Services\ShippingService;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
@@ -35,7 +36,7 @@ class CheckoutController extends Controller
             if ($order) {
                 session(['placed_order_id' => $order->id]);
 
-                return redirect()->route($order->payment_method === 'cod' ? 'checkout.success' : 'checkout.payment-instructions', $order);
+                return redirect()->route(app(PaymentService::class)->forOrder($order->id) ? 'payments.show' : ($order->payment_method === 'cod' ? 'checkout.success' : 'checkout.payment-instructions'), $order);
             }
 
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
@@ -126,7 +127,12 @@ class CheckoutController extends Controller
                 'order_id' => $order->id,
                 'replayed' => $placement->replayed,
                 'tracking_url' => route('orders.track-guest', $order->tracking_token),
+                'payment_action' => app(PaymentService::class)->checkoutAction($order),
             ]);
+        }
+
+        if (app(PaymentService::class)->forOrder($order->id)) {
+            return redirect()->route('payments.show', $order);
         }
 
         // COD → success page; manual payments → payment instructions

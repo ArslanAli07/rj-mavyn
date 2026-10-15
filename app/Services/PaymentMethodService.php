@@ -7,6 +7,7 @@ use App\Services\Plugins\PluginRuntime;
 use App\Services\Pricing\PricingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Mavyn\Contracts\Payments\GatewayProvider;
 use Mavyn\Contracts\Plugins\CurrencyPaymentProvider;
 use Mavyn\Contracts\Plugins\PaymentInstructions;
 use Mavyn\Contracts\Plugins\SelectablePaymentProvider;
@@ -35,7 +36,7 @@ class PaymentMethodService
             if (! $this->eligible($key, $id, $provider, $currency)) {
                 continue;
             }
-            $methods[$id] = ['provider_key' => $key, 'instructions' => $provider->instructions()];
+            $methods[$id] = ['provider_key' => $key, 'instructions' => $provider->instructions(), 'gateway' => $provider instanceof GatewayProvider, 'provider_class' => $provider::class];
         }
 
         return $methods;

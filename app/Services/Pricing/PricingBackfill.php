@@ -3,6 +3,7 @@
 namespace App\Services\Pricing;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Mavyn\Core\Currencies;
 use Mavyn\Core\Money;
 
@@ -34,6 +35,7 @@ final class PricingBackfill
                 $report['amounts'] = ['currency' => null, 'evidence' => implode('; ', $moneyIssues), 'unresolved' => true];
             }
             $changed = ! $context->ready;
+            $hasExclusions = Schema::hasTable('currency_price_backfill_exclusions');
             // Never expose a partially migrated price book for selling.
             DB::table('currency_runtime')->where('id', 1)->update(['ready' => false]);
             if (! $ready) {
@@ -43,10 +45,13 @@ final class PricingBackfill
             }
             foreach (PricingService::TABLES as $kind => $table) {
                 $currency = $report[$kind]['currency'];
-                DB::table($table)->orderBy('id')->chunkById(250, function ($rows) use ($kind, $table, $currency, &$changed) {
+                DB::table($table)->orderBy('id')->chunkById(250, function ($rows) use ($kind, $table, $currency, $hasExclusions, &$changed) {
                     foreach ($rows as $row) {
                         $code = $row->price_currency ?? $currency;
                         Currencies::symbol($code);
+                        if ($hasExclusions && DB::table('currency_price_backfill_exclusions')->where(['kind' => $kind, 'entity_id' => $row->id, 'currency' => $code])->exists()) {
+                            continue;
+                        }
                         $fields = $this->legacyFields($kind, $row);
                         $inserted = DB::table('currency_prices')->insertOrIgnore(['kind' => $kind, 'entity_id' => $row->id, 'currency' => $code, ...$fields]);
                         $stamped = DB::table($table)->where('id', $row->id)->whereNull('price_currency')->update(['price_currency' => $code]);

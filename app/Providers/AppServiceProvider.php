@@ -18,6 +18,7 @@ use App\Services\CartService;
 use App\Services\EloquentSettingsStore;
 use App\Services\InventoryService;
 use App\Services\Media\MediaPolicyRegistry;
+use App\Services\Payments\PaymentService;
 use App\Services\Plugins\EloquentDeliveryZoneStore;
 use App\Services\Plugins\InstalledPluginCatalog;
 use App\Services\Plugins\LegacyCommerceSettings;
@@ -34,6 +35,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Mavyn\Contracts\Payments\Payments;
 use Mavyn\Contracts\Plugins\DeliveryZoneStore;
 use Mavyn\Contracts\Pricing\CheckoutReview;
 use Mavyn\Contracts\Pricing\PriceBook;
@@ -48,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(PricingService::class);
+        $this->app->bind(Payments::class, PaymentService::class);
         $this->app->bind(PriceBook::class, fn () => app(PricingService::class));
         $this->app->bind(CheckoutReview::class, CheckoutQuoteService::class);
         $this->app->scoped(ThemeRuntime::class);

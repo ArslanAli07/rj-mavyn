@@ -57,7 +57,12 @@ class Coupon extends Model
 
     public function currencyRule(): ?array
     {
-        return app(PricingService::class)->price('coupon', $this->id);
+        $row = app(PricingService::class)->price('coupon', $this->id);
+        if ($row && (($this->type === 'fixed' && $row['amount_minor'] === null) || ($this->type === 'percentage' && $row['amount_minor'] !== null))) {
+            return null;
+        }
+
+        return $row;
     }
 
     public function calculateDiscount(string|int|float $subtotal): string

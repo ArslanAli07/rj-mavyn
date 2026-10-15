@@ -31,3 +31,5 @@ Start with the PRD and architecture, then use the relevant development guide. Ex
 - [Commerce plugins and compatibility adapters](COMMERCE_PLUGINS.md)
 
 - [Implemented theme runtime and recovery](THEME_RUNTIME.md)
+
+- [Generic online payments](ONLINE_PAYMENTS.md): gateway contracts, verified results, refunds, callbacks and durable recovery.

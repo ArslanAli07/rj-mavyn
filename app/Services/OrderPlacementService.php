@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Services\Media\MediaLibraryService;
+use App\Services\Payments\PaymentService;
 use App\Services\Pricing\CheckoutQuoteService;
 use App\Services\Pricing\PricingService;
 use App\Support\Money;
@@ -138,7 +139,7 @@ class OrderPlacementService
                     'tax_amount' => Money::decimal($taxMinor),
                     'grand_total' => Money::decimal(max(0, Money::minor($subtotal) - Money::minor($discount)) + $taxMinor + $quote->feeMinor),
                     'payment_method' => $data['payment_method'],
-                    'payment_instructions_snapshot' => ['provider_key' => $payment['provider_key'], 'label' => $payment['instructions']->label, 'instructions' => $payment['instructions']->instructions, 'requires_receipt' => $payment['instructions']->requiresReceipt],
+                    'payment_instructions_snapshot' => ['provider_key' => $payment['provider_key'], 'label' => $payment['instructions']->label, 'instructions' => $payment['instructions']->instructions, 'requires_receipt' => $payment['instructions']->requiresReceipt, 'gateway' => $payment['gateway'] ?? false],
                     'payment_receipt' => $receiptPath,
                     'payment_receipt_disk' => 'local',
                     'payment_status' => 'pending',
@@ -146,6 +147,10 @@ class OrderPlacementService
                     'order_notes' => $data['order_notes'] ?? null,
                     'inventory_managed' => true,
                 ]);
+
+                if ($payment['gateway'] ?? false) {
+                    app(PaymentService::class)->record($order, $payment['provider_key'], $payment['provider_class'], $attempt->owner_hash);
+                }
 
                 foreach ($items as $item) {
                     $orderItem = OrderItem::create([

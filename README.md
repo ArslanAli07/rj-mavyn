@@ -88,3 +88,5 @@ Installed plugins support [local editing without repeated Composer updates](docs
 Default `php artisan migrate --seed` initializes only required platform data, including the first administrator and missing core settings. Store catalog/media/demo content is excluded. See [database setup](docs/DATABASE_SETUP.md) for credentials, unattended setup and idempotent behavior.
 
 Independent currency pricing and safe upgrades are documented in [Multi-currency operations](docs/MULTI_CURRENCY.md). Existing installations must merge the updated checkout theme and resolve price provenance before enabling currency switching.
+
+Online payment plugins use the generic contracts and host operations in [online payments](docs/ONLINE_PAYMENTS.md). Gateway SDKs and credentials remain in the plugin.

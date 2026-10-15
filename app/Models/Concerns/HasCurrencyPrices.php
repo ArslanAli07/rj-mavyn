@@ -34,13 +34,14 @@ trait HasCurrencyPrices
     {
         $pricing = app(PricingService::class);
         $fields = $this->currencyFields();
-        $moneyChanged = ! $this->exists || $this->isDirty([...$fields, 'price_currency']) || ($this->priceKind() === 'variant' && $this->isDirty('is_default'));
+        $typeChanged = $this->exists && $this->priceKind() === 'coupon' && $this->isDirty('type');
+        $moneyChanged = $typeChanged || ! $this->exists || $this->isDirty([...$fields, 'price_currency']) || ($this->priceKind() === 'variant' && $this->isDirty('is_default'));
         $termsChanged = $moneyChanged || $this->isDirty(['is_active', 'is_default', 'sort_order', 'type', 'usage_limit', 'per_user_limit', 'starts_at', 'expires_at']);
         if (! $pricing->installed() || ! $termsChanged) {
             return parent::save($options);
         }
 
-        return DB::transaction(function () use ($pricing, $options, $moneyChanged) {
+        return DB::transaction(function () use ($pricing, $options, $moneyChanged, $typeChanged) {
             $context = $pricing->lock(true);
             if ($this->exists && $this->getRawOriginal('price_currency') === null) {
                 throw ValidationException::withMessages(['price_currency' => 'Resolve legacy price provenance before editing this record.']);
@@ -77,6 +78,10 @@ trait HasCurrencyPrices
             }
             $saved = parent::save($options);
             if ($saved && $values !== null) {
+                if ($typeChanged) {
+                    // A fixed amount cannot be inferred from a percentage in another currency.
+                    DB::table('currency_prices')->where('kind', 'coupon')->where('entity_id', $this->id)->where('currency', '!=', $currency)->delete();
+                }
                 DB::table('currency_prices')->updateOrInsert(['kind' => $kind, 'entity_id' => $this->id, 'currency' => $currency], $values);
                 if ($kind === 'product') {
                     $variant = DB::table('product_variants')->where('product_id', $this->id)->where('is_active', true)->orderByDesc('is_default')->orderBy('sort_order')->orderBy('id')->first();

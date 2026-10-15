@@ -61,8 +61,11 @@ final class PluginCatalog
                     throw new InvalidArgumentException('Secret defaults must be empty.');
                 }
             }
-            if (array_diff(array_keys($meta['routes'] ?? []), ['admin', 'storefront'])) {
+            if (array_diff(array_keys($meta['routes'] ?? []), ['admin', 'storefront', 'callbacks'])) {
                 throw new InvalidArgumentException('Unknown route scope.');
+            }
+            if (isset($meta['routes']['callbacks']) && ! in_array('payment.provider', $meta['capabilities'] ?? [], true)) {
+                throw new InvalidArgumentException('Payment callbacks require the payment.provider capability.');
             }
             if (isset($meta['routes']['admin']) && ! isset($meta['permissions'][$id.'.manage'])) {
                 throw new InvalidArgumentException('Admin routes require a declared manage permission.');

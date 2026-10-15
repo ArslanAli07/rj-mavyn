@@ -1,0 +1,6 @@
+{
+    "name": "test/gateway",
+    "type": "library",
+    "require": {"php": "^8.3", "mavyn/core": "^0.1", "mavyn/contracts": "^0.1"},
+    "extra": {"mavyn": {"kind": "plugin", "id": "test.gateway", "name": "Gateway fixture", "provider": "Tests\\Fixtures\\Gateway\\GatewayPlugin", "capabilities": ["payment.provider", "fulfillment.provider"], "routes": {"callbacks": "routes/callbacks.php"}}}
+}

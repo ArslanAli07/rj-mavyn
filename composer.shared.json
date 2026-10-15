@@ -17,8 +17,8 @@
         "laravel/tinker": "^3.0",
         "spatie/laravel-medialibrary": "^11.23",
         "spatie/laravel-sitemap": "^8.1",
-        "mavyn/contracts": "^0.1.1",
-        "mavyn/core": "^0.1.1",
+        "mavyn/contracts": "^0.1.2",
+        "mavyn/core": "^0.1.2",
         "mavyn/theme-default": "^0.1"
     },
     "require-dev": {
@@ -125,8 +125,8 @@
             "options": {
                 "symlink": true,
                 "versions": {
-                    "mavyn/core": "0.1.1",
-                    "mavyn/contracts": "0.1.1"
+                    "mavyn/core": "0.1.2",
+                    "mavyn/contracts": "0.1.2"
                 }
             }
         },

@@ -9,6 +9,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ShopController;
@@ -112,3 +113,7 @@ Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 // Include Breeze auth routes
 require __DIR__.'/auth.php';
+
+// Generic gateway continuation; external calls occur only on the owned CSRF-protected POST.
+Route::get('/payments/{order}', [PaymentController::class, 'show'])->name('payments.show');
+Route::post('/payments/{order}/start', [PaymentController::class, 'start'])->middleware('throttle:10,1')->name('payments.start');

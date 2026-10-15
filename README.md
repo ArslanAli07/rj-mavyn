@@ -1,9 +1,11 @@
 # Project Mavyn
 
-The master repository contains the application, core packages, and extension
-runtime. Each application clone supplies its own themes and plugins. Keep their
-source and client dependency configuration in separate repositories or backups;
-commits to this repository do not back up ignored files.
+The master repository contains the application, core packages, extension runtime,
+and a bundled default theme seed in `resources/themes/default`. Setup copies the
+seed to `themes/default` when that directory is absent. Each application clone
+owns its installed themes and plugins. Keep customizations and client dependency
+configuration in separate repositories or backups; commits to this repository do
+not back up ignored files.
 
 ## Dependencies for a new clone
 
@@ -12,12 +14,20 @@ commits to this repository do not back up ignored files.
 Composer commands and the application. `composer.client.json` is an optional,
 ignored file that adds the clone's package requirements and repositories.
 
-Install the shared application before adding client packages:
+Prepare the dependency manifest, then run project setup:
 
 ```sh
 php bin/prepare-composer.php
-composer install
+composer setup
 ```
+
+Both preparation and `composer setup` copy the bundled default theme before
+Composer installs its path package. The theme ships prebuilt CSS and JavaScript;
+no separate theme build or download is required. Setup preserves an existing
+`themes/default` directory, including local edits. It then installs dependencies,
+creates `.env` if needed, generates the application key, migrates the database,
+and builds the shared admin assets. Configure database access before running it.
+For dependency installation alone, use `composer install` after preparation.
 
 To configure a storefront, copy `composer.client.example.json` to
 `composer.client.json`, replace the example package names and constraints, and
@@ -29,11 +39,13 @@ composer update
 php artisan platform:themes:activate your.theme-id
 ```
 
-The runtime requires a theme with the ID `mavyn.theme-default` as its complete
-fallback whenever themes are installed. Supply that package separately alongside
-your chosen theme. A core installation without themes cannot serve a storefront.
+The bundled `mavyn/theme-default` package supplies the complete storefront fallback
+and is installed through the shared lockfile. A fresh database selects it unless
+the reference Happy Tea theme is installed. Additional themes and plugins remain
+optional client packages.
 Client configuration can add requirements and repositories; it cannot override
-shared requirements. Package folders alone do not install or activate extensions.
+shared requirements. An older client's identical `mavyn/theme-default: ^0.1`
+requirement is accepted. Package folders alone do not install or activate extensions.
 
 The preparation command combines the shared manifest with the client package
 list and initializes a missing lockfile from the shared lock. It preserves an

@@ -7,6 +7,7 @@
             <file>tests/Unit/LegacyPaymentInstructionsTest.php</file>
             <file>tests/Unit/PluginContractsTest.php</file>
             <file>tests/Unit/ThemeContractsTest.php</file>
+            <file>tests/Unit/ProjectSetupTest.php</file>
             <file>tests/Feature/CloneBootstrapTest.php</file>
         </testsuite>
     </testsuites>

@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Services\Themes\InstalledThemeCatalog;
+use App\Services\Themes\ThemeAssets;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Mavyn\Core\Themes\ThemeCatalog;
 use Tests\Fixtures\Plugins\FixturePlugin;
 use Tests\TestCase;
 
@@ -69,6 +72,31 @@ class CloneBootstrapTest extends TestCase
         foreach (['products', 'product_variants', 'product_images', 'categories', 'occasions', 'home_slides', 'delivery_zones', 'coupons', 'users', 'orders', 'order_items', 'faqs', 'testimonials', 'media', 'media_assets', 'media_usages'] as $table) {
             $this->assertDatabaseCount($table, 0);
         }
+    }
+
+    public function test_new_clone_serves_the_bundled_default_theme_and_its_packaged_assets(): void
+    {
+        $this->catalog([]);
+        $package = json_decode(file_get_contents(base_path('themes/default/composer.json')), true, 512, JSON_THROW_ON_ERROR);
+        file_put_contents($this->themeCatalogPath, json_encode([
+            'format' => 1, 'lock_hash' => hash_file('sha256', base_path('composer.lock')),
+            'packages' => [['package' => $package['name'], 'version' => '0.1.0', 'path' => 'themes/default', 'manifest' => $package['extra']['mavyn']]],
+        ], JSON_THROW_ON_ERROR));
+
+        $this->assertSame(0, Artisan::call('migrate', ['--force' => true]));
+        app(InstalledThemeCatalog::class)->verify(ThemeCatalog::DEFAULT);
+        foreach (['/', '/shop', '/cart', '/contact', '/login', '/register', '/forgot-password'] as $path) {
+            $this->get($path)->assertOk()->assertSee('data-storefront-theme="'.ThemeCatalog::DEFAULT.'"', false)
+                ->assertSee('<script type="module"', false);
+        }
+        $assets = app(ThemeAssets::class)->urls([ThemeCatalog::DEFAULT]);
+        foreach ($assets['styles'] as $url) {
+            $this->get($url)->assertOk()->assertHeader('Content-Type', 'text/css; charset=UTF-8');
+        }
+        foreach ([...$assets['scripts'], ...array_values($assets['files'])] as $url) {
+            $this->get($url)->assertOk()->assertHeader('Content-Type', 'text/javascript; charset=UTF-8');
+        }
+        $this->assertSame(dirname($assets['scripts'][0]).'/vendor-CWk4R-Yb.js', $assets['files']['alpine']);
     }
 
     public function test_new_clone_imports_only_reference_plugins_that_are_installed(): void

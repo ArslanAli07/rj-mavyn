@@ -15,12 +15,18 @@ try {
         }
         foreach ($client['require'] ?? [] as $name => $constraint) {
             if (array_key_exists($name, $manifest['require'])) {
+                // Older clones listed the bundled default theme themselves.
+                if ($name === 'mavyn/theme-default' && $constraint === $manifest['require'][$name]) {
+                    continue;
+                }
                 throw new RuntimeException('Client configuration cannot override shared requirement: '.$name);
             }
             $manifest['require'][$name] = $constraint;
         }
         $manifest['repositories'] = array_merge($manifest['repositories'], $client['repositories'] ?? []);
     }
+
+    require __DIR__.'/copy-default-theme.php';
 
     // Keep an existing clone lockfile: it includes that clone's package graph.
     if (! is_file($root.'/composer.lock') && ! copy($root.'/composer.shared.lock', $root.'/composer.lock')) {

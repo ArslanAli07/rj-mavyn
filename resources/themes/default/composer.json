@@ -1,0 +1,74 @@
+{
+    "name": "mavyn/theme-default",
+    "description": "Default storefront theme",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "mavyn/core": "^0.1",
+        "mavyn/contracts": "^0.1"
+    },
+    "extra": {
+        "mavyn": {
+            "kind": "theme",
+            "id": "mavyn.theme-default",
+            "name": "Default",
+            "contract": "^0.1",
+            "parent": null,
+            "requires_active": {},
+            "settings": {
+                "accent_color": {
+                    "type": "color",
+                    "default": "#2458A6"
+                },
+                "welcome_text": {
+                    "type": "text",
+                    "default": "Explore our collection",
+                    "max": 150
+                }
+            },
+            "templates": {
+                "account.addresses": "resources/views/account/addresses.blade.php",
+                "account.dashboard": "resources/views/account/dashboard.blade.php",
+                "account.order-detail": "resources/views/account/order-detail.blade.php",
+                "account.orders": "resources/views/account/orders.blade.php",
+                "account.password": "resources/views/account/password.blade.php",
+                "account.profile": "resources/views/account/profile.blade.php",
+                "account.wishlist": "resources/views/account/wishlist.blade.php",
+                "auth.confirm-password": "resources/views/auth/confirm-password.blade.php",
+                "auth.forgot-password": "resources/views/auth/forgot-password.blade.php",
+                "auth.login": "resources/views/auth/login.blade.php",
+                "auth.register": "resources/views/auth/register.blade.php",
+                "auth.reset-password": "resources/views/auth/reset-password.blade.php",
+                "auth.verify-email": "resources/views/auth/verify-email.blade.php",
+                "components.breadcrumb": "resources/views/components/breadcrumb.blade.php",
+                "components.pagination": "resources/views/components/pagination.blade.php",
+                "components.product-card": "resources/views/components/product-card.blade.php",
+                "components.product-card-add": "resources/views/components/product-card-add.blade.php",
+                "layouts.app": "resources/views/layouts/app.blade.php",
+                "layouts.auth": "resources/views/layouts/auth.blade.php",
+                "pages.about": "resources/views/pages/about.blade.php",
+                "pages.cart": "resources/views/pages/cart.blade.php",
+                "pages.category": "resources/views/pages/category.blade.php",
+                "pages.checkout": "resources/views/pages/checkout.blade.php",
+                "pages.contact": "resources/views/pages/contact.blade.php",
+                "pages.faq": "resources/views/pages/faq.blade.php",
+                "pages.gallery": "resources/views/pages/gallery.blade.php",
+                "pages.home": "resources/views/pages/home.blade.php",
+                "pages.order-success": "resources/views/pages/order-success.blade.php",
+                "pages.payment-instructions": "resources/views/pages/payment-instructions.blade.php",
+                "pages.privacy": "resources/views/pages/privacy.blade.php",
+                "pages.product": "resources/views/pages/product.blade.php",
+                "pages.returns": "resources/views/pages/returns.blade.php",
+                "pages.search": "resources/views/pages/search.blade.php",
+                "pages.shipping": "resources/views/pages/shipping.blade.php",
+                "pages.shop": "resources/views/pages/shop.blade.php",
+                "pages.terms": "resources/views/pages/terms.blade.php",
+                "pages.track-order": "resources/views/pages/track-order.blade.php",
+                "pages.wishlist": "resources/views/pages/wishlist.blade.php",
+                "layouts.guest": "resources/views/layouts/guest.blade.php"
+            },
+            "asset_manifest": "dist/manifest.json"
+        }
+    }
+}

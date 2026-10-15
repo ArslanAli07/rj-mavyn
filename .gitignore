@@ -21,7 +21,8 @@
 /storage/*.key
 /storage/pail
 /vendor
-# Themes and plugins belong to each application clone, not the shared repository.
+# Installed themes and plugins belong to each application clone.
+# The bundled default theme seed is tracked under resources/themes/default.
 /themes/
 /plugins/
 /public/themes/

@@ -1,5 +1,7 @@
 <x-admin-layout title="Create new product">
-    @php($legacyCurrency = ($product ?? $coupon ?? $deliveryZone ?? null)?->getRawOriginal('price_currency') ?? app(\Mavyn\Contracts\Pricing\PriceBook::class)->context()->currency)
+    @php
+        $legacyCurrency = ($product ?? $coupon ?? $deliveryZone ?? null)?->getRawOriginal('price_currency') ?? app(\Mavyn\Contracts\Pricing\PriceBook::class)->context()->currency;
+    @endphp
 
     {{-- Header --}}
     <div class="mb-5 d-flex align-items-center justify-content-between border-bottom border-light-subtle pb-3">

@@ -48,6 +48,42 @@ class AdminProductIntegrityTest extends TestCase
             'values' => [['id' => $valueId, 'name' => 'Submitted choice', 'price_adjustment' => 0, 'is_active' => true]]];
     }
 
+    public function test_create_form_initializes_default_variants_and_empty_options(): void
+    {
+        $this->get(route('admin.products.create'))->assertOk()
+            ->assertSee('name="title"', false)
+            ->assertSee('variants: [{"id":null,"name":"Regular"', false)
+            ->assertSee('"name":"Large"', false)
+            ->assertSee('optionGroups: [],', false)
+            ->assertDontSee('@php', false);
+    }
+
+    public function test_edit_form_initializes_saved_variants_and_options(): void
+    {
+        $variant = $this->product->variants()->sole();
+        $group = $this->group($this->product, 'Gift wrapping');
+
+        $this->get(route('admin.products.edit', $this->product))->assertOk()
+            ->assertSee('value="Bag"', false)
+            ->assertSee('variants: [{"id":'.$variant->id.',"name":"Standard","price":100,', false)
+            ->assertSee('optionGroups: [{"id":'.$group->id.',"name":"Gift wrapping"', false)
+            ->assertSee('"name":"Original choice"', false)
+            ->assertDontSee('@php', false);
+    }
+
+    public function test_product_forms_restore_submitted_variants_and_options(): void
+    {
+        $variants = [['id' => null, 'name' => 'Submitted variant', 'price' => '125.50', 'is_default' => true, 'is_active' => true]];
+        $groups = [['id' => null, 'name' => 'Submitted group', 'values' => [['id' => null, 'name' => 'Submitted choice', 'price_adjustment' => '5.00']]]];
+
+        foreach ([route('admin.products.create'), route('admin.products.edit', $this->product)] as $url) {
+            $this->withSession(['_old_input' => ['variants' => $variants, 'option_groups' => $groups]])
+                ->get($url)->assertOk()
+                ->assertSee('variants: '.json_encode($variants).',', false)
+                ->assertSee('optionGroups: '.json_encode($groups).',', false);
+        }
+    }
+
     public function test_foreign_option_value_is_rejected_without_deleting_existing_choices(): void
     {
         $own = $this->group($this->product, 'Own group');

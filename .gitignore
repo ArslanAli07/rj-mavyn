@@ -47,3 +47,4 @@ Thumbs.db
 *.tar.zstd.tar.gz
 *.tar.zstd.tar.bz2
 /storage/media-library/
+/products-data

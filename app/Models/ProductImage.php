@@ -16,8 +16,18 @@ class ProductImage extends Model
 
     public function getImageUrlAttribute(): string
     {
-        return $this->image
-            ? asset('storage/' . $this->image)
-            : asset('images/placeholder.svg');
+        if (empty($this->image)) {
+            return asset('images/placeholder.svg');
+        }
+
+        // Images published with the document root are addressed directly; the
+        // rest live on the public storage disk.
+        if (str_starts_with($this->image, 'assets/') || str_starts_with($this->image, 'images/')) {
+            $segments = array_map('rawurlencode', explode('/', $this->image));
+
+            return asset(implode('/', $segments));
+        }
+
+        return asset('storage/' . $this->image);
     }
 }

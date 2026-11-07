@@ -54,6 +54,26 @@
                 <input type="number" id="display_order" name="display_order" value="{{ old('display_order', $category->display_order) }}" required class="form-control small num">
                 @error('display_order') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
             </div>
+            <div>
+                <label for="subgroup" class="form-label">Menu column group</label>
+                <input type="text" id="subgroup" name="subgroup" value="{{ old('subgroup', $category->subgroup) }}" placeholder="e.g. Jackets" class="form-control small">
+                <p class="text-body-secondary small mt-1">Heading this category sits under in the nav mega-menu. Leave empty for the first column.</p>
+                @error('subgroup') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
+            </div>
+        </div>
+
+        <div class="d-grid admin-cols-1 admin-cols-sm-2 gap-4">
+            <div>
+                <label for="nav_badge" class="form-label">Nav badge</label>
+                <select id="nav_badge" name="nav_badge" class="form-select small">
+                    <option value="">None</option>
+                    @foreach(\App\Models\Category::NAV_BADGES as $badge)
+                        <option value="{{ $badge }}" @selected(old('nav_badge', $category->nav_badge) === $badge)>{{ ucfirst($badge) }}</option>
+                    @endforeach
+                </select>
+                @error('nav_badge') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
+            </div>
+            <div></div>
         </div>
 
         <div class="pt-2 d-flex flex-column flex-sm-row gap-4">

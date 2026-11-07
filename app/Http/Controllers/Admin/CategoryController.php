@@ -44,11 +44,15 @@ class CategoryController extends Controller
             'display_order' => 'integer|min:0',
             'is_active' => 'boolean',
             'show_on_homepage' => 'boolean',
+            'subgroup' => 'nullable|string|max:100',
+            'nav_badge' => 'nullable|string|in:'.implode(',', Category::NAV_BADGES),
         ]);
 
         $slugField = $request->filled('slug') ? 'slug' : 'name';
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
         app(CatalogSlugService::class)->validate(Category::class, $data['slug'], $slugField, 100);
+        $data['subgroup'] = $data['subgroup'] ?? null;
+        $data['nav_badge'] = ($data['nav_badge'] ?? null) ?: null;
 
         DB::transaction(function () use ($request, $data, $slugField) {
             unset($data['image_asset_id']);
@@ -87,7 +91,11 @@ class CategoryController extends Controller
             'display_order' => 'integer|min:0',
             'is_active' => 'boolean',
             'show_on_homepage' => 'boolean',
+            'subgroup' => 'nullable|string|max:100',
+            'nav_badge' => 'nullable|string|in:'.implode(',', Category::NAV_BADGES),
         ]);
+        $data['subgroup'] = $data['subgroup'] ?? null;
+        $data['nav_badge'] = ($data['nav_badge'] ?? null) ?: null;
 
         DB::transaction(function () use ($request, $data, $category) {
             unset($data['image_asset_id']);

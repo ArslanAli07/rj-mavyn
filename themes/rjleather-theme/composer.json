@@ -1,0 +1,117 @@
+{
+    "name": "rjleather/theme-storefront",
+    "description": "RJ Motorbike storefront adapted from the supplied design",
+    "type": "library",
+    "version": "1.0.3",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3",
+        "mavyn/core": "^0.1",
+        "mavyn/contracts": "^0.1",
+        "mavyn/theme-default": "^0.1"
+    },
+    "extra": {
+        "mavyn": {
+            "kind": "theme",
+            "id": "rjleather.theme-storefront",
+            "name": "RJ Motorbike",
+            "contract": "^0.1",
+            "parent": "mavyn.theme-default",
+            "requires_active": {},
+            "settings": {
+                "brand_name": {
+                    "type": "text",
+                    "default": "RJ Motorbike",
+                    "max": 80
+                },
+                "accent_color": {
+                    "type": "color",
+                    "default": "#C9925B"
+                },
+                "announcement_text": {
+                    "type": "text",
+                    "default": "Handmade leather, built for the long way round.",
+                    "max": 150
+                },
+                "hero_title": {
+                    "type": "text",
+                    "default": "Crafted to last. Made to be yours.",
+                    "max": 150
+                },
+                "hero_description": {
+                    "type": "text",
+                    "default": "Hand-cut leather jackets, chaps and gloves, finished in small workshop runs and made to age beautifully.",
+                    "max": 300
+                },
+                "hero_button": {
+                    "type": "text",
+                    "default": "Shop the collection",
+                    "max": 80
+                },
+                "categories_title": {
+                    "type": "text",
+                    "default": "Shop by category",
+                    "max": 120
+                },
+                "categories_intro": {
+                    "type": "text",
+                    "default": "Jackets, chaps, gloves and kilts for the road, the arena and everyday wear.",
+                    "max": 300
+                },
+                "sellers_title": {
+                    "type": "text",
+                    "default": "Top sellers",
+                    "max": 120
+                },
+                "gifting_title": {
+                    "type": "text",
+                    "default": "Corporate & bespoke gifting",
+                    "max": 120
+                },
+                "editorial_title": {
+                    "type": "text",
+                    "default": "Make your leather last",
+                    "max": 120
+                },
+                "subscribe_title": {
+                    "type": "text",
+                    "default": "Be first to know",
+                    "max": 120
+                }
+            },
+            "templates": {
+                "account.addresses": "resources/views/account/addresses.blade.php",
+                "account.dashboard": "resources/views/account/dashboard.blade.php",
+                "account.order-detail": "resources/views/account/order-detail.blade.php",
+                "account.orders": "resources/views/account/orders.blade.php",
+                "account.password": "resources/views/account/password.blade.php",
+                "account.profile": "resources/views/account/profile.blade.php",
+                "account.wishlist": "resources/views/account/wishlist.blade.php",
+                "auth.forgot-password": "resources/views/auth/forgot-password.blade.php",
+                "auth.login": "resources/views/auth/login.blade.php",
+                "auth.register": "resources/views/auth/register.blade.php",
+                "auth.reset-password": "resources/views/auth/reset-password.blade.php",
+                "components.breadcrumb": "resources/views/components/breadcrumb.blade.php",
+                "components.product-card": "resources/views/components/product-card.blade.php",
+                "pages.about": "resources/views/pages/about.blade.php",
+                "pages.contact": "resources/views/pages/contact.blade.php",
+                "pages.faq": "resources/views/pages/faq.blade.php",
+                "pages.home": "resources/views/pages/home.blade.php",
+                "pages.shop": "resources/views/pages/shop.blade.php",
+                "pages.search": "resources/views/pages/search.blade.php",
+                "pages.cart": "resources/views/pages/cart.blade.php",
+                "pages.category": "resources/views/pages/category.blade.php",
+                "pages.product": "resources/views/pages/product.blade.php",
+                "pages.wishlist": "resources/views/pages/wishlist.blade.php",
+                "layouts.auth": "resources/views/layouts/auth.blade.php",
+                "layouts.guest": "resources/views/layouts/guest.blade.php",
+                "layouts.app": "resources/views/layouts/app.blade.php",
+                "pages.privacy": "resources/views/pages/privacy.blade.php",
+                "pages.terms": "resources/views/pages/terms.blade.php",
+                "pages.returns": "resources/views/pages/returns.blade.php",
+                "pages.shipping": "resources/views/pages/shipping.blade.php"
+            },
+            "asset_manifest": "dist/manifest.json"
+        }
+    }
+}

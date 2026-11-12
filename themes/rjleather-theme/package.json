@@ -1,0 +1,15 @@
+{
+  "name": "rjleather-storefront-theme",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build && node bin/asset-manifest.mjs"
+  },
+  "devDependencies": {
+    "alpinejs": "^3.4.2",
+    "vite": "^8.0.0"
+  },
+  "dependencies": {
+    "@alpinejs/collapse": "^3.17.5"
+  }
+}

@@ -160,6 +160,11 @@ class InventoryService
     /** Read current stock even when a storefront product was loaded from a page cache. */
     public function availableQuantity(Product $product, ProductVariant $variant): ?int
     {
+        // Untracked stock has no quantity to consult, so short-circuit before
+        // the lookups instead of re-reading the row per variant per page.
+        if ($product->inventory_mode === 'untracked' && $product->in_stock && $product->is_active) {
+            return null;
+        }
         $current = Product::find($product->id);
         $variant = ProductVariant::where('product_id', $product->id)->find($variant->id);
         if (! $current?->is_active || ! $current->in_stock || ! $variant?->is_active || ! $variant->in_stock) {
@@ -172,7 +177,12 @@ class InventoryService
 
     public function available(Product $product): bool
     {
-        foreach ($product->variants()->where('is_active', true)->get() as $variant) {
+        // Cards render many products per page; prefer the variants already on
+        // the model over a fresh query per card.
+        $variants = $product->relationLoaded('variants')
+            ? $product->variants->where('is_active', true)
+            : $product->variants()->where('is_active', true)->get();
+        foreach ($variants as $variant) {
             $quantity = $this->availableQuantity($product, $variant);
             if ($quantity === null || $quantity > 0) {
                 return true;

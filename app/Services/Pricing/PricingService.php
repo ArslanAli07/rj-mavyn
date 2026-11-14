@@ -368,9 +368,14 @@ final class PricingService implements PriceBook
     {
         $currency ??= $this->assertReady()->currency;
         Currencies::symbol($currency);
-        $price = $this->variantQuery($currency)->selectRaw('COALESCE(cp.sale_minor, cp.amount_minor)');
+        $price = DB::table('product_variants as pv')->join('currency_prices as cp', function ($join) use ($currency) {
+            $join->on('cp.entity_id', '=', 'pv.id')->where('cp.kind', 'variant')->where('cp.currency', $currency);
+        })->where('pv.is_active', true)->groupBy('pv.product_id')->select('pv.product_id')
+            ->selectRaw('MIN(COALESCE(cp.sale_minor, cp.amount_minor)) as catalog_price');
 
-        return $query->select('products.*')->selectSub($price, 'catalog_price_minor');
+        return $query->select('products.*')
+            ->leftJoinSub($price, 'catalog_prices', 'catalog_prices.product_id', '=', 'products.id')
+            ->selectRaw('catalog_prices.catalog_price as catalog_price_minor');
     }
 
     private function variantQuery(string $currency): \Illuminate\Database\Query\Builder

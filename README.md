@@ -87,6 +87,37 @@ Installed plugins support [local editing without repeated Composer updates](docs
 
 Default `php artisan migrate --seed` initializes only required platform data, including the first administrator and missing core settings. Store catalog/media/demo content is excluded. See [database setup](docs/DATABASE_SETUP.md) for credentials, unattended setup and idempotent behavior.
 
+## RJ Leather catalogue import
+
+The storefront catalogue comes from the supplier export, which stays outside
+the repository: product photography (~2.9 GB) is not committed.
+
+```sh
+php artisan migrate
+php artisan db:seed --class=RjLeatherCatalogSeeder
+```
+
+The seeder is idempotent — running it again refreshes the catalogue instead of
+duplicating it (second run: everything updates, nothing is created again).
+
+Configuration lives in `.env`:
+
+- `RJ_CATALOG_SOURCE` — path to the supplier export (defaults to
+  `products-data` inside the project: the folder holding `For Men`, `MotoGP`,
+  … each with `products/<code>/product.json` and its photography). In a new
+  project, copy the export there (or point `RJ_CATALOG_SOURCE` at anywhere you
+  keep it) and the images are copied into `public/images/products`, which
+  `.gitignore` excludes.
+- `RJ_CATALOG_COPY_IMAGES` — set to `false` to import catalogue data without
+  copying photography.
+- `RJ_CATALOG_CURRENCY` — selling currency (`USD` by default). The importer
+  moves the store's currency runtime, price books and provenance to that
+  currency, because the supplier quotes prices in it.
+
+Imported data: the three-level category tree, 1844 products with size
+variants, USD price books, descriptions and specifications parsed from the
+supplier JSON, and size charts for the product page.
+
 Independent currency pricing and safe upgrades are documented in [Multi-currency operations](docs/MULTI_CURRENCY.md). Existing installations must merge the updated checkout theme and resolve price provenance before enabling currency switching.
 
 Online payment plugins use the generic contracts and host operations in [online payments](docs/ONLINE_PAYMENTS.md). Gateway SDKs and credentials remain in the plugin.

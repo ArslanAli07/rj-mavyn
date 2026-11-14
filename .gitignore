@@ -23,7 +23,8 @@
 /vendor
 # Installed themes and plugins belong to each application clone.
 # The bundled default theme seed is tracked under resources/themes/default.
-/themes/
+/themes/*
+!/themes/rjleather-theme/
 /plugins/
 /public/themes/
 # Generated dependency files and private package choices for each clone.
@@ -48,3 +49,7 @@ Thumbs.db
 *.tar.zstd.tar.bz2
 /storage/media-library/
 /products-data
+# Product photography copied from the supplier catalogue export.
+/public/images/products
+# AI session work log (not for the repo)
+/WORKLOG.md

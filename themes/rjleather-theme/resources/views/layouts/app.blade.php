@@ -47,7 +47,7 @@
     <div class="rj-container">
         <div class="rj-header__main">
             <a class="rj-logo" href="{{ route('home') }}" aria-label="{{ $storeName }} home">
-                @if($logo)<img src="{{ $logo }}" alt="{{ $storeName }}">@else<span class="rj-monogram">RJ-MOTORBIKE</span>@endif
+                @if($logo)<img src="{{ $logo }}" alt="{{ $storeName }}">@else<span class="rj-monogram"><span class="rj-monogram__mark" aria-hidden="true">RJ</span><span class="rj-monogram__word">Motorbike</span></span>@endif
             </a>
             <nav class="rj-nav" aria-label="Main navigation">
                 @php

@@ -125,8 +125,45 @@
 @media(min-width:768px){.rj-header__main {height:64px;}}
 .rj-logo {display:inline-flex;align-items:center;gap:10px;color:var(--rj-ink);}
 .rj-logo img {max-height:30px;width:auto;object-fit:contain;}
-.rj-logo .rj-monogram {display:inline-flex;align-items:center;font-size:14px;font-weight:800;line-height:1;letter-spacing:.16em;color:var(--rj-ink);white-space:nowrap;}
-.rj-logo .rj-monogram::after {content:"";width:5px;height:5px;border-radius:50%;background:var(--rj-accent,#C9925B);margin-left:7px;}
+/* Wordmark: boxed "RJ" monogram with a tan racing stripe, beside a
+   letterspaced MOTORBIKE wordmark. */
+.rj-logo .rj-monogram {display:inline-flex;align-items:center;gap:10px;white-space:nowrap;}
+.rj-monogram__mark {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--rj-ink, #17120f);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: .06em;
+    overflow: hidden;
+}
+.rj-monogram__mark::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4px;
+    background: var(--rj-accent, #C9925B);
+}
+.rj-monogram__word {
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--rj-ink);
+}
+@media(max-width:767px){
+    .rj-monogram__mark {width: 26px;height: 26px;font-size: 11px;}
+    .rj-monogram__word {font-size: 13px;}
+}
 /* The nav fills the header row height so each group can anchor its
    content-sized panel to the row's bottom edge (directly under the bar). */
 .rj-nav {min-width:0;height:100%;}

@@ -424,18 +424,26 @@
         </div>
     </div>
     <nav id="mobile-menu" class="rj-mobile-menu" aria-label="Mobile navigation" hidden>
+        <div class="rj-mobile-menu__bar">
+            <a class="rj-logo" href="{{ route('home') }}" aria-label="{{ $storeName }} home"><span class="rj-monogram"><span class="rj-monogram__mark" aria-hidden="true">RJ</span><span class="rj-monogram__word">Motorbike</span></span></a>
+            <div class="rj-mobile-menu__actions">
+                <button type="button" class="rj-mobile-menu__action" data-mobile-search-focus aria-label="Search products"><svg class="icon"><use href="#icon-search"/></svg></button>
+                <button type="button" class="rj-mobile-menu__action" data-dialog="bag-dialog" aria-label="Shopping bag"><svg class="icon"><use href="#icon-bag"/></svg><span class="rj-tool__count" data-cart-badge @if(cart_count() === 0) hidden @endif>{{ cart_count() }}</span></button>
+                <button type="button" class="rj-mobile-menu__action" data-mobile-menu-close aria-label="Close menu"><svg class="icon"><use href="#icon-close"/></svg></button>
+            </div>
+        </div>
         @foreach($navGroups as $group)
             @php
                 $mobileChildren = $navChildren($group);
                 $mobileLabel = preg_replace('/^For\s+/i', '', $group->name);
             @endphp
             @if($mobileChildren->isEmpty())
-                <a href="{{ route('category.show', $group->slug) }}">{{ $mobileLabel }} <span aria-hidden="true">→</span></a>
+                <a href="{{ route('category.show', $group->slug) }}">{{ $mobileLabel }} <svg class="icon rj-mobile-menu__chevron" aria-hidden="true"><use href="#icon-chevron"/></svg></a>
             @else
                 <div class="rj-mobile-menu__group">
                     <div class="rj-mobile-menu__group-head">
                         <a href="{{ route('category.show', $group->slug) }}">{{ $mobileLabel }}</a>
-                        <button type="button" class="rj-mobile-menu__toggle" data-mobile-nav-toggle aria-expanded="false" aria-controls="mobile-nav-group-{{ $group->id }}" aria-label="Show {{ $mobileLabel }} categories">+</button>
+                        <button type="button" class="rj-mobile-menu__toggle" data-mobile-nav-toggle aria-expanded="false" aria-controls="mobile-nav-group-{{ $group->id }}" aria-label="Show {{ $mobileLabel }} categories"><svg class="icon" aria-hidden="true"><use href="#icon-chevron"/></svg></button>
                     </div>
                     <div id="mobile-nav-group-{{ $group->id }}" class="rj-mobile-menu__children" hidden>
                         @foreach($mobileChildren as $child)
@@ -448,8 +456,8 @@
                 </div>
             @endif
         @endforeach
-        <a href="{{ route('about') }}">Our Story <span aria-hidden="true">→</span></a>
-        <a href="{{ route('contact') }}">Contact <span aria-hidden="true">→</span></a>
+        <a href="{{ route('about') }}">Our Story <svg class="icon rj-mobile-menu__chevron" aria-hidden="true"><use href="#icon-chevron"/></svg></a>
+        <a href="{{ route('contact') }}">Contact <svg class="icon rj-mobile-menu__chevron" aria-hidden="true"><use href="#icon-chevron"/></svg></a>
         <form action="{{ route('search') }}" role="search"><label for="mobile-search" class="sr-only">Search products</label><input type="search" name="q" id="mobile-search" placeholder="Search {{ $storeName }}" maxlength="255"><button aria-label="Search"><svg class="icon"><use href="#icon-search"/></svg></button></form>
     </nav>
 </header>

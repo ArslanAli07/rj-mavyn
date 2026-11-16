@@ -66,8 +66,14 @@ function ready() {
         const panel = document.getElementById(button.getAttribute('aria-controls'));
         const open = button.getAttribute('aria-expanded') === 'true';
         button.setAttribute('aria-expanded', String(!open));
-        button.textContent = open ? '+' : '−';
         if (panel) panel.hidden = open;
+    }));
+    $$('[data-mobile-menu-close]').forEach(button => button.addEventListener('click', () => closeMenu()));
+    $$('[data-mobile-search-focus]').forEach(button => button.addEventListener('click', () => {
+        const input = document.getElementById('mobile-search');
+        if (!input) return;
+        input.scrollIntoView({ block: 'nearest' });
+        input.focus({ preventScroll: true });
     }));
     document.addEventListener('keydown', event => {
         const dialog = $('dialog[open]');

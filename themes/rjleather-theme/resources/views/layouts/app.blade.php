@@ -58,7 +58,7 @@
                      */
                     $navByParent = $navCategories->groupBy(fn ($category) => $category->parent_id ?? 0);
                     $navGroups = $navByParent->get(0, collect())->filter(fn ($category) => $category->show_on_homepage)->values();
-                    $navChildren = fn ($category) => $navByParent->get($category->id, collect())->values();
+                    $navChildren = fn ($category) => app(\App\Services\Catalog\CategoryTree::class)->orderSiblings($navByParent->get($category->id, collect()));
 
                     /*
                      * Leather Collection navigation builder:

@@ -286,7 +286,7 @@
 
 /* ---------- Product page ---------- */
 .rj-product {padding-bottom:80px;}
-.rj-product__layout {display:grid;grid-template-columns:minmax(0,1.1fr) minmax(340px,.9fr);gap:64px;align-items:start;margin-top:26px;}
+.rj-product__layout {display:grid;grid-template-columns:minmax(0,1.1fr) minmax(340px,.9fr);gap:64px;margin-top:26px;}
 /* Ultra-wide monitors: the buy column keeps a fixed ceiling so the form does
    not stretch across half the viewport, and the gallery takes the slack. */
 @media(min-width:1800px) {
@@ -318,8 +318,22 @@
 .rj-product__anchors {display:flex;flex-wrap:wrap;gap:24px;margin-top:6px;padding-top:0;border-top:0;}
 .rj-product__anchors a {font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--rj-muted);border-bottom:1px solid transparent;transition:color .2s var(--rj-ease),border-color .2s var(--rj-ease);}
 .rj-product__anchors a:hover {color:var(--rj-ink);border-bottom-color:var(--rj-accent);}
-.purchase-sticky {position:sticky;top:110px;}
+/* Purchase column: no longer self-sticky; the SKU/title/price head inside it
+   pins instead (see .rj-product__head), so the options scroll normally. */
 .rj-product__line {display:inline-flex;align-items:center;gap:10px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--rj-muted);}
+/* SKU + title + price stay pinned under the sticky header while the
+   purchase options scroll beneath them. */
+.rj-product__head {
+    position: sticky;
+    top: 105px;
+    z-index: 5;
+    background: #fff;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--rj-line-soft);
+}
+@media(max-width:767px){
+    .rj-product__head {top:101px;}
+}
 .rj-product__title {margin-top:12px;font-size:clamp(24px,3vw,34px);line-height:1.15;}
 .rj-product__price {display:flex;align-items:baseline;flex-wrap:wrap;gap:12px;margin-top:14px;}
 .rj-product__price > span {font-size:24px;font-weight:700;letter-spacing:-.01em;}
@@ -679,7 +693,7 @@
 /* ---------- Responsive ---------- */
 @media(max-width:1024px) {
     .rj-product__layout {grid-template-columns:minmax(0,1fr);gap:36px;}
-    .purchase-sticky {position:static;}
+
     .rj-cart__layout {grid-template-columns:minmax(0,1fr);gap:32px;}
     .rj-cart__summary {position:static;}
     .rj-catalog__editorial .rj-split__copy {padding:36px 0 36px 32px;}

@@ -213,24 +213,26 @@
 
             {{-- Purchase / Sticky Config Aside --}}
             <aside class="purchase-sticky rj-product__purchase" aria-label="Product options">
-                {{-- Top Meta Row: SKU Badge --}}
-                <div class="rj-product__meta-bar">
-                    @if($product->sku)
-                        <div class="rj-sku-tag">SKU {{ $product->sku }}</div>
-                    @endif
-                </div>
+                {{-- Sticky Head: SKU, title & price pin under the header while the options scroll --}}
+                <div class="rj-product__head">
+                    <div class="rj-product__meta-bar">
+                        @if($product->sku)
+                            <div class="rj-sku-tag">SKU {{ $product->sku }}</div>
+                        @endif
+                    </div>
 
-                <h1 class="rj-display rj-title rj-product__title">{{ $product->title }}</h1>
+                    <h1 class="rj-display rj-title rj-product__title" x-ref="productTitle">{{ $product->title }}</h1>
 
-                {{-- Price Row --}}
-                <div class="rj-product__price">
-                    <span class="rj-price-current" x-text="formatMoney(unitPrice)">{{ format_price($product->effective_price) }}</span>
-                    <template x-if="selectedVariant && selectedVariant.is_on_sale && optionsTotal === 0">
-                        <del class="rj-price-original" x-text="selectedVariant.formatted_price"></del>
-                    </template>
-                    @if($product->is_on_sale)
-                        <span class="rj-discount-tag">Save {{ $product->discount_percentage }}%</span>
-                    @endif
+                    {{-- Price Row --}}
+                    <div class="rj-product__price">
+                        <span class="rj-price-current" x-text="formatMoney(unitPrice)">{{ format_price($product->effective_price) }}</span>
+                        <template x-if="selectedVariant && selectedVariant.is_on_sale && optionsTotal === 0">
+                            <del class="rj-price-original" x-text="selectedVariant.formatted_price"></del>
+                        </template>
+                        @if($product->is_on_sale)
+                            <span class="rj-discount-tag">Save {{ $product->discount_percentage }}%</span>
+                        @endif
+                    </div>
                 </div>
 
                 <p class="rj-product__helper">Select your preferred options below to personalize your order.</p>

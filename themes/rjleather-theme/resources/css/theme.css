@@ -1,3 +1,6 @@
+/* Alpine's cloak: keep x-cloak elements invisible until Alpine initializes. */
+[x-cloak] {display: none !important;}
+
 /* RJ Motorbike storefront design system.
    Restyled onto the supplied reference design: Proxima Nova throughout,
    near-black ink (#17120f) on white, cool grey product tiles (#e1e0dc),
@@ -1024,38 +1027,28 @@
     text-transform: uppercase;
 }
 .rj-price-current {
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 28px;
+    font-weight: 800;
     color: #17120f;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+    line-height: 1;
 }
 .rj-price-original {
-    font-size: 16px;
+    font-size: 15px;
+    font-weight: 400;
     color: #8a8a8a;
-    margin-left: 10px;
+    margin-left: 0;
     text-decoration: line-through;
 }
+/* Simple savings note: plain green text — savings should pop, price stays ink. */
 .rj-discount-tag {
-    background: var(--rj-surface-soft);
-    color: #17120f;
-    padding: 4px 9px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-left: 10px;
-}
-.rj-gallery__discount-badge {
-    position: absolute;
-    top: 14px;
-    left: 14px;
-    background: #fff;
-    color: #17120f;
-    padding: 4px 10px;
+    color: #15803d;
     font-size: 12px;
     font-weight: 700;
-    z-index: 5;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    margin-left: 0;
+    white-space: nowrap;
 }
 .rj-form-group {
     margin-bottom: 0;

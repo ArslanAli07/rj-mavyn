@@ -106,6 +106,14 @@
             formatMoney(amount) {
                 return this.currencySymbol + ' ' + Number(amount).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
             },
+            savingsTag() {
+                const v = this.selectedVariant;
+                if (!v || !v.is_on_sale) return '';
+                const saved = Math.max(0, Number(v.price) - Number(v.effective_price));
+                const pct = Number(v.price) > 0 ? Math.round((saved / Number(v.price)) * 100) : 0;
+                const amount = saved.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return 'Save ' + this.currencySymbol + amount + (pct ? ' (' + pct + '% off)' : '');
+            },
             isSelected(groupId, valueId) {
                 const group = this.optionGroups.find(g => Number(g.id) === Number(groupId));
                 const selected = this.selectedOptionIds[groupId];
@@ -223,14 +231,17 @@
 
                     <h1 class="rj-display rj-title rj-product__title" x-ref="productTitle">{{ $product->title }}</h1>
 
-                    {{-- Price Row --}}
+                    {{-- Price Row: the comparison price and the SAVE tag show together --
+                         only while the selected variant is on sale and no priced option
+                         adds to the unit price (options are never discounted, so a bare
+                         "SAVE 20%" beside option-loaded totals would be misleading). --}}
                     <div class="rj-product__price">
                         <span class="rj-price-current" x-text="formatMoney(unitPrice)">{{ format_price($product->effective_price) }}</span>
                         <template x-if="selectedVariant && selectedVariant.is_on_sale && optionsTotal === 0">
                             <del class="rj-price-original" x-text="selectedVariant.formatted_price"></del>
                         </template>
                         @if($product->is_on_sale)
-                            <span class="rj-discount-tag">Save {{ $product->discount_percentage }}%</span>
+                            <span class="rj-discount-tag" x-cloak x-show="selectedVariant && selectedVariant.is_on_sale && optionsTotal === 0" x-text="savingsTag()"></span>
                         @endif
                     </div>
                 </div>

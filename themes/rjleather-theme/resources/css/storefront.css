@@ -335,8 +335,8 @@
     .rj-product__head {top:101px;}
 }
 .rj-product__title {margin-top:12px;font-size:clamp(24px,3vw,34px);line-height:1.15;}
-.rj-product__price {display:flex;align-items:baseline;flex-wrap:wrap;gap:12px;margin-top:14px;}
-.rj-product__price > span {font-size:24px;font-weight:700;letter-spacing:-.01em;}
+.rj-product__price {display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:14px;}
+.rj-product__price > .rj-price-current {font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1;}
 .rj-product__price del {font-size:15px;font-weight:400;color:var(--rj-muted);}
 .rj-product__summary {margin-top:12px;padding-bottom:18px;border-bottom:1px solid var(--rj-line-soft);font-size:14px;line-height:1.7;color:var(--rj-muted);}
 .rj-product__helper {margin-top:12px;font-size:12.5px;line-height:1.6;color:var(--rj-muted);}

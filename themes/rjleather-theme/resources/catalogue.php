@@ -13,7 +13,7 @@
 return [
     'groups' => [
         'For Men' => ['Chappals', 'Chaps', 'Coats', 'Gloves', 'Jackets', 'Leather Handbags', 'Leather Kilts', 'Movies Leather Jacket for Men', 'Pants', 'Vests'],
-        'For Women' => ['Chaps', 'Coats', 'Film Leather Jacket for Women', 'Gloves', 'Jackets', 'Leather Kilts & Skirts', 'Movies Jackets', 'Pants', 'Vests'],
+        'For Women' => ['Chaps', 'Coats', 'Gloves', 'Jackets', 'Leather Kilts & Skirts', 'Movies Leather Jacket for Women', 'Pants', 'Vests'],
         'MotoGP' => ['Brands', 'Footwear', 'Gloves', 'Jackets', 'Pants', 'Race', 'Race Suits'],
         'Motorcycle' => ['Footwear', 'Gloves', 'Jackets', 'Pants', 'Race Suit', 'Vests'],
     ],

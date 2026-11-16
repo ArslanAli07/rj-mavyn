@@ -285,11 +285,11 @@
 
                             $totalFilms = $allMovies->count();
                             $columns->push([
-                                'heading' => $isWomen ? 'FILM LEATHER JACKETS' : 'MOVIES LEATHER JACKETS',
+                                'heading' => 'MOVIES LEATHER JACKETS',
                                 'url' => route('category.show', $moviesCat->slug),
                                 'items' => $sortedMovies->isNotEmpty() ? $sortedMovies : collect([$moviesCat]),
                                 'all_url' => route('category.show', $moviesCat->slug),
-                                'all_label' => $isWomen ? 'Shop All Film Jackets (' . $totalFilms . ')' : 'Shop All Movie Jackets (' . $totalFilms . ')',
+                                'all_label' => 'Shop All Movie Jackets (' . $totalFilms . ')',
                             ]);
                         }
 

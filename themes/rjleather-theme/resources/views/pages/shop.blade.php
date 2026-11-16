@@ -294,8 +294,20 @@
     <section class="rj-section rj-catalog__editorial">
         <div class="rj-container">
             <div class="rj-split">
+                @php
+                    // The editorial band uses the theme's own workshop photography;
+                    // the labelled placeholder stays as the fallback.
+                    $workshopPhoto = null;
+                    try { $workshopPhoto = theme_asset('images/gallery/bespoke-getting.jpeg'); } catch (\InvalidArgumentException) {}
+                @endphp
                 <span class="rj-split__media">
-                    <span class="rj-media-frame" data-ratio="4/3"><span>Leather workshop</span></span>
+                    <span class="rj-media-frame" data-ratio="4/3">
+                        @if($workshopPhoto)
+                            <img src="{{ $workshopPhoto }}" alt="Leather workshop — bespoke commissions taking shape" loading="lazy">
+                        @else
+                            <span>Leather workshop</span>
+                        @endif
+                    </span>
                 </span>
                 <div class="rj-split__copy">
                     <span class="rj-eyebrow">Care &amp; craft</span>

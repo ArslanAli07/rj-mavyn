@@ -132,6 +132,38 @@
                 const amount = price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
                 return value.name + ' + ' + this.currencySymbol + ' ' + amount;
             },
+            optionSummary(groupId) {
+                const group = this.optionGroups.find(g => Number(g.id) === Number(groupId));
+                const selected = this.selectedOptionIds[groupId];
+                const ids = Array.isArray(selected) ? selected.map(Number) : [];
+                if (!ids.length) return 'Select';
+                const names = (group?.values || []).filter(v => ids.includes(Number(v.id))).map(v => v.name);
+                if (names.length <= 2) return names.join(', ');
+                return names.slice(0, 2).join(', ') + '… +' + (names.length - 2);
+            },
+            shortName(name) {
+                return (String(name || '').replace(/\s*\([^)]*\)\s*$/, '').trim()) || name;
+            },
+            optionSummaryNames(groupId) {
+                const group = this.optionGroups.find(g => Number(g.id) === Number(groupId));
+                const selected = this.selectedOptionIds[groupId];
+                const ids = Array.isArray(selected) ? selected.map(Number) : [];
+                return (group?.values || []).filter(v => ids.includes(Number(v.id))).map(v => this.shortName(v.name));
+            },
+            optionSummaryExtra(groupId) {
+                const names = this.optionSummaryNames(groupId);
+                return names.length > 2 ? '+' + (names.length - 2) + ' more' : '';
+            },
+            optionCount(groupId) {
+                const selected = this.selectedOptionIds[groupId];
+                return Array.isArray(selected) ? selected.length : 0;
+            },
+            optionGroupTotal(groupId) {
+                const group = this.optionGroups.find(g => Number(g.id) === Number(groupId));
+                const selected = this.selectedOptionIds[groupId];
+                const ids = Array.isArray(selected) ? selected.map(Number) : [];
+                return (group?.values || []).filter(v => ids.includes(Number(v.id))).reduce((sum, v) => sum + Number(v.price_adjustment || 0), 0);
+            },
             toggleOption(groupId, valueId) {
                 const group = this.optionGroups.find(g => Number(g.id) === Number(groupId));
                 if (group && group.selection_type === 'single') {
@@ -328,20 +360,37 @@
                                     @if($group->selection_type === 'multiple')
                                         {{-- Multi-choice extras open as a dropdown panel of priced checkboxes --}}
                                         <div class="rj-option-dropdown" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
-                                            <button type="button" class="rj-option-dropdown__toggle" @click="open = !open" :aria-expanded="open" aria-controls="opt-group-{{ $group->id }}">
-                                                <span class="rj-option-dropdown__value" x-text="(selectedOptionIds[{{ $group->id }}] || []).length ? (selectedOptionIds[{{ $group->id }}].length + ' selected') : 'Select'"></span>
+                                            <button type="button" class="rj-option-dropdown__toggle" @click="open = !open" :aria-expanded="open" aria-controls="opt-group-{{ $group->id }}" :title="optionSummary({{ $group->id }})">
+                                                <span class="rj-option-dropdown__chips">
+                                                    <span class="rj-option-dropdown__count" x-show="optionCount({{ $group->id }}) > 0" x-text="optionCount({{ $group->id }}) + ' selected'"></span>
+                                                    <template x-for="(name, idx) in optionSummaryNames({{ $group->id }})" :key="name">
+                                                        <span class="rj-option-chip" x-show="idx < 2" x-text="name"></span>
+                                                    </template>
+                                                    <template x-if="optionSummaryExtra({{ $group->id }})">
+                                                        <span class="rj-option-chip rj-option-chip--more" x-text="optionSummaryExtra({{ $group->id }})"></span>
+                                                    </template>
+                                                    <span class="rj-option-dropdown__placeholder" x-show="optionCount({{ $group->id }}) === 0">Select</span>
+                                                </span>
+                                                <span class="rj-option-dropdown__total" x-text="optionGroupTotal({{ $group->id }}) > 0 ? '+ ' + formatMoney(optionGroupTotal({{ $group->id }})) : ''"></span>
                                                 <svg class="icon" :class="{ 'is-flipped': open }" aria-hidden="true"><use href="#icon-chevron"/></svg>
                                             </button>
                                             <div class="rj-option-dropdown__menu" id="opt-group-{{ $group->id }}" x-show="open" x-cloak x-transition.opacity.duration.150ms role="group" aria-label="{{ $group->name }}">
-                                                @foreach($group->values->where('is_active', true) as $val)
-                                                    <label class="rj-option-check">
-                                                        <input type="checkbox"
-                                                               :checked="isSelected({{ $group->id }}, {{ $val->id }})"
-                                                               @change="toggleOption({{ $group->id }}, {{ $val->id }})">
-                                                        <span class="rj-option-check__name">{{ $val->name }}</span>
-                                                        <span class="rj-option-check__price">+ {{ format_price($val->price_adjustment) }}</span>
-                                                    </label>
-                                                @endforeach
+                                                <div class="rj-option-dropdown__list">
+                                                    @foreach($group->values->where('is_active', true) as $val)
+                                                        <label class="rj-option-check">
+                                                            <input type="checkbox"
+                                                                   :checked="isSelected({{ $group->id }}, {{ $val->id }})"
+                                                                   @change="toggleOption({{ $group->id }}, {{ $val->id }})">
+                                                            <span class="rj-option-check__name">{{ $val->name }}</span>
+                                                            <span class="rj-option-check__price">+ {{ format_price($val->price_adjustment) }}</span>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                                <div class="rj-option-dropdown__footer">
+                                                    <span class="rj-option-dropdown__footer-count" x-text="optionCount({{ $group->id }}) + ' selected'"></span>
+                                                    <span class="rj-option-dropdown__footer-total" x-text="optionGroupTotal({{ $group->id }}) > 0 ? '+ ' + formatMoney(optionGroupTotal({{ $group->id }})) : ''"></span>
+                                                    <button type="button" class="rj-option-dropdown__done" @click="open = false">DONE</button>
+                                                </div>
                                             </div>
                                         </div>
                                     @else

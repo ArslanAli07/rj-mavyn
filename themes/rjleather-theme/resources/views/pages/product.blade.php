@@ -182,12 +182,8 @@
             <section class="rj-product__gallery" aria-label="{{ $product->title }} images">
                 <div class="rj-gallery @if($gallery->count() > 1) rj-gallery--multi @endif" data-gallery>
                     <div class="rj-gallery__frame">
-                        @if($product->is_on_sale)
-                            <div class="rj-gallery__discount-badge">-{{ $product->discount_percentage }}%</div>
-                        @endif
                         <button type="button" class="rj-gallery__stage" data-gallery-stage aria-label="Enlarge {{ $product->title }}">
                             <img src="{{ $mainImage['url'] }}" srcset="{{ $mainImage['srcset'] ?? '' }}" sizes="(max-width: 767px) 100vw, (max-width: 1199px) 55vw, 620px" alt="{{ $mainImage['alt_text'] ?? $product->title }}" data-gallery-main-image fetchpriority="high">
-                            <span class="rj-gallery__zoom" aria-hidden="true"><svg class="icon"><use href="#icon-plus"/></svg></span>
                         </button>
                         @if($gallery->count() > 1)
                             <button type="button" class="rj-gallery__nav rj-gallery__nav--prev" data-gallery-scroll="-1" aria-label="Previous image"><svg class="icon icon-back" aria-hidden="true"><use href="#icon-arrow"/></svg></button>

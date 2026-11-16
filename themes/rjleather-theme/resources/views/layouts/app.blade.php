@@ -608,10 +608,6 @@
 <dialog id="gallery-dialog" class="dialog lightbox-dialog" aria-label="Product image gallery">
     <div class="lightbox-shell dialog__panel">
         <div class="lightbox-rail" data-lightbox-thumbs hidden></div>
-        <div class="lightbox-zoom" role="group" aria-label="Zoom controls">
-            <button type="button" data-lightbox-zoom="1" aria-label="Zoom in">+</button>
-            <button type="button" data-lightbox-zoom="-1" aria-label="Zoom out">&minus;</button>
-        </div>
         <button class="dialog-close" aria-label="Close gallery"><svg class="icon"><use href="#icon-close"/></svg></button>
         <button type="button" class="lightbox-arrow lightbox-arrow--prev" data-lightbox-step="-1" aria-label="Previous image"><svg class="icon lightbox-chevron lightbox-chevron--prev" aria-hidden="true"><use href="#icon-chevron"/></svg></button>
         <div class="lightbox-stage">

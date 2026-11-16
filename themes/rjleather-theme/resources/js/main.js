@@ -338,6 +338,7 @@ function ready() {
     let lightboxIndex = 0;
     let activeIndex = 0;
     let lightboxZoom = 1;
+    let lightboxOrigin = { x: 50, y: 50 };
     let lightboxRailBuilt = false;
 
     function setActiveThumb(index) {
@@ -358,14 +359,32 @@ function ready() {
     }
     function zoomApply() {
         if (!lightboxImage) return;
-        lightboxImage.style.transform = lightboxZoom > 1 ? `scale(${lightboxZoom})` : '';
-        $$('[data-lightbox-zoom]', lightboxDialog).forEach(button => {
-            const amount = Number(button.dataset.lightboxZoom);
-            button.disabled = amount > 0 ? lightboxZoom >= 3 : lightboxZoom <= 1;
-        });
+        const zoomed = lightboxZoom > 1;
+        lightboxImage.style.transform = zoomed ? `scale(${lightboxZoom})` : '';
+        lightboxImage.style.transformOrigin = zoomed ? `${lightboxOrigin.x}% ${lightboxOrigin.y}%` : '';
+        lightboxImage.classList.toggle('is-zoomed', zoomed);
     }
     function zoomSet(level) {
         lightboxZoom = Math.min(3, Math.max(1, level));
+        if (lightboxZoom <= 1) lightboxOrigin = { x: 50, y: 50 };
+        zoomApply();
+    }
+    // While zoomed the view can be panned (wheel / finger) across the image.
+    function panBy(dx, dy) {
+        lightboxOrigin = {
+            x: Math.min(100, Math.max(0, lightboxOrigin.x + dx)),
+            y: Math.min(100, Math.max(0, lightboxOrigin.y + dy)),
+        };
+        zoomApply();
+    }
+    function panToPointer(event) {
+        if (lightboxZoom <= 1 || !lightboxImage) return;
+        const point = event.touches ? event.touches[0] : event;
+        const rect = lightboxImage.getBoundingClientRect();
+        lightboxOrigin = {
+            x: Math.min(100, Math.max(0, ((point.clientX - rect.left) / rect.width) * 100)),
+            y: Math.min(100, Math.max(0, ((point.clientY - rect.top) / rect.height) * 100)),
+        };
         zoomApply();
     }
     function buildRail() {
@@ -426,7 +445,16 @@ function ready() {
     stageButton?.addEventListener('click', () => { lightboxIndex = activeIndex; buildRail(); showImage(); motion.openDialog(lightboxDialog); });
     function step(amount) { if (!galleryButtons.length) return; lightboxIndex = (lightboxIndex+amount+galleryButtons.length)%galleryButtons.length; showImage(); }
     $$('[data-lightbox-step]').forEach(button => button.addEventListener('click', () => step(Number(button.dataset.lightboxStep))));
-    $$('[data-lightbox-zoom]').forEach(button => button.addEventListener('click', () => zoomSet(lightboxZoom + Number(button.dataset.lightboxZoom) * 0.5)));
+    // Click-to-zoom: one click zooms the image in, another click zooms it back out.
+    lightboxImage?.addEventListener('click', () => zoomSet(lightboxZoom > 1 ? 1 : 2));
+    // Pan the zoomed image with the mouse wheel (or two-finger scroll).
+    lightboxImage?.addEventListener('wheel', event => {
+        if (lightboxZoom <= 1) return;
+        event.preventDefault();
+        panBy(event.deltaX * 0.2, event.deltaY * 0.2);
+    }, { passive: false });
+    // On touch screens the zoomed image pans with the finger.
+    lightboxImage?.addEventListener('touchmove', panToPointer, { passive: true });
     $$('[data-gallery-scroll]').forEach(button => button.addEventListener('click', () => {
         const amount = Number(button.dataset.galleryScroll);
         const next = Math.min(galleryButtons.length - 1, Math.max(0, activeIndex + amount));

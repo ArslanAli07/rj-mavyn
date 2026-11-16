@@ -1072,6 +1072,8 @@
 .rj-req-mark {
     color: #eb5757;
     margin-left: 2px;
+    font-size: 13px;
+    line-height: 1;
 }
 .rj-select-wrapper {
     position: relative;

@@ -476,6 +476,10 @@
 .rj-sizesel .icon {position:absolute;right:14px;top:50%;width:14px;height:14px;transform:translateY(-50%);pointer-events:none;}
 .rj-product-form {display:flex;flex-direction:column;gap:22px;}
 .rj-product-form label {display:flex;flex-direction:column;gap:10px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;}
+/* Standalone labels (SIZE, ORDER INSTRUCTIONS) sit directly above their
+   control — the flex-column pattern above stacked their text and the
+   required mark with a 10px gap. */
+.rj-product-form label.rj-form-label {display:block;}
 .rj-product-form input,.rj-product-form select {padding:12px;border:1px solid var(--rj-line);background:#fff;border-radius:0;color:#000;font-size:13px;font-weight:400;letter-spacing:normal;text-transform:none;}
 .rj-product-form input:focus,.rj-product-form select:focus {outline:none;border-color:var(--rj-ink);}
 .rj-quantity>div {display:flex;width:150px;border:1px solid var(--rj-line);}

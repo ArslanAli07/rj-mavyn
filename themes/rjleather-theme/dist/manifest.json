@@ -11,23 +11,23 @@
         },
         {
             "path": "dist/storefront.css",
-            "sha256": "d0f5621cb85075d2bb9e31d177a9e9650bb0e3ae91ed2773c97dda7029623459"
+            "sha256": "359c107ba64500dd36d940b1ceaa1cfd4eb55de7680de1cea04e129ed99252d0"
         },
         {
             "path": "dist/theme.css",
-            "sha256": "96532072564efc60d19f0ce3e12153e44d82516ac327b1c2425f2dc07012a467"
+            "sha256": "06ecc62dd37143886539adf4c849cfc829d63394ed08fc56d46993f27208eeee"
         }
     ],
     "scripts": [
         {
-            "path": "dist/build/assets/main-VKe3X0bP.js",
-            "sha256": "3b134e60a8b0c130c3ec283fa448ffd7dc5913652afde043bd4b0739982c820c"
+            "path": "dist/build/assets/main-Dej6FGRC.js",
+            "sha256": "6edcf39ca0ee0450e4bfda4def7157d3671b6311666b90f7875f46343ba8170a"
         }
     ],
     "files": {
-        "dist/build/assets/main-VKe3X0bP.js": {
-            "path": "dist/build/assets/main-VKe3X0bP.js",
-            "sha256": "3b134e60a8b0c130c3ec283fa448ffd7dc5913652afde043bd4b0739982c820c"
+        "dist/build/assets/main-Dej6FGRC.js": {
+            "path": "dist/build/assets/main-Dej6FGRC.js",
+            "sha256": "6edcf39ca0ee0450e4bfda4def7157d3671b6311666b90f7875f46343ba8170a"
         },
         "dist/design/css/input.css": {
             "path": "dist/design/css/input.css",
@@ -283,11 +283,11 @@
         },
         "dist/storefront.css": {
             "path": "dist/storefront.css",
-            "sha256": "d0f5621cb85075d2bb9e31d177a9e9650bb0e3ae91ed2773c97dda7029623459"
+            "sha256": "359c107ba64500dd36d940b1ceaa1cfd4eb55de7680de1cea04e129ed99252d0"
         },
         "dist/theme.css": {
             "path": "dist/theme.css",
-            "sha256": "96532072564efc60d19f0ce3e12153e44d82516ac327b1c2425f2dc07012a467"
+            "sha256": "06ecc62dd37143886539adf4c849cfc829d63394ed08fc56d46993f27208eeee"
         }
     }
 }

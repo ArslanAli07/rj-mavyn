@@ -286,7 +286,7 @@
 
 /* ---------- Product page ---------- */
 .rj-product {padding-bottom:80px;}
-.rj-product__layout {display:grid;grid-template-columns:minmax(0,1.1fr) minmax(340px,.9fr);gap:64px;align-items:start;margin-top:26px;}
+.rj-product__layout {display:grid;grid-template-columns:minmax(0,1.1fr) minmax(340px,.9fr);gap:64px;margin-top:26px;}
 /* Ultra-wide monitors: the buy column keeps a fixed ceiling so the form does
    not stretch across half the viewport, and the gallery takes the slack. */
 @media(min-width:1800px) {
@@ -306,9 +306,6 @@
 .rj-gallery__nav--next {right:16px;}
 .rj-gallery__nav .icon {width:16px;height:16px;}
 .rj-gallery__nav:hover {border-color:var(--rj-ink);background:#fff;}
-.rj-gallery__zoom {position:absolute;right:14px;bottom:14px;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid var(--rj-line);border-radius:999px;background:rgba(255,255,255,.92);color:#000;transition:opacity .2s var(--rj-ease),transform .2s var(--rj-ease),background .2s var(--rj-ease);}
-.rj-gallery__zoom .icon {width:16px;height:16px;}
-.rj-gallery__stage:hover .rj-gallery__zoom {background:var(--rj-ink);color:#fff;}
 .rj-gallery__thumbs {display:grid;grid-auto-flow:column;grid-auto-columns:72px;grid-template-columns:none;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;scroll-snap-type:x mandatory;}
 .rj-gallery__thumbs::-webkit-scrollbar {height:4px;}
 .rj-gallery__thumbs::-webkit-scrollbar-thumb {background:var(--rj-line);}
@@ -320,11 +317,25 @@
 .rj-product__anchors {display:flex;flex-wrap:wrap;gap:24px;margin-top:6px;padding-top:0;border-top:0;}
 .rj-product__anchors a {font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--rj-muted);border-bottom:1px solid transparent;transition:color .2s var(--rj-ease),border-color .2s var(--rj-ease);}
 .rj-product__anchors a:hover {color:var(--rj-ink);border-bottom-color:var(--rj-accent);}
-.purchase-sticky {position:sticky;top:110px;}
+/* Purchase column: no longer self-sticky; the SKU/title/price head inside it
+   pins instead (see .rj-product__head), so the options scroll normally. */
 .rj-product__line {display:inline-flex;align-items:center;gap:10px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--rj-muted);}
+/* SKU + title + price stay pinned under the sticky header while the
+   purchase options scroll beneath them. */
+.rj-product__head {
+    position: sticky;
+    top: 105px;
+    z-index: 5;
+    background: #fff;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--rj-line-soft);
+}
+@media(max-width:767px){
+    .rj-product__head {top:101px;}
+}
 .rj-product__title {margin-top:12px;font-size:clamp(24px,3vw,34px);line-height:1.15;}
-.rj-product__price {display:flex;align-items:baseline;flex-wrap:wrap;gap:12px;margin-top:14px;}
-.rj-product__price > span {font-size:24px;font-weight:700;letter-spacing:-.01em;}
+.rj-product__price {display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:14px;}
+.rj-product__price > .rj-price-current {font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1;}
 .rj-product__price del {font-size:15px;font-weight:400;color:var(--rj-muted);}
 .rj-product__summary {margin-top:12px;padding-bottom:18px;border-bottom:1px solid var(--rj-line-soft);font-size:14px;line-height:1.7;color:var(--rj-muted);}
 .rj-product__helper {margin-top:12px;font-size:12.5px;line-height:1.6;color:var(--rj-muted);}
@@ -464,6 +475,10 @@
 .rj-sizesel .icon {position:absolute;right:14px;top:50%;width:14px;height:14px;transform:translateY(-50%);pointer-events:none;}
 .rj-product-form {display:flex;flex-direction:column;gap:22px;}
 .rj-product-form label {display:flex;flex-direction:column;gap:10px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;}
+/* Standalone labels (SIZE, ORDER INSTRUCTIONS) sit directly above their
+   control — the flex-column pattern above stacked their text and the
+   required mark with a 10px gap. */
+.rj-product-form label.rj-form-label {display:block;}
 .rj-product-form input,.rj-product-form select {padding:12px;border:1px solid var(--rj-line);background:#fff;border-radius:0;color:#000;font-size:13px;font-weight:400;letter-spacing:normal;text-transform:none;}
 .rj-product-form input:focus,.rj-product-form select:focus {outline:none;border-color:var(--rj-ink);}
 .rj-quantity>div {display:flex;width:150px;border:1px solid var(--rj-line);}
@@ -681,7 +696,6 @@
 /* ---------- Responsive ---------- */
 @media(max-width:1024px) {
     .rj-product__layout {grid-template-columns:minmax(0,1fr);gap:36px;}
-    .purchase-sticky {position:static;}
     .rj-cart__layout {grid-template-columns:minmax(0,1fr);gap:32px;}
     .rj-cart__summary {position:static;}
     .rj-catalog__editorial .rj-split__copy {padding:36px 0 36px 32px;}

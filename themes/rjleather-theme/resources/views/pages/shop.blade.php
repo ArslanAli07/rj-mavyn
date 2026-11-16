@@ -82,10 +82,16 @@
                         $railGroups = $railRootNode && $railRootNode->children->isNotEmpty() ? $railRootNode->children : collect();
                         $railRootClean = preg_replace('/^for\s+/i', '', $railRoot->name);
                     @endphp
-                    <h2 class="rj-rail__title"><a href="{{ route('category.show', $railRoot->slug) }}">{{ $railRootClean }}</a></h2>
+                    <h2 class="rj-rail__title"><a href="{{ route('category.show', $railRoot->slug) }}?all=1">{{ $railRootClean }}</a></h2>
+                    @php
+                        // Browsing the group's full view (?all=1): no subcategory is
+                        // picked, so none is highlighted — the grid shows everything.
+                        $browsingRailRoot = $selectedCategory->id === $railRoot->id && !request()->boolean('all');
+                        $railPreselected = $browsingRailRoot ? $railGroups->first() : null;
+                    @endphp
                     <nav class="rj-rail__nav" aria-label="{{ $railRootClean }} categories">
                         @foreach($railGroups as $group)
-                            <a href="{{ route('category.show', $group->slug) }}" @class(['rj-rail__link', 'is-active' => ($selectedCategory->id === $group->id || $selectedCategory->parent_id === $group->id)])>{{ preg_replace('/^for\s+/i', '', $group->name) }}</a>
+                            <a href="{{ route('category.show', $group->slug) }}" @class(['rj-rail__link', 'is-active' => ($selectedCategory->id === $group->id || $selectedCategory->parent_id === $group->id || ($railPreselected && $group->id === $railPreselected->id))])>{{ preg_replace('/^for\s+/i', '', $group->name) }}</a>
                         @endforeach
                     </nav>
                 @else

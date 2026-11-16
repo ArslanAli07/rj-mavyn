@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Services\Catalog\CategoryTree;
 use App\Services\Catalog\ProductTitleAttributes;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -14,9 +15,23 @@ class CategoryController extends Controller
 {
     public function __construct(private readonly CategoryTree $tree) {}
 
-    public function show(string $slug): View
+    public function show(string $slug): View|RedirectResponse
     {
         $category = Category::active()->where('slug', $slug)->firstOrFail();
+
+        // A group with subcategories lands on its leading (best) one — the
+        // same page as clicking that subcategory in the rail, so the grid
+        // always matches the highlighted entry. `?all=1` keeps the
+        // whole-group view reachable from the rail title.
+        if (! request()->boolean('all') && $category->parent_id === null) {
+            $firstChild = $this->tree->branch($category)->first();
+            if ($firstChild) {
+                $target = route('category.show', $firstChild->slug);
+                $query = collect(request()->query())->except(['all', 'page'])->all();
+
+                return redirect()->to($query ? $target.'?'.http_build_query($query) : $target, 302);
+            }
+        }
 
         // A group shows everything filed underneath it, not only its own products.
         $query = Product::active()

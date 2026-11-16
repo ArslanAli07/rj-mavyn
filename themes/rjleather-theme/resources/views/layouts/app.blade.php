@@ -392,8 +392,8 @@
                             @endif
                         </li>
                     @endforeach
-                    <li><a class="rj-nav__item" href="{{ route('about') }}">Our Story</a></li>
-                    <li><a class="rj-nav__item" href="{{ route('contact') }}">Contact</a></li>
+                    <li class="rj-nav__minor"><a class="rj-nav__item" href="{{ route('about') }}">Our Story</a></li>
+                    <li class="rj-nav__minor"><a class="rj-nav__item" href="{{ route('contact') }}">Contact</a></li>
                 </ul>
         </nav>
             <div class="rj-header__tools">

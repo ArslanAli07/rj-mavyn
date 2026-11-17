@@ -17,7 +17,7 @@
     $craftPhoto = $photo('gallery/caring-for-leather.jpeg');
     $workshopPhoto = $photo('gallery/bespoke-getting.jpeg');
 @endphp
-<x-app-layout :title="'Our Story — '.setting('site_name', config('site.name', 'Store'))" page-key="about">
+<x-app-layout :title="'Our Story | '.setting('site_name', config('site.name', 'Store')).' — Handmade Leather, Made to Measure'" :meta-description="'Inside the '.setting('site_name', config('site.name', 'RJ Motorbike')).' workshop: hand-cut hides, made-to-measure leather jackets, MotoGP race suits and gear built to age beautifully.'" page-key="about">
     <div class="rj-container">
         <nav class="rj-breadcrumb" aria-label="Breadcrumb">
             <a href="{{ route('home') }}">Home</a><span>/</span><span aria-current="page">Our story</span>

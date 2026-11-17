@@ -6,7 +6,7 @@
     $contactWhatsapp = trim((string) setting('site_whatsapp'));
     $contactWhatsappDigits = preg_replace('/[^0-9]/', '', $contactWhatsapp);
 @endphp
-<x-app-layout :title="'Contact — '.setting('site_name', config('site.name', 'Store'))" page-key="contact">
+<x-app-layout :title="'Contact | '.setting('site_name', config('site.name', 'Store')).' — Custom Orders & Support'" :meta-description="'Questions about a made-to-measure leather jacket, an order or delivery? Contact the '.setting('site_name', config('site.name', 'RJ Motorbike')).' workshop by email, phone or WhatsApp.'" page-key="contact">
     <div class="rj-container">
         <nav class="rj-breadcrumb" aria-label="Breadcrumb">
             <a href="{{ route('home') }}">Home</a><span>/</span><span aria-current="page">Contact</span>

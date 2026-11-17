@@ -1,5 +1,8 @@
 @section('title', 'FAQ')
-<x-app-layout :title="'FAQ — '.setting('site_name', config('site.name', 'Store'))" page-key="faq">
+<x-app-layout :title="'FAQ | '.setting('site_name', config('site.name', 'Store')).' — Size Guides, Delivery & Made to Measure'" :meta-description="'Answers on made-to-measure sizing, leather care, delivery times, returns and payment options for custom leather jackets and motorcycle gear from '.setting('site_name', config('site.name', 'RJ Motorbike')).'.'" page-key="faq">
+@push('head')
+    {!! seo_schema(app(\App\Services\Seo\StructuredDataService::class)->faqGraph($faqs)) !!}
+@endpush
     <div class="rj-container">
         <nav class="rj-breadcrumb" aria-label="Breadcrumb">
             <a href="{{ route('home') }}">Home</a><span>/</span><span aria-current="page">FAQ</span>

@@ -1,4 +1,4 @@
-<x-app-layout title="Gallery — {{ setting('site_name', config('site.name', 'Store')) }}" page-key="gallery">
+<x-app-layout title="Gallery | {{ setting('site_name', config('site.name', 'Store')) }} — Workshop & Craft Photography" page-key="gallery" meta-description="Behind the seams: photos from the {{ setting('site_name', config('site.name', 'RJ Motorbike')) }} workshop — hides, hand stitching, bespoke fittings and finished made-to-measure leather pieces.">
 
     <x-breadcrumb :items="['Gallery' => '']" />
 

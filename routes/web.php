@@ -100,6 +100,10 @@ Route::get('/terms', [PageController::class, 'terms'])->name('terms');
 Route::get('/refund-policy', [PageController::class, 'returns'])->name('returns');
 Route::get('/shipping-policy', [PageController::class, 'shipping'])->name('shipping');
 
+// Blog & Buyer Guides
+Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
+
 // Contact
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'send'])->name('contact.send')->middleware(['honeypot', 'throttle:5,1']);

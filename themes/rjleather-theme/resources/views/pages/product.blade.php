@@ -1,7 +1,10 @@
-<x-app-layout :title="$product->meta_title ?: $product->title.' — '.setting('site_name', config('site.name'))" :meta-description="$product->meta_description ?: $product->short_description" :og-image="$product->main_image_url">
+<x-app-layout :title="$product->meta_title ?: $product->title.' — '.setting('site_name', config('site.name'))" :meta-description="$product->meta_description ?: $product->short_description" :og-image="$product->main_image_url" og-type="product">
+@push('head')
+    {!! seo_schema(app(\App\Services\Seo\StructuredDataService::class)->productGraph($product)) !!}
+@endpush
 @php
     $hasImage = (bool) ($product->main_image_asset_id || $product->main_image);
-    $mainImage = $hasImage ? $product->detail_image : ['url' => theme_asset('images/placeholder.svg'), 'alt_text' => $product->title];
+    $mainImage = $hasImage ? $product->detail_image : ['url' => theme_asset('images/placeholder.svg'), 'alt_text' => $product->main_image_alt];
     $gallery = collect([$mainImage])->merge($product->gallery_images)->unique('url')->values();
 
     // Sizing tables and gender setup
@@ -236,7 +239,7 @@
                                 <button type="button" class="gallery-image @if($loop->first) is-active @endif" data-gallery-index="{{ $loop->index }}"
                                         data-gallery-src="{{ $image['url'] }}" data-gallery-srcset="{{ $image['srcset'] ?? '' }}"
                                         aria-label="View {{ $product->title }}, image {{ $loop->iteration }}" @if($loop->first) aria-current="true" @endif>
-                                    <img src="{{ $image['url'] }}" srcset="{{ $image['srcset'] ?? '' }}" alt="{{ $image['alt_text'] ?? $product->title }}" loading="lazy" width="180" height="216">
+                                    <img src="{{ $image['url'] }}" srcset="{{ $image['srcset'] ?? '' }}" alt="{{ $image['alt_text'] ?? ($product->title . ' — View ' . $loop->iteration . ' (Custom Leather Detail)') }}" loading="lazy" width="180" height="216">
                                 </button>
                             @endforeach
                         </div>

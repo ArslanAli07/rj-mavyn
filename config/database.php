@@ -38,9 +38,12 @@ return [
             'database' => env('DB_DATABASE', database_path('database.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-            'busy_timeout' => null,
-            'journal_mode' => null,
-            'synchronous' => null,
+            // Readers no longer block the cart's lock writes (and vice versa),
+            // and a 5s wait rides out the brief write bursts that used to
+            // surface as random "database is locked" 500s on page renders.
+            'busy_timeout' => 5000,
+            'journal_mode' => 'wal',
+            'synchronous' => 'normal',
             'transaction_mode' => 'DEFERRED',
         ],
 

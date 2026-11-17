@@ -6,20 +6,56 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @php
         $storeName = setting('site_name', config('site.name', 'RJ Motorbike'));
-        $pageTitle = $title ?? ($seo->meta_title ?? $storeName);
+        /*
+         * Precedence: the admin's per-page SEO row (seo_meta) wins, then the
+         * page's own title, then the store name. The same cascade drives the
+         * description, ending at the tagline setting.
+         */
+        $pageTitle = $seo->meta_title ?? $title ?? $storeName;
         $description = $metaDescription ?? ($seo->meta_description ?? setting('site_tagline', ''));
         $locale = strtoupper((string) setting('store_locale', 'en'));
         $countryCode = (string) setting('store_country_code', config('site.country_code', 'PK'));
+
+        /*
+         * Utility and account flows never belong in the index: search result
+         * pages, the bag, checkout, wishlists and anything behind a login send
+         * `noindex` so crawl budget stays on the catalogue.
+         */
+        $utilityPage = request()->routeIs([
+            'search', 'cart.*', 'checkout.*', 'wishlist.*', 'account.*', 'orders.*',
+            'payments.show', 'login', 'register', 'password.*', 'verification.*',
+        ]);
+        $robots = $metaRobots ?? ($utilityPage ? 'noindex, nofollow' : 'index, follow');
+
+        /*
+         * Canonical keeps pagination addressable (?page=N self-canonicalizes)
+         * while every filter combination consolidates onto the clean URL.
+         */
+        $canonical = request()->url();
+        if (request()->routeIs('category.show') && request()->boolean('all')) {
+            $canonical .= '?all=1';
+        } elseif (filled(request()->query('page'))) {
+            $canonical .= '?page='.(int) request()->query('page');
+        }
     @endphp
     <title>{{ $pageTitle }}</title>
     <meta name="description" content="{{ $description }}">
+    <meta name="robots" content="{{ $robots }}">
     <meta property="og:title" content="{{ $pageTitle }}">
     <meta property="og:description" content="{{ $description }}">
     <meta property="og:image" content="{{ $ogImage ?? $seo?->og_image_url ?? store_media_url('site_logo', theme_asset('images/hero.jpg')) }}">
+    <meta property="og:image:alt" content="{{ $pageTitle }}">
     <meta property="og:site_name" content="{{ $storeName }}">
-    <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:type" content="website">
-    <link rel="canonical" href="{{ url()->current() }}">
+    <meta property="og:url" content="{{ request()->url() }}">
+    <meta property="og:type" content="{{ $ogType ?? 'website' }}">
+    <meta property="og:locale" content="{{ $locale }}_{{ strtoupper($countryCode) }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:description" content="{{ $description }}">
+    <meta name="twitter:image" content="{{ $ogImage ?? $seo?->og_image_url ?? store_media_url('site_logo', theme_asset('images/hero.jpg')) }}">
+    <link rel="canonical" href="{{ $canonical }}">
+    <link rel="sitemap" href="{{ url('sitemap.xml') }}" type="application/xml">
+    {!! seo_schema(app(\App\Services\Seo\StructuredDataService::class)->websiteGraph()) !!}
     <link rel="icon" href="{{ store_media_url('site_favicon', theme_asset('images/favicon.svg')) }}">
     @foreach($theme['assets']['styles'] as $url)
         <link rel="stylesheet" href="{{ $url }}">
@@ -351,7 +387,7 @@
                                                 @endphp
                                                 <div class="rj-nav__promo">
                                                     <a class="rj-nav__promo-media" href="{{ route('category.show', $group->slug) }}" tabindex="-1" aria-hidden="true">
-                                                        <img src="{{ $navPromo }}" alt="" loading="lazy">
+                                                        <img src="{{ $navPromo }}" alt="{{ $navPromoLabel }} — Handcrafted Leather Collection" loading="lazy">
                                                     </a>
                                                     <a class="rj-nav__promolink" href="{{ route('category.show', $group->slug) }}">{{ $navPromoLabel }} <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
                                                 </div>
@@ -485,6 +521,7 @@
         ]],
         ['title' => 'About Us', 'links' => [
             ['label' => 'Our Story', 'url' => route('about')],
+            ['label' => 'Blogs', 'url' => route('blog.index')],
             ['label' => 'My Account', 'url' => route('account.dashboard')],
             ['label' => 'Wishlist', 'url' => route('wishlist.index')],
             ['label' => 'Gallery', 'url' => route('gallery')],

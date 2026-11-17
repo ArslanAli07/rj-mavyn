@@ -12,6 +12,7 @@ class AppLayout extends Component
         public ?string $metaDescription = null,
         public ?string $metaKeywords = null,
         public ?string $ogImage = null,
+        public ?string $ogType = null,
         public ?string $pageKey = null,
     ) {
     }

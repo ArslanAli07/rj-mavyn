@@ -141,7 +141,12 @@ class Product extends Model
 
     public function getMainImageAltAttribute(): string
     {
-        return $this->mainImageUsages()->with('asset')->first()?->asset?->alt_text ?? $this->title;
+        $custom = $this->mainImageUsages()->with('asset')->first()?->asset?->alt_text;
+        if (filled($custom)) {
+            return $custom;
+        }
+
+        return $this->title . ' — Custom Leather Motorcycle Gear | RJ Motorbike';
     }
 
     public function getGalleryAssetIdsAttribute(): array
@@ -153,8 +158,9 @@ class Product extends Model
     {
         $library = $this->libraryImages('catalog.product.gallery', 'product-detail');
 
-        return $library ?: $this->images->map(fn ($image) => [
-            'url' => $image->image_url, 'alt_text' => $this->title,
+        return $library ?: $this->images->values()->map(fn ($image, $index) => [
+            'url' => $image->image_url,
+            'alt_text' => $this->title . ' — View ' . ($index + 1) . ' (Custom Leather Detail)',
         ])->all();
     }
 

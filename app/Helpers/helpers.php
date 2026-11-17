@@ -48,6 +48,17 @@ if (! function_exists('setting')) {
     }
 }
 
+if (! function_exists('seo_schema')) {
+    /**
+     * Render a JSON-LD <script> tag for a structured-data graph built by
+     * the StructuredDataService (Product, BreadcrumbList, ItemList…).
+     */
+    function seo_schema(array $graph): \Illuminate\Support\HtmlString
+    {
+        return app(\App\Services\Seo\StructuredDataService::class)->render($graph);
+    }
+}
+
 if (! function_exists('ordering_manually_enabled')) {
     /**
      * Whether the admin "Accept online orders" toggle is on.

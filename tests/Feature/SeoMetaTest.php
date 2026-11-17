@@ -44,8 +44,9 @@ class SeoMetaTest extends TestCase
 
     public function test_seo_meta_renders_on_storefront_page(): void
     {
-        SeoMeta::create([
-            'page_key' => 'shop',
+        // updateOrCreate: the default SEO seed rows already exist, the admin
+        // dashboard overwrites the same row.
+        SeoMeta::updateOrCreate(['page_key' => 'shop'], [
             'meta_title' => 'Shop Premium Teas — Happy Tea',
             'meta_description' => 'Browse our full menu of teas and coffees.',
             'meta_keywords' => 'shop tea, boba menu',
@@ -63,9 +64,11 @@ class SeoMetaTest extends TestCase
     public function test_page_identity_cannot_be_overridden_by_unvalidated_nested_fields(): void
     {
         $admin = Admin::create(['name' => 'Owner', 'email' => 'owner@example.com', 'password' => 'password', 'role' => 'super_admin', 'is_active' => true]);
-        SeoMeta::create(['page_key' => 'home', 'meta_title' => 'Original home']);
+        SeoMeta::updateOrCreate(['page_key' => 'home'], ['meta_title' => 'Original home']);
         $this->actingAs($admin, 'admin')->putJson(route('admin.seo.update'), ['pages' => ['home' => ['page_key' => 'shop', 'meta_title' => 'Changed home']]])->assertUnprocessable()->assertJsonValidationErrors('pages.home');
         $this->assertDatabaseHas('seo_meta', ['page_key' => 'home', 'meta_title' => 'Original home']);
-        $this->assertDatabaseMissing('seo_meta', ['page_key' => 'shop']);
+        // The tampered page_key must not have written a new row anywhere —
+        // shop keeps whatever it had (the default seed) and gains nothing.
+        $this->assertDatabaseMissing('seo_meta', ['page_key' => 'shop', 'meta_title' => 'Changed home']);
     }
 }

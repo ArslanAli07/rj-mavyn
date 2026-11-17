@@ -156,7 +156,10 @@
         </div>
         <div class="rj-container rj-hero__inner">
             <div class="rj-hero__content">
-                <h1 class="rj-hero__title">{{ $heroTitle }} @if($heroHighlight)<span>{{ $heroHighlight }}</span>@endif</h1>
+                <h1 class="rj-hero__title">Custom Leather Jackets &amp; Motorcycle Gear</h1>
+                <p class="rj-hero__tagline" style="font-size: 1.125rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.75rem; margin-bottom: 0.25rem; color: rgba(255,255,255,0.95);">
+                    {{ $heroTitle }} @if($heroHighlight)<span>{{ $heroHighlight }}</span>@endif
+                </p>
                 @if($heroText)<p class="rj-hero__text">{{ $heroText }}</p>@endif
                 <div class="rj-hero__buttons">
                     <a class="rj-button" href="{{ $heroButton['url'] }}">{{ $heroButton['label'] }}</a>

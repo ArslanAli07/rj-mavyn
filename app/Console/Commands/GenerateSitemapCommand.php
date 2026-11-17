@@ -13,6 +13,12 @@ class GenerateSitemapCommand extends Command
 
     public function handle(SitemapService $sitemap): int
     {
+        if (app()->environment('local') && str_contains((string) config('app.url'), '.test')) {
+            $this->error('APP_URL is a local development URL. Set APP_URL to the production domain before generating a deployable sitemap.');
+
+            return self::FAILURE;
+        }
+
         $result = $sitemap->generate();
 
         $this->info("Sitemap written to {$result['sitemap']} ({$result['urls']} URLs)");

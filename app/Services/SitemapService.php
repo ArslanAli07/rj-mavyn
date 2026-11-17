@@ -62,6 +62,7 @@ class SitemapService
         $staticPages = [
             ['route' => 'home', 'priority' => 1.0, 'frequency' => Url::CHANGE_FREQUENCY_DAILY],
             ['route' => 'shop', 'priority' => 0.9, 'frequency' => Url::CHANGE_FREQUENCY_DAILY],
+            ['route' => 'blog.index', 'priority' => 0.8, 'frequency' => Url::CHANGE_FREQUENCY_WEEKLY],
             ['route' => 'about', 'priority' => 0.7, 'frequency' => Url::CHANGE_FREQUENCY_MONTHLY],
             ['route' => 'gallery', 'priority' => 0.7, 'frequency' => Url::CHANGE_FREQUENCY_WEEKLY],
             ['route' => 'contact', 'priority' => 0.6, 'frequency' => Url::CHANGE_FREQUENCY_MONTHLY],
@@ -85,8 +86,13 @@ class SitemapService
         }
 
         foreach (Category::active()->get() as $category) {
+            $categoryUrl = route('category.show', $category->slug);
+            if ($category->parent_id === null && $category->children()->active()->exists()) {
+                $categoryUrl .= '?all=1';
+            }
+
             $sitemap->add(
-                Url::create(route('category.show', $category->slug))
+                Url::create($categoryUrl)
                     ->setLastModificationDate($category->updated_at)
                     ->setPriority(0.8)
                     ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
@@ -104,6 +110,19 @@ class SitemapService
             }
 
             $sitemap->add($url);
+        }
+
+        foreach (\App\Models\Post::published()->get() as $post) {
+            $postUrl = Url::create(route('blog.show', $post->slug))
+                ->setLastModificationDate($post->updated_at)
+                ->setPriority(0.7)
+                ->setChangeFrequency(Url::CHANGE_FREQUENCY_MONTHLY);
+
+            if (! empty($post->featured_image)) {
+                $postUrl->addImage($post->featured_image_url, $post->title);
+            }
+
+            $sitemap->add($postUrl);
         }
 
         return $sitemap;

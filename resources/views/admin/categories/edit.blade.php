@@ -33,6 +33,21 @@
             @error('description') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
         </div>
 
+        <hr class="border-light-subtle my-1">
+        <p class="small fw-semibold text-body mb-0">Search engine listing</p>
+        <p class="text-body-secondary small mt-0">Shown by Google under this collection's link. Keep the title under 60 characters and the description between 120 and 160.</p>
+        <div>
+            <label for="meta_title" class="form-label">Meta title</label>
+            <input type="text" id="meta_title" name="meta_title" value="{{ old('meta_title', $category->meta_title) }}" maxlength="255" class="form-control small">
+            @error('meta_title') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div>
+            <label for="meta_description" class="form-label">Meta description</label>
+            <textarea id="meta_description" name="meta_description" rows="2" maxlength="500" class="form-control small">{{ old('meta_description', $category->meta_description) }}</textarea>
+            @error('meta_description') <p class="text-danger small mt-1">{{ $message }}</p> @enderror
+        </div>
+        <hr class="border-light-subtle my-1">
+
         <div class="d-grid admin-cols-1 admin-cols-sm-4 gap-4 align-items-center">
             <div class="admin-span-sm-1 admin-aspect-square rounded-2 overflow-hidden border bg-body-tertiary">
                 <img src="{{ $category->image_url ?? asset('images/placeholder.svg') }}" alt="{{ $category->name }}" class="w-100 h-100 object-fit-cover">

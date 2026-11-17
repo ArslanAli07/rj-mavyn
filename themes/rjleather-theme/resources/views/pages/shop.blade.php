@@ -37,7 +37,12 @@
     $flatOptions = $flatten($tree);
     $currentSort = (string) request('sort', 'featured');
 @endphp
-<x-app-layout :title="$catalogTitle.' — '.setting('site_name', config('site.name'))">
+<x-app-layout :title="isset($metaTitle) && $metaTitle ? $metaTitle : ($catalogTitle.' — '.setting('site_name', config('site.name')))" :meta-description="$metaDescription ?? $catalogDescription">
+@if(!$isSearch && $selectedCategory)
+    @push('head')
+        {!! seo_schema(app(\App\Services\Seo\StructuredDataService::class)->categoryGraph($selectedCategory, $products instanceof \Illuminate\Contracts\Pagination\Paginator ? $products->getCollection() : $products)) !!}
+    @endpush
+@endif
 <div class="rj-catalog">
     <div class="rj-container">
         <nav class="rj-breadcrumb" aria-label="Breadcrumb">

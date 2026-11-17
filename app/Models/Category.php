@@ -13,8 +13,8 @@ class Category extends Model
     use HasLibraryMedia;
 
     protected $fillable = [
-        'name', 'slug', 'description', 'image', 'display_order', 'is_active', 'show_on_homepage',
-        'subgroup', 'nav_badge',
+        'name', 'slug', 'description', 'image', 'parent_id', 'display_order', 'is_active', 'show_on_homepage',
+        'subgroup', 'nav_badge', 'meta_title', 'meta_description',
     ];
 
     public const NAV_BADGES = ['new', 'hot'];

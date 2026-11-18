@@ -18,7 +18,9 @@ use Illuminate\Support\Str;
  */
 class GenerateCategoryMetasCommand extends Command
 {
-    protected $signature = 'seo:generate-category-metas {--force : Overwrite meta fields that already hold copy}';
+    protected $signature = 'seo:generate-category-metas
+        {--force : Overwrite meta fields that already hold copy}
+        {--fix-duplicates : Only rewrite categories whose current meta title is shared with another category}';
 
     protected $description = 'Generate keyword-rich meta titles and descriptions for all categories from the category tree';
 
@@ -86,6 +88,18 @@ class GenerateCategoryMetasCommand extends Command
         'motorcycle-jackets-touring' => 'Touring Motorcycle Leather Jackets',
         'motorcycle-race-suit' => 'Motorcycle Race Suits',
         'motorcycle-vests' => 'Motorcycle Leather Vests',
+        // "Race" (AMA / Moto GP / WSBK series gear) is a different shelf from
+        // "Race Suits", so each gets its own title.
+        'motogp-race' => 'MotoGP, WSBK & AMA Racing Leathers',
+        'motogp-race-moto-gp' => 'MotoGP Racing Leathers & Replica Gear',
+    ];
+
+    /** Section qualifier per catalogue root, so Men's and Women's shelves differ. */
+    private const ROOT_QUALIFIERS = [
+        'for-men' => "Men's",
+        'for-women' => "Women's",
+        'motogp' => 'MotoGP',
+        'motorcycle' => 'Motorcycle',
     ];
 
     public function __construct(private readonly CategoryTree $tree)
@@ -107,7 +121,16 @@ class GenerateCategoryMetasCommand extends Command
     public function handle(): int
     {
         $force = (bool) $this->option('force');
+        $fixDuplicates = (bool) $this->option('fix-duplicates');
         $categories = Category::active()->orderBy('display_order')->get();
+
+        // Titles currently shared by more than one category (case-insensitive).
+        $sharedTitles = $categories
+            ->filter(fn (Category $category) => filled($category->meta_title))
+            ->groupBy(fn (Category $category) => mb_strtolower(trim($category->meta_title)))
+            ->filter(fn ($group) => $group->count() > 1)
+            ->keys()
+            ->all();
         $filled = 0;
         $skipped = 0;
 
@@ -121,7 +144,13 @@ class GenerateCategoryMetasCommand extends Command
                 continue;
             }
 
-            if (! $force && filled($category->meta_title) && filled($category->meta_description)) {
+            if ($fixDuplicates) {
+                if (! in_array(mb_strtolower(trim((string) $category->meta_title)), $sharedTitles, true)) {
+                    $skipped++;
+
+                    continue;
+                }
+            } elseif (! $force && filled($category->meta_title) && filled($category->meta_description)) {
                 $skipped++;
 
                 continue;
@@ -138,6 +167,13 @@ class GenerateCategoryMetasCommand extends Command
         $this->bustCaches();
 
         $this->info("Meta copy written for {$filled} categories; {$skipped} skipped.");
+
+        $stillShared = Category::active()->whereNotNull('meta_title')->get()
+            ->groupBy(fn (Category $category) => mb_strtolower(trim($category->meta_title)))
+            ->filter(fn ($group) => $group->count() > 1);
+        foreach ($stillShared as $title => $group) {
+            $this->warn("Duplicate meta title \"{$title}\": ".$group->pluck('slug')->implode(', '));
+        }
 
         return self::SUCCESS;
     }
@@ -177,10 +213,29 @@ class GenerateCategoryMetasCommand extends Command
 
         $key = mb_strtolower(trim($category->name));
         if (isset(self::LEAF_PHRASES[$key])) {
-            return self::LEAF_PHRASES[$key];
+            return $this->qualify(self::LEAF_PHRASES[$key], $rootSlug);
         }
 
         return null;
+    }
+
+    /**
+     * Prefix a generic leaf phrase with its catalogue section so sibling
+     * shelves stay distinct: "Leather Jackets" → "Men's Leather Jackets",
+     * "MotoGP Leather Boots" under Motorcycle → "Motorcycle Leather Boots".
+     */
+    private function qualify(string $phrase, string $rootSlug): string
+    {
+        $qualifier = self::ROOT_QUALIFIERS[$rootSlug] ?? null;
+        if ($qualifier === null) {
+            return $phrase;
+        }
+
+        if ($qualifier === 'Motorcycle') {
+            $phrase = trim(str_replace('MotoGP ', '', $phrase));
+        }
+
+        return str_contains($phrase, $qualifier) ? $phrase : "{$qualifier} {$phrase}";
     }
 
     /** "Leather Jackets" | "MotoGP Race Suits" → "Leather Jackets" | "Race Suits". */

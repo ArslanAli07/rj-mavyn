@@ -14,10 +14,10 @@ class BlogSeeder extends Seeder
                 'title' => 'How to Measure for a Custom Made-to-Measure Leather Jacket',
                 'slug' => 'how-to-measure-custom-leather-jacket',
                 'excerpt' => 'A complete master craftsman sizing guide: exact instructions on measuring your chest, shoulders, sleeve length, and waist for a flawless bespoke leather fit.',
-                'meta_title' => 'How to Measure for a Custom Leather Jacket | Sizing Guide | RJ Motorbike',
+                'meta_title' => 'How to Measure for a Custom Leather Jacket | RJ Motorbike',
                 'meta_description' => 'Learn how to accurately measure your chest, shoulders, sleeve length and torso for a custom made-to-measure leather jacket. Step-by-step master craftsman guide.',
                 'meta_keywords' => 'how to measure leather jacket, custom leather jacket sizing, made to measure motorcycle jacket, chest measurement jacket, bespoke leather fit',
-                'featured_image' => 'theme-assets/rjleather.theme-storefront/85b69bcc544e78bb81afb64432822a833687da17549bd110202b9b584f76dfe9/dist/images/hero.jpg',
+                'featured_image' => null, // falls back to the theme hero via featured_image_url
                 'content' => '
                     <p>A true leather jacket should feel like an extension of your own skin. Unlike mass-manufactured off-the-rack outerwear, a <strong>made-to-measure leather motorcycle jacket</strong> contours to your unique posture, arm reach, and chest profile. However, the secret to a bespoke fit lies entirely in accurate measurements.</p>
                     
@@ -45,6 +45,7 @@ class BlogSeeder extends Seeder
 
                     <h2>The RJ Motorbike Tailoring Promise</h2>
                     <p>When you select <em>Custom Size (+ $95.00)</em> on any RJ Motorbike jacket, our master tailors draft an individual pattern tailored to your exact measurements. With premium full-grain hides and reinforced seams, your jacket is built to protect and last a lifetime.</p>
+                    <p>Ready to order? Browse our <a href="/category/customize-fashion">custom made-to-measure leather jackets</a>, shop <a href="/category/for-men-jackets-bikers">biker leather jackets for men</a> or <a href="/category/for-women-jackets-bikers">for women</a>, or check the <a href="/faq">sizing FAQ</a>. Not sure which cut suits you? Read our guide to <a href="/blog/biker-vs-bomber-vs-cafe-racer-leather-jacket-guide">biker, bomber and cafe racer jackets</a>.</p>
                 ',
                 'is_published' => true,
                 'published_at' => now()->subDays(10),
@@ -54,26 +55,26 @@ class BlogSeeder extends Seeder
                 'slug' => 'biker-vs-bomber-vs-cafe-racer-leather-jacket-guide',
                 'excerpt' => 'Compare the three quintessential leather silhouettes: the asymmetric double-rider biker jacket, the military MA-1 bomber, and the streamlined cafe racer.',
                 'meta_title' => 'Biker vs Bomber vs Cafe Racer Leather Jackets | RJ Motorbike',
-                'meta_description' => 'Explore the differences between biker, bomber, and cafe racer leather jackets. Find the right silhouette, protection level, and leather finish for your lifestyle.',
+                'meta_description' => 'Compare biker, bomber and cafe racer leather jackets. Find the right silhouette, protection level and leather finish for your riding style.',
                 'meta_keywords' => 'biker vs bomber leather jacket, cafe racer motorcycle jacket, double rider leather jacket, mens leather jacket styles, motorcycle outerwear comparison',
-                'featured_image' => 'theme-assets/rjleather.theme-storefront/85b69bcc544e78bb81afb64432822a833687da17549bd110202b9b584f76dfe9/dist/images/hero.jpg',
+                'featured_image' => null, // falls back to the theme hero via featured_image_url
                 'content' => '
                     <p>The leather jacket has defined rebellion, aviation, and motorcycle culture for over a century. Yet when deciding on a handcrafted investment piece, understanding the differences in silhouette, functional design, and wind protection is crucial.</p>
 
                     <h2>1. The Classic Double-Rider Biker Jacket</h2>
                     <p>Pioneered in 1928, the classic motorcycle biker jacket features an <strong>asymmetrical front zipper</strong>, wide lapels with snap buttons, zippered cuffs, and often an integrated waist belt. The offset zipper was designed to prevent wind from cutting through when leaning forward over a motorcycle tank.</p>
-                    <p><strong>Best For:</strong> Cruisers, rock-and-roll aesthetics, and riders demanding maximum chest windproofing.</p>
+                    <p><strong>Best For:</strong> Cruisers, rock-and-roll aesthetics, and riders demanding maximum chest windproofing. <a href="/category/for-men-jackets-bikers">Shop biker leather jackets</a>.</p>
 
                     <h2>2. The Aviation Bomber Jacket (A-2 & MA-1 Heritage)</h2>
                     <p>Originally engineered for open-cockpit fighter pilots in World War II, the leather bomber is characterized by <strong>ribbed knit cuffs and hem</strong>, a central heavy-duty zip, and a roomier shoulder cut. Bombers excel in casual comfort, trapping insulating warmth close to the torso.</p>
-                    <p><strong>Best For:</strong> Everyday streetwear, cooler weather commutes, and pairing with denim.</p>
+                    <p><strong>Best For:</strong> Everyday streetwear, cooler weather commutes, and pairing with denim. <a href="/category/for-men-jackets-bomber">Shop bomber leather jackets</a> or the <a href="/products/brown-leather-bomber-jacket-men-a-2-flight">A-2 flight bomber</a>.</p>
 
                     <h2>3. The Minimalist Cafe Racer</h2>
                     <p>Born in post-war 1960s London among riders who modified their motorbikes to race between roadside transport cafes, the Cafe Racer is pure minimalism. Featuring a <strong>clean mandarin snap collar</strong>, centered zipper, and streamlined vertical pockets, it eliminates excess fabric for optimal aerodynamic speed.</p>
-                    <p><strong>Best For:</strong> Sport bikes, modern classics, minimalist wardrobes, and riders who prefer subtle, understated elegance.</p>
+                    <p><strong>Best For:</strong> Sport bikes, modern classics, minimalist wardrobes, and riders who prefer subtle, understated elegance. See the <a href="/products/black-cafe-racer-leather-jacket-men">black cafe racer leather jacket</a>.</p>
 
                     <h2>Handcrafted in Full-Grain Hides</h2>
-                    <p>At RJ Motorbike, every silhouette is hand-cut from hand-selected cowhide, buffalo, or sheepskin hides. Choose your lining, customize your hardware, and select your armor pocket configurations for a personalized finish.</p>
+                    <p>At RJ Motorbike, every silhouette is hand-cut from hand-selected cowhide, buffalo, or sheepskin hides. Choose your lining, customize your hardware, and select your armor pocket configurations for a personalized finish. Start with a <a href="/category/customize-fashion">custom leather jacket</a> and use our <a href="/blog/how-to-measure-custom-leather-jacket">step-by-step measuring guide</a> to get the fit right.</p>
                 ',
                 'is_published' => true,
                 'published_at' => now()->subDays(7),
@@ -85,7 +86,7 @@ class BlogSeeder extends Seeder
                 'meta_title' => 'Full-Grain vs Top-Grain Leather Guide | RJ Motorbike',
                 'meta_description' => 'Discover why full-grain cowhide provides superior motorcycle abrasion resistance compared to top-grain or genuine leather. Master craftsman leather care guide.',
                 'meta_keywords' => 'full grain vs top grain leather, motorcycle leather durability, cowhide leather abrasion resistance, how to clean leather motorcycle jacket',
-                'featured_image' => 'theme-assets/rjleather.theme-storefront/85b69bcc544e78bb81afb64432822a833687da17549bd110202b9b584f76dfe9/dist/images/hero.jpg',
+                'featured_image' => null, // falls back to the theme hero via featured_image_url
                 'content' => '
                     <p>Not all leather is created equal. When a jacket represents both your personal aesthetic and your primary defense against asphalt abrasion, knowing how leather grades differ can make all the difference on the open road.</p>
 
@@ -103,12 +104,15 @@ class BlogSeeder extends Seeder
                     <h2>Top-Grain & Corrected Leather</h2>
                     <p>Top-grain leather has had the very top layer lightly sanded to remove scars or insect bites, followed by an embossed synthetic grain. While uniform in appearance, the sanding process reduces overall abrasion resistance by up to 25% compared to untouched full-grain.</p>
 
+                    <p>Every RJ Motorbike piece is cut from full-grain hides. See it in our <a href="/category/motorcycle-jackets-race">racing motorcycle jackets</a> and <a href="/category/for-men-jackets">leather jackets for men</a>, or read how <a href="/blog/motogp-race-suits-one-piece-vs-two-piece-track-guide">race suits</a> are built for the track.</p>
+
                     <h2>How to Care for Your Motorcycle Leather</h2>
                     <ol>
                         <li><strong>Wipe Down After Rides:</strong> Use a damp microfiber cloth to remove bugs, road salt, and road grime before they dry out the pores.</li>
                         <li><strong>Condition Seasonally:</strong> Apply a natural beeswax or lanolin-based leather balm twice a year to maintain hide hydration and prevent stiffness.</li>
                         <li><strong>Never Use Direct Heat:</strong> If caught in a rainstorm, always hang your jacket on a wide, contoured wooden hanger at room temperature. Never place it next to a radiator.</li>
                     </ol>
+                    <p>Questions about leather, sizing or delivery? Our <a href="/faq">FAQ</a> covers care, made-to-measure orders and returns.</p>
                 ',
                 'is_published' => true,
                 'published_at' => now()->subDays(5),
@@ -117,16 +121,16 @@ class BlogSeeder extends Seeder
                 'title' => 'MotoGP Race Suits Explained: One-Piece vs Two-Piece, Armor Levels and Track Standards',
                 'slug' => 'motogp-race-suits-one-piece-vs-two-piece-track-guide',
                 'excerpt' => 'A breakdown of high-performance track protection: CE Level 2 armor, aerodynamic speed humps, titanium shoulder sliders, and 1-piece vs 2-piece leather configurations.',
-                'meta_title' => 'MotoGP Race Suits: 1-Piece vs 2-Piece Protection Guide | RJ Motorbike',
+                'meta_title' => 'MotoGP Race Suits: One vs Two-Piece Guide | RJ Motorbike',
                 'meta_description' => 'Learn track day safety requirements, CE Level 2 armor, aerodynamic speed humps, and the differences between 1-piece and 2-piece motorcycle leather race suits.',
                 'meta_keywords' => 'motogp leather suit, 1 piece vs 2 piece motorcycle race suit, track day leather suit, ce level 2 motorcycle armor, custom race suit made to measure',
-                'featured_image' => 'theme-assets/rjleather.theme-storefront/85b69bcc544e78bb81afb64432822a833687da17549bd110202b9b584f76dfe9/dist/images/hero.jpg',
+                'featured_image' => null, // falls back to the theme hero via featured_image_url
                 'content' => '
                     <p>When riding at high speed on track day circuits, proper equipment is non-negotiable. Whether you are aiming for weekend track days or competitive club racing, choosing between a <strong>1-piece</strong> and <strong>2-piece race suit</strong> dictates your protection, flexibility, and track compliance.</p>
 
                     <h2>1-Piece Leather Race Suits (Pure Track Focus)</h2>
                     <p>The 1-piece race suit is the premier choice for circuit racing and track days. Cut in a pre-curved, forward-tuck riding posture, a 1-piece suit eliminates the waist zipper seam, ensuring that the suit cannot separate during a high-speed slide across tarmac.</p>
-                    <p><strong>Key Advantages:</strong> Maximum structural integrity, zero waist pinch points, aerodynamic race hump integration, and universal track day sanctioning.</p>
+                    <p><strong>Key Advantages:</strong> Maximum structural integrity, zero waist pinch points, aerodynamic race hump integration, and universal track day sanctioning. <a href="/category/motorcycle-race-suit-1-piece-race-suit">Shop 1-piece motorcycle race suits</a>.</p>
 
                     <h2>2-Piece Race Suits (Versatility for the Road & Canyon)</h2>
                     <p>A 2-piece suit connects a dedicated racing jacket to leather race pants via a full-circumference 360-degree heavy-duty zipper. This allows you to unzip and remove the jacket during lunch stops or wear the jacket independently on casual road rides.</p>
@@ -139,6 +143,7 @@ class BlogSeeder extends Seeder
                         <li><strong>External TPU & Titanium Sliders:</strong> Deflect impact energy and enable smooth sliding on track surfaces.</li>
                         <li><strong>Kevlar Stretch Panels:</strong> Strategic accordion leather and Schoeller-Keprotec stretch fabric in the crotch, calves, and underarms for full rider mobility.</li>
                     </ul>
+                    <p>Browse the full range of <a href="/category/motogp-race-suits?all=1">MotoGP race suits</a> and <a href="/category/motogp-race-moto-gp">MotoGP racing leathers</a>, such as the <a href="/products/valentino-rossi-vr46-motogp-race-suit-yamaha-2010">Valentino Rossi VR46 Yamaha 2010 race suit</a>. Every suit is made to measure, so follow our <a href="/blog/how-to-measure-custom-leather-jacket">measuring guide</a> before you order.</p>
                 ',
                 'is_published' => true,
                 'published_at' => now()->subDays(3),
@@ -147,27 +152,27 @@ class BlogSeeder extends Seeder
                 'title' => 'Iconic Movie Leather Jackets: The History, Style and How to Wear Them Today',
                 'slug' => 'iconic-movie-leather-jackets-history-and-styling-guide',
                 'excerpt' => 'From Top Gun\'s G-1 flight jacket to Tyler Durden\'s crimson Fight Club coat and Wolverine\'s brown cafe racer, explore the cinema history of legendary leather outerwear.',
-                'meta_title' => 'Iconic Movie Leather Jackets: Cinema History & Style | RJ Motorbike',
+                'meta_title' => 'Iconic Movie Leather Jackets: History & Style | RJ Motorbike',
                 'meta_description' => 'Explore the story and craftsmanship behind cinema\'s most famous leather jackets: Top Gun G-1, Fight Club red coat, Wolverine cafe racer, and Terminator.',
                 'meta_keywords' => 'movie leather jackets, top gun maverick leather jacket, fight club tyler durden red jacket, wolverine brown leather jacket, film jackets handmade',
-                'featured_image' => 'theme-assets/rjleather.theme-storefront/85b69bcc544e78bb81afb64432822a833687da17549bd110202b9b584f76dfe9/dist/images/hero.jpg',
+                'featured_image' => null, // falls back to the theme hero via featured_image_url
                 'content' => '
                     <p>Nothing establishes a movie character\'s grit, charisma, and independence faster than a legendary leather jacket. Over decades of cinema, specific leather designs have transcended the silver screen to become timeless wardrobe centerpieces.</p>
 
                     <h2>1. The Top Gun Maverick G-1 Flight Jacket</h2>
-                    <p>Worn by Tom Cruise as Pete "Maverick" Mitchell, the naval G-1 aviator jacket features genuine mouton shearling collar, bi-swing back for arm reach, knit cuffs, and authentic military squadron patches. Originally issued to US Navy pilots in the 1930s, this jacket remains the definitive symbol of aerial bravado.</p>
+                    <p>Worn by Tom Cruise as Pete "Maverick" Mitchell, the naval G-1 aviator jacket features genuine mouton shearling collar, bi-swing back for arm reach, knit cuffs, and authentic military squadron patches. Originally issued to US Navy pilots in the 1930s, this jacket remains the definitive symbol of aerial bravado. See our <a href="/products/top-gun-maverick-g-1-brown-leather-bomber-jacket-men">Top Gun Maverick G-1 leather bomber jacket</a>.</p>
 
                     <h2>2. Tyler Durden\'s Red Leather Jacket in Fight Club</h2>
-                    <p>Brad Pitt\'s portrayal of Tyler Durden disrupted 90s fashion with an unapologetic, 1970s-inspired red leather coat with contrast white stitching and exaggerated notch lapels. At RJ Motorbike, our craftsmen reproduce this piece with supple, wax-finished sheepskin for authentic drape and mobility.</p>
+                    <p>Brad Pitt\'s portrayal of Tyler Durden disrupted 90s fashion with an unapologetic, 1970s-inspired red leather coat with contrast white stitching and exaggerated notch lapels. At RJ Motorbike, our craftsmen reproduce this piece with supple, wax-finished sheepskin for authentic drape and mobility. Shop the <a href="/products/fight-club-tyler-durden-red-leather-jacket-men">Fight Club Tyler Durden red leather jacket</a>.</p>
 
                     <h2>3. Wolverine\'s Brown Cafe Racer (X-Men Origins)</h2>
-                    <p>Hugh Jackman\'s Wolverine jacket pairs rugged brown cowhide with tan racing stripes down the sleeves. Featuring a snap tab collar and gusseted shoulders, it embodies utilitarian durability tailored for action.</p>
+                    <p>Hugh Jackman\'s Wolverine jacket pairs rugged brown cowhide with tan racing stripes down the sleeves. Featuring a snap tab collar and gusseted shoulders, it embodies utilitarian durability tailored for action. See the <a href="/products/wolverine-brown-leather-jacket-x-men-film-replica">Wolverine brown leather jacket</a>.</p>
 
                     <h2>4. Terminator 2: Judgment Day Biker</h2>
-                    <p>Arnold Schwarzenegger\'s arrival in Terminator 2 immortalized the heavy black cowhide asymmetrical biker with silver snaps and an industrial waist belt. It remains the gold standard of mechanical menace and motorcycling heritage.</p>
+                    <p>Arnold Schwarzenegger\'s arrival in Terminator 2 immortalized the heavy black cowhide asymmetrical biker with silver snaps and an industrial waist belt. It remains the gold standard of mechanical menace and motorcycling heritage. Shop the <a href="/products/terminator-2-black-biker-style-leather-jacket-men">Terminator 2 black biker leather jacket</a>.</p>
 
                     <h2>Screen Accuracy Meets Made-to-Measure Comfort</h2>
-                    <p>At RJ Motorbike, our film jackets are not synthetic Halloween costumes. Each piece is constructed from real full-grain cowhide or lambskin, tailored to your exact measurements so you can wear it with pride on your bike or in the city.</p>
+                    <p>At RJ Motorbike, our film jackets are not synthetic Halloween costumes. Each piece is constructed from real full-grain cowhide or lambskin, tailored to your exact measurements so you can wear it with pride on your bike or in the city. Explore every <a href="/category/for-men-movies-leather-jacket-for-men?all=1">movie leather jacket</a> in our collection.</p>
                 ',
                 'is_published' => true,
                 'published_at' => now()->subDay(),

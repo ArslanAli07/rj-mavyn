@@ -16,6 +16,10 @@
         $locale = strtoupper((string) setting('store_locale', 'en'));
         $countryCode = (string) setting('store_country_code', config('site.country_code', 'PK'));
 
+        // Open Graph locale for the target market (US/UK/AU English): a
+        // lowercase language plus an uppercase region, e.g. en_US.
+        $ogLocale = 'en_US';
+
         /*
          * Utility and account flows never belong in the index: search result
          * pages, the bag, checkout, wishlists and anything behind a login send
@@ -37,6 +41,12 @@
         } elseif (filled(request()->query('page'))) {
             $canonical .= '?page='.(int) request()->query('page');
         }
+
+        // Paginated pages get a distinct title so ?page=2… are not duplicates.
+        $pageNumber = (int) request()->query('page', 1);
+        if ($pageNumber > 1) {
+            $pageTitle .= ' — Page '.$pageNumber;
+        }
     @endphp
     <title>{{ $pageTitle }}</title>
     <meta name="description" content="{{ $description }}">
@@ -46,9 +56,9 @@
     <meta property="og:image" content="{{ $ogImage ?? $seo?->og_image_url ?? store_media_url('site_logo', theme_asset('images/hero.jpg')) }}">
     <meta property="og:image:alt" content="{{ $pageTitle }}">
     <meta property="og:site_name" content="{{ $storeName }}">
-    <meta property="og:url" content="{{ request()->url() }}">
+    <meta property="og:url" content="{{ $canonical }}">
     <meta property="og:type" content="{{ $ogType ?? 'website' }}">
-    <meta property="og:locale" content="{{ $locale }}_{{ strtoupper($countryCode) }}">
+    <meta property="og:locale" content="{{ $ogLocale }}">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $pageTitle }}">
     <meta name="twitter:description" content="{{ $description }}">

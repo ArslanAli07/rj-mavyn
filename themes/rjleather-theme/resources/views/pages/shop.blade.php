@@ -9,6 +9,12 @@
     $total = method_exists($products, 'total') ? $products->total() : $products->count();
     $hasFilters = $isShop && request()->hasAny(['category','min_price','max_price','in_stock','occasion']);
 
+    // The all-products page keeps its visible heading but gets keyword-led head copy.
+    if ($isShop && empty($metaTitle)) {
+        $metaTitle = 'Shop Custom Leather Jackets, Race Suits & Gear | '.setting('site_name', config('site.name', 'RJ Motorbike'));
+        $metaDescription = $metaDescription ?? 'Browse handmade leather jackets, MotoGP race suits, motorcycle gear, coats and vests, all made to measure from full-grain leather with free worldwide shipping.';
+    }
+
     /*
      * The catalogue is a real tree: a group owns its subcategories and those
      * own their own collections (MotoGP > Brands > Ducati). The storefront
@@ -37,7 +43,7 @@
     $flatOptions = $flatten($tree);
     $currentSort = (string) request('sort', 'featured');
 @endphp
-<x-app-layout :title="isset($metaTitle) && $metaTitle ? $metaTitle : ($catalogTitle.' — '.setting('site_name', config('site.name')))" :meta-description="$metaDescription ?? $catalogDescription">
+<x-app-layout :title="isset($metaTitle) && $metaTitle ? $metaTitle : ($catalogTitle.' — '.setting('site_name', config('site.name')))" :meta-description="$metaDescription ?? $catalogDescription" :page-key="$isShop ? 'shop' : null">
 @if(!$isSearch && $selectedCategory)
     @push('head')
         {!! seo_schema(app(\App\Services\Seo\StructuredDataService::class)->categoryGraph($selectedCategory, $products instanceof \Illuminate\Contracts\Pagination\Paginator ? $products->getCollection() : $products)) !!}

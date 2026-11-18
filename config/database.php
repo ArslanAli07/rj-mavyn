@@ -41,10 +41,20 @@ return [
             // Readers no longer block the cart's lock writes (and vice versa),
             // and a 5s wait rides out the brief write bursts that used to
             // surface as random "database is locked" 500s on page renders.
-            'busy_timeout' => 5000,
+            'busy_timeout' => (int) env('DB_BUSY_TIMEOUT', 30000),
             'journal_mode' => 'wal',
             'synchronous' => 'normal',
-            'transaction_mode' => 'DEFERRED',
+            // The PricingContext middleware wraps each page render in one
+            // transaction, so on SQLite renders queue behind each other;
+            // the long busy_timeout lets queued requests wait (crawlers and
+            // visitors get a slow 200, not a 500). MySQL has no such queue.
+            // IMMEDIATE takes the write lock at BEGIN, where busy_timeout
+            // applies. DEFERRED begins as a reader and upgrades on the first
+            // write; when another request wrote in between, SQLite refuses
+            // that upgrade at once (SQLITE_BUSY, no waiting) and the page
+            // 500s. Every storefront render opens such a transaction for the
+            // cart owner lock, so concurrent visitors and crawlers hit it.
+            'transaction_mode' => env('DB_SQLITE_TRANSACTION_MODE', 'IMMEDIATE'),
         ],
 
         'mysql' => [

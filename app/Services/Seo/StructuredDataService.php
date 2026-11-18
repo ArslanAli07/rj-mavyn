@@ -118,16 +118,43 @@ final class StructuredDataService
         ]];
     }
 
-    /** Serialize a graph into the <script type="application/ld+json"> tag. */
+    /**
+     * Serialize a graph into the <script type="application/ld+json"> tag.
+     *
+     * Accepts either a list of nodes or a single node, and always wraps them
+     * in {"@context": "https://schema.org", "@graph": [...]} so parsers can
+     * resolve the schema.org vocabulary. JSON_HEX_TAG keeps a stray "</script>"
+     * in merchant copy from closing the tag early.
+     */
     public function render(array $graph): HtmlString
     {
         if ($graph === []) {
             return new HtmlString('');
         }
 
+        $nodes = array_is_list($graph) ? $graph : [$graph];
+
+        $document = [
+            '@context' => 'https://schema.org',
+            '@graph' => array_values(array_map(fn ($node) => $this->prune($node), $nodes)),
+        ];
+
         return new HtmlString('<script type="application/ld+json">'
-            .json_encode($graph, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)
+            .json_encode($document, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_THROW_ON_ERROR)
             .'</script>');
+    }
+
+    /** Drop null and empty-array properties, which schema validators flag. */
+    private function prune(mixed $value): mixed
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        $pruned = array_map(fn ($item) => $this->prune($item), $value);
+        $pruned = array_filter($pruned, fn ($item) => $item !== null && $item !== []);
+
+        return array_is_list($value) ? array_values($pruned) : $pruned;
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────
@@ -189,11 +216,27 @@ final class StructuredDataService
                 '@type' => 'ListItem',
                 'position' => $index + 2,
                 'name' => $label,
-                'item' => route('category.show', $category->slug),
+                'item' => $this->categoryUrl($category),
             ];
         }
 
         return ['@type' => 'BreadcrumbList', 'itemListElement' => $items];
+    }
+
+    /**
+     * The URL a category actually resolves at. A top-level group with
+     * subcategories 302-redirects to its first child, so its indexable
+     * whole-group page is `?all=1` (the same URL the sitemap lists).
+     */
+    private function categoryUrl(Category $category): string
+    {
+        $url = route('category.show', $category->slug);
+
+        if ($category->parent_id === null && $this->tree->branch($category)->isNotEmpty()) {
+            $url .= '?all=1';
+        }
+
+        return $url;
     }
 
     /** Article/BlogPosting graph for informational and guide pages. */

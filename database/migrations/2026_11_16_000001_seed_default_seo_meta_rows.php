@@ -17,7 +17,7 @@ return new class extends Migration
 
         $pages = [
             'home' => [
-                'meta_title' => 'Custom Leather Jackets, Race Suits & Motorcycle Gear | '.$brand,
+                'meta_title' => 'Custom Leather Jackets & Motorcycle Gear | '.$brand,
                 'meta_description' => 'Handmade leather jackets, MotoGP race suits and motorcycle gear, cut to your measurements from full-grain hides. Made to order with free worldwide shipping.',
                 'meta_keywords' => 'custom leather jacket, leather motorcycle jacket, motoGP leather suit, made to measure leather, leather race suit',
             ],

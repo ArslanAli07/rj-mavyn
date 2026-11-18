@@ -1,5 +1,5 @@
 @section('title', 'Guides & Articles')
-<x-app-layout :title="'Motorcycle Leather Guides, Sizing & Track Advice | '.setting('site_name', config('site.name', 'RJ Motorbike'))" :meta-description="'Expert buyer guides, sizing instructions, and care advice for handmade leather motorcycle jackets, race suits, and bespoke riding gear from RJ Motorbike.'" og-type="blog">
+<x-app-layout :title="'Motorcycle Leather Guides & Sizing Advice | '.setting('site_name', config('site.name', 'RJ Motorbike'))" :meta-description="'Expert buyer guides, sizing instructions, and care advice for handmade leather motorcycle jackets, race suits, and bespoke riding gear from RJ Motorbike.'" og-type="website">
     <div class="rj-container">
         <nav class="rj-breadcrumb" aria-label="Breadcrumb">
             <a href="{{ route('home') }}">Home</a><span>/</span><span aria-current="page">Guides &amp; Articles</span>

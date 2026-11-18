@@ -31,7 +31,7 @@
             @endif
         </header>
 
-        @if($post->featured_image)
+        @if($post->featured_image_url)
             <div style="aspect-ratio:16/9;overflow:hidden;border-radius:6px;margin-bottom:40px;background:#f3f3f3;">
                 <img src="{{ $post->featured_image_url }}" alt="{{ $post->title }}" style="width:100%;height:100%;object-fit:cover;">
             </div>

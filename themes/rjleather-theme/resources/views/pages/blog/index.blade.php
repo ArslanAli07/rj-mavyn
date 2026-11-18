@@ -1,5 +1,5 @@
 @section('title', 'Blogs')
-<x-app-layout :title="'Leather & Motorcycle Blogs | '.setting('site_name', config('site.name', 'RJ Motorbike'))" :meta-description="'Stories, practical advice and product insights on leather jackets, motorcycle riding gear, fit and care from RJ Motorbike.'" og-type="blog">
+<x-app-layout :title="'Leather & Motorcycle Blogs | '.setting('site_name', config('site.name', 'RJ Motorbike'))" :meta-description="'Stories, practical advice and product insights on leather jackets, motorcycle riding gear, fit and care from RJ Motorbike.'" og-type="website">
     <div class="rj-container">
         <nav class="rj-breadcrumb" aria-label="Breadcrumb">
             <a href="{{ route('home') }}">Home</a><span>/</span><span aria-current="page">Blogs</span>

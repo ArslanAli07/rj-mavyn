@@ -108,6 +108,12 @@
                 Newsletter subscribers
             </a>
 @endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.posts.index'))
+<a href="{{ route('admin.posts.index') }}" class="admin-nav-item {{ request()->routeIs('admin.posts.*') ? 'active' : '' }}">
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v8a2 2 0 01-2 2zM7 8h5M7 12h10M7 16h10"/></svg>
+                Blog posts
+            </a>
+@endif
 
             <div class="pt-3 pb-2 px-3 small fw-semibold text-body-secondary admin-letter-spacing">Configuration</div>
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.delivery-zones.index') && plugin_active('mavyn.local-delivery'))

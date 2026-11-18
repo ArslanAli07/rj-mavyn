@@ -108,7 +108,7 @@ Route::prefix('admin')->name('admin.')->middleware(['admin', 'admin.permissions'
     Route::patch('contact-messages/{message}/resolve', [AdminContactMessageController::class, 'resolve'])->name('contact-messages.resolve');
 
     // Posts / Blog
-    Route::resource('posts', \App\Http\Controllers\Admin\PostController::class);
+    Route::resource('posts', \App\Http\Controllers\Admin\PostController::class)->except('show');
 
     // SEO
     Route::get('seo', [AdminSeoController::class, 'index'])->name('seo.index');

@@ -29,6 +29,15 @@ class Post extends Model
         'published_at' => 'datetime',
     ];
 
+    /** Keep sitemap.xml in step with the blog, as products and categories do. */
+    protected static function booted(): void
+    {
+        $refresh = fn () => app(\App\Services\SitemapService::class)->generateQuietly();
+
+        static::saved($refresh);
+        static::deleted($refresh);
+    }
+
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('is_published', true)

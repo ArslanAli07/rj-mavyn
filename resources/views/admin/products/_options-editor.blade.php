@@ -147,6 +147,39 @@
                         </div>
                     </div>
 
+                    {{-- Product builder (Style / Size / Extras) settings; leave Step on "Classic" for the plain dropdown layout --}}
+                    <div class="d-grid admin-cols-1 admin-cols-sm-12 gap-3 align-items-end bg-body-tertiary rounded-2 p-2 border border-light-subtle">
+                        <div class="admin-span-sm-2">
+                            <label class="form-label small">Builder step</label>
+                            <select :name="'option_groups[' + gIndex + '][step]'" x-model="group.step" class="form-select small py-2">
+                                <option value="">Classic (dropdown)</option>
+                                <option value="style">Style</option>
+                                <option value="extras">Extras</option>
+                            </select>
+                        </div>
+                        <div class="admin-span-sm-2">
+                            <label class="form-label small">Shown as</label>
+                            <select :name="'option_groups[' + gIndex + '][display]'" x-model="group.display" class="form-select small py-2">
+                                <option value="select">Dropdown</option>
+                                <option value="tiles">Tiles</option>
+                                <option value="swatches">Colour swatches</option>
+                            </select>
+                        </div>
+                        <div class="admin-span-sm-4">
+                            <label class="form-label small">Help text</label>
+                            <input type="text" maxlength="255" :name="'option_groups[' + gIndex + '][help_text]'" x-model="group.help_text" class="form-control small py-2" placeholder="e.g. Choose up to 4 for this design.">
+                        </div>
+                        <div class="admin-span-sm-4">
+                            <label class="form-label small">Show only when</label>
+                            <select :name="'option_groups[' + gIndex + '][depends_on_value_id]'" x-model="group.depends_on_value_id" class="form-select small py-2">
+                                <option value="">Always</option>
+                                <template x-for="choice in dependencyChoices(gIndex)" :key="choice.id">
+                                    <option :value="choice.id" x-text="choice.label"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="admin-stack-2 ps-1">
                         <div class="d-flex align-items-center justify-content-between">
                             <span class="small fw-semibold admin-letter-spacing text-body-secondary">Choices</span>
@@ -175,6 +208,15 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                         </svg>
                                     </button>
+                                </div>
+                                <div class="admin-span-sm-3" x-show="group.display === 'swatches'">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="d-inline-block rounded-1 border" style="width:28px;height:28px;flex:none" :style="value.swatch ? 'background:' + value.swatch : ''"></span>
+                                        <input type="text" maxlength="7" :name="'option_groups[' + gIndex + '][values][' + vIndex + '][swatch]'" x-model="value.swatch" class="form-control small py-2" placeholder="#RRGGBB colour">
+                                    </div>
+                                </div>
+                                <div class="admin-span-sm-9">
+                                    <input type="text" maxlength="120" :name="'option_groups[' + gIndex + '][values][' + vIndex + '][input_label]'" x-model="value.input_label" class="form-control small py-2" placeholder="Ask the customer for text when chosen (e.g. Pantone code). Leave empty for none.">
                                 </div>
                             </div>
                         </template>

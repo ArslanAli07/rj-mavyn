@@ -18,6 +18,8 @@ class ProductOptionValue extends Model
         'price_adjustment',
         'is_active',
         'sort_order',
+        'swatch',
+        'input_label',
     ];
 
     protected function casts(): array

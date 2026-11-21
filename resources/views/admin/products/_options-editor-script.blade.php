@@ -65,8 +65,16 @@
                     max_selections: '',
                     is_required: false,
                     is_active: true,
-                    values: [{ id: null, name: '', price_adjustment: 0, is_active: true }],
+                    step: '',
+                    display: 'select',
+                    help_text: '',
+                    depends_on_value_id: '',
+                    values: [{ id: null, name: '', price_adjustment: 0, is_active: true, swatch: '', input_label: '' }],
                 });
+            },
+            // Saved choices of the other groups, for "show only when".
+            dependencyChoices(gIndex) {
+                return this.optionGroups.flatMap((group, i) => i === gIndex ? [] : group.values.filter(v => v.id).map(v => ({ id: v.id, label: group.name + ': ' + v.name })));
             },
             removeOptionGroup(index) {
                 this.optionGroups.splice(index, 1);
@@ -82,6 +90,8 @@
                     name: '',
                     price_adjustment: 0,
                     is_active: true,
+                    swatch: '',
+                    input_label: '',
                 });
             },
             removeOptionValue(groupIndex, valueIndex) {

@@ -55,6 +55,10 @@ class ProductOptionGroup extends Model
         'is_required',
         'is_active',
         'sort_order',
+        'step',
+        'display',
+        'help_text',
+        'depends_on_value_id',
     ];
 
     protected function casts(): array

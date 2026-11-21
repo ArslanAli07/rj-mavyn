@@ -8,7 +8,7 @@
             <tbody>
                 @foreach($stockMovements as $movement)
                     <tr class="border-top border-light-subtle">
-                        <td class="p-2">{{ $movement->created_at->format('M j, H:i') }}<br>{{ $movement->admin?->name ?? 'Checkout / order workflow' }}</td>
+                        <td class="p-2">{{ store_time($movement->created_at)->format('M j, H:i') }}<br>{{ $movement->admin?->name ?? 'Checkout / order workflow' }}</td>
                         <td class="p-2">{{ $movement->context['variant_name'] ?? 'Shared product stock' }}<br>{{ ucfirst($movement->kind) }}</td>
                         <td class="p-2">{{ $movement->stock_delta > 0 ? '+' : '' }}{{ $movement->stock_delta }}</td>
                         <td class="p-2">{{ $movement->reserved_delta > 0 ? '+' : '' }}{{ $movement->reserved_delta }}</td>

@@ -102,11 +102,17 @@
                         'max_selections' => $g->max_selections,
                         'is_required' => (bool) $g->is_required,
                         'is_active' => (bool) $g->is_active,
+                        'step' => $g->step ?? '',
+                        'display' => $g->display ?? 'select',
+                        'help_text' => $g->help_text ?? '',
+                        'depends_on_value_id' => $g->depends_on_value_id ?? '',
                         'values' => $g->values->map(fn ($v) => [
                             'id' => $v->id,
                             'name' => $v->name,
                             'price_adjustment' => (float) $v->price_adjustment,
                             'is_active' => (bool) $v->is_active,
+                            'swatch' => $v->swatch ?? '',
+                            'input_label' => $v->input_label ?? '',
                         'in_stock' => (bool) $v->in_stock,
                         'track_inventory' => (bool) $v->track_inventory,
                         'stock_quantity' => $v->stock_quantity,
@@ -194,6 +200,12 @@
                     <label class="d-flex align-items-center gap-2 admin-clickable user-select-none">
                         <input type="checkbox" name="in_stock" value="1" {{ $product->in_stock ? 'checked' : '' }} class="form-check-input">
                         <span>In Stock</span>
+                    </label>
+
+                    <input type="hidden" name="allows_design_upload" value="0">
+                    <label class="d-flex align-items-center gap-2 admin-clickable user-select-none">
+                        <input type="checkbox" name="allows_design_upload" value="1" {{ $product->allows_design_upload ? 'checked' : '' }} class="form-check-input">
+                        <span>Customers can upload a design file (builder pages)</span>
                     </label>
 
                     <hr class="border-light-subtle">

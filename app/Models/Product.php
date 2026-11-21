@@ -46,7 +46,7 @@ class Product extends Model
     protected $fillable = [
         'price_currency',
         'category_id', 'title', 'slug', 'sku', 'short_description', 'description',
-        'size_chart', 'specifications',
+        'size_chart', 'specifications', 'allows_design_upload',
         'meta_title', 'meta_description', 'meta_keywords',
         'ingredients', 'allergens', 'price', 'discount_price', 'weight', 'servings',
         'stock_quantity', 'in_stock', 'is_featured', 'is_bestseller', 'is_new_arrival',
@@ -64,6 +64,7 @@ class Product extends Model
             'price' => 'decimal:2',
             'discount_price' => 'decimal:2',
             'in_stock' => 'boolean',
+            'allows_design_upload' => 'boolean',
             'is_featured' => 'boolean',
             'is_bestseller' => 'boolean',
             'is_new_arrival' => 'boolean',

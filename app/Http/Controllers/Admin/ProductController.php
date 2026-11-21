@@ -79,6 +79,7 @@ class ProductController extends Controller
             }
 
             $data['is_featured'] = $request->boolean('is_featured');
+            $data['allows_design_upload'] = $request->boolean('allows_design_upload');
             $data['is_bestseller'] = $request->boolean('is_bestseller');
             $data['is_new_arrival'] = $request->boolean('is_new_arrival');
             $data['in_stock'] = $request->boolean('in_stock', true);
@@ -151,6 +152,7 @@ class ProductController extends Controller
             }
 
             $data['is_featured'] = $request->boolean('is_featured', $product->is_featured);
+            $data['allows_design_upload'] = $request->boolean('allows_design_upload', $product->allows_design_upload);
             $data['is_bestseller'] = $request->boolean('is_bestseller');
             $data['is_new_arrival'] = $request->boolean('is_new_arrival');
             $data['in_stock'] = $request->boolean('in_stock');
@@ -281,6 +283,7 @@ class ProductController extends Controller
             }],
             'gallery_images.*' => 'nullable|image|max:4096',
             'is_featured' => 'boolean',
+            'allows_design_upload' => 'nullable|boolean',
             'is_bestseller' => 'boolean',
             'is_new_arrival' => 'boolean',
             'in_stock' => 'boolean',
@@ -343,6 +346,10 @@ class ProductController extends Controller
             'option_groups.*.is_required' => 'nullable|boolean',
             'option_groups.*.is_active' => 'nullable|boolean',
             'option_groups.*.sort_order' => 'nullable|integer|min:0',
+            'option_groups.*.step' => 'nullable|in:style,extras',
+            'option_groups.*.display' => 'nullable|in:select,tiles,swatches',
+            'option_groups.*.help_text' => 'nullable|string|max:255',
+            'option_groups.*.depends_on_value_id' => 'nullable|integer',
             'option_groups.*.values' => 'required_with:option_groups.*.name|array|list|min:1',
             'option_groups.*.values.*' => 'array',
             'option_groups.*.values.*.id' => [
@@ -363,6 +370,8 @@ class ProductController extends Controller
             'option_groups.*.values.*.price_adjustment' => 'nullable|numeric',
             'option_groups.*.values.*.is_active' => 'nullable|boolean',
             'option_groups.*.values.*.sort_order' => 'nullable|integer|min:0',
+            'option_groups.*.values.*.swatch' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'option_groups.*.values.*.input_label' => 'nullable|string|max:120',
         ]);
 
         $this->assertUniqueVariantNames($request->input('variants', []));
@@ -520,6 +529,23 @@ class ProductController extends Controller
                 'is_active' => $this->resolveActiveFlag($payload['is_active'] ?? null),
                 'sort_order' => $payload['sort_order'] ?? $groupIndex,
             ];
+            // Builder fields are written only when the form sent them, so older forms never wipe them.
+            if (array_key_exists('step', $payload)) {
+                $groupAttributes['step'] = $payload['step'] ?: null;
+            }
+            if (array_key_exists('display', $payload)) {
+                $groupAttributes['display'] = $payload['display'] ?: 'select';
+            }
+            if (array_key_exists('help_text', $payload)) {
+                $groupAttributes['help_text'] = trim((string) $payload['help_text']) ?: null;
+            }
+            if (array_key_exists('depends_on_value_id', $payload)) {
+                $dependsOn = (int) $payload['depends_on_value_id'] ?: null;
+                // Only a choice of one of this product's other groups can be a condition.
+                $valid = $dependsOn && ProductOptionValue::whereKey($dependsOn)->whereHas('group', fn ($q) => $q->where('product_id', $product->id)
+                    ->when(! empty($payload['id']), fn ($q) => $q->where('id', '!=', $payload['id'])))->exists();
+                $groupAttributes['depends_on_value_id'] = $valid ? $dependsOn : null;
+            }
 
             if (! empty($payload['id'])) {
                 $group = $product->optionGroups()->find($payload['id']);
@@ -544,6 +570,12 @@ class ProductController extends Controller
                     'is_active' => $this->resolveActiveFlag($valuePayload['is_active'] ?? null),
                     'sort_order' => $valuePayload['sort_order'] ?? $valueIndex,
                 ];
+                if (array_key_exists('swatch', $valuePayload)) {
+                    $valueAttributes['swatch'] = strtolower((string) $valuePayload['swatch']) ?: null;
+                }
+                if (array_key_exists('input_label', $valuePayload)) {
+                    $valueAttributes['input_label'] = trim((string) $valuePayload['input_label']) ?: null;
+                }
 
                 if (! empty($valuePayload['id'])) {
                     $value = ProductOptionValue::where('product_option_group_id', $group->id)

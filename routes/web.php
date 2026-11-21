@@ -100,6 +100,13 @@ Route::get('/terms', [PageController::class, 'terms'])->name('terms');
 Route::get('/refund-policy', [PageController::class, 'returns'])->name('returns');
 Route::get('/shipping-policy', [PageController::class, 'shipping'])->name('shipping');
 
+// Ordering guide: how it works, sizing and measurements for custom orders.
+Route::get('/how-it-works', [\App\Http\Controllers\GuideController::class, 'howItWorks'])->name('guide.how-it-works');
+Route::get('/size-guide', [\App\Http\Controllers\GuideController::class, 'sizeGuide'])->name('guide.size-guide');
+Route::get('/how-to-measure', [\App\Http\Controllers\GuideController::class, 'howToMeasure'])->name('guide.how-to-measure');
+Route::get('/measurement-form', [\App\Http\Controllers\GuideController::class, 'measurementForm'])->name('guide.measurement-form');
+Route::post('/measurement-form', [\App\Http\Controllers\GuideController::class, 'storeMeasurements'])->name('guide.measurement-form.store')->middleware(['honeypot', 'throttle:5,1']);
+
 // Blog & Buyer Guides
 Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');

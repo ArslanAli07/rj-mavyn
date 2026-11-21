@@ -144,7 +144,8 @@ class AppServiceProvider extends ServiceProvider
             ])->values()->all());
             $view->with('productOptionGroupsPayload', $data['activeOptionGroups']->map(fn ($g) => [
                 'id' => $g->id, 'name' => $g->name, 'selection_type' => $g->selection_type, 'min_selections' => $g->effectiveMinSelections(), 'max_selections' => $g->effectiveMaxSelections(), 'is_required' => $g->effectiveMinSelections() > 0,
-                'values' => $g->values->where('is_active', true)->filter(fn ($v) => $v->price_adjustment !== null)->values()->map(fn ($v) => ['id' => $v->id, 'name' => $v->name, 'price_adjustment' => (float) $v->price_adjustment, 'formatted_adjustment' => ((float) $v->price_adjustment == 0) ? null : (((float) $v->price_adjustment > 0 ? '+' : '').format_price($v->price_adjustment))])->all(),
+                'display' => $g->display ?? 'select', 'step' => $g->step, 'help_text' => $g->help_text, 'depends_on_value_id' => $g->depends_on_value_id ? (int) $g->depends_on_value_id : null,
+                'values' => $g->values->where('is_active', true)->filter(fn ($v) => $v->price_adjustment !== null)->values()->map(fn ($v) => ['id' => $v->id, 'name' => $v->name, 'swatch' => $v->swatch, 'input_label' => $v->input_label, 'price_adjustment' => (float) $v->price_adjustment, 'formatted_adjustment' => ((float) $v->price_adjustment == 0) ? null : (((float) $v->price_adjustment > 0 ? '+' : '').format_price($v->price_adjustment))])->all(),
             ])->values()->all());
             $attributes = app(ProductAttributesService::class);
             $view->with('showIngredients', $attributes->has('product', 'ingredients'))->with('showAllergens', $attributes->has('product', 'allergens'))->with('showServings', $attributes->has('variant', 'servings'));

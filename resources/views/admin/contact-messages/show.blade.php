@@ -47,7 +47,7 @@
                 </div>
                 <div class="d-flex justify-content-between">
                     <span>Date:</span>
-                    <span class="fw-semibold text-body">{{ $message->created_at->format('Y-m-d H:i') }}</span>
+                    <span class="fw-semibold text-body">{{ store_time($message->created_at)->format('Y-m-d H:i') }}</span>
                 </div>
             </div>
 

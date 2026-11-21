@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Post;
 use App\Models\Product;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
 use Throwable;
@@ -48,9 +50,11 @@ class SitemapService
     {
         try {
             $this->generate();
+
             return true;
         } catch (Throwable $e) {
-            Log::error('Sitemap regeneration failed: ' . $e->getMessage());
+            Log::error('Sitemap regeneration failed: '.$e->getMessage());
+
             return false;
         }
     }
@@ -67,6 +71,9 @@ class SitemapService
             ['route' => 'gallery', 'priority' => 0.7, 'frequency' => Url::CHANGE_FREQUENCY_WEEKLY],
             ['route' => 'contact', 'priority' => 0.6, 'frequency' => Url::CHANGE_FREQUENCY_MONTHLY],
             ['route' => 'faq', 'priority' => 0.6, 'frequency' => Url::CHANGE_FREQUENCY_MONTHLY],
+            ['route' => 'guide.how-it-works', 'priority' => 0.6, 'frequency' => Url::CHANGE_FREQUENCY_MONTHLY],
+            ['route' => 'guide.size-guide', 'priority' => 0.6, 'frequency' => Url::CHANGE_FREQUENCY_MONTHLY],
+            ['route' => 'guide.how-to-measure', 'priority' => 0.5, 'frequency' => Url::CHANGE_FREQUENCY_YEARLY],
             ['route' => 'privacy', 'priority' => 0.3, 'frequency' => Url::CHANGE_FREQUENCY_YEARLY],
             ['route' => 'terms', 'priority' => 0.3, 'frequency' => Url::CHANGE_FREQUENCY_YEARLY],
             ['route' => 'returns', 'priority' => 0.3, 'frequency' => Url::CHANGE_FREQUENCY_YEARLY],
@@ -74,7 +81,7 @@ class SitemapService
         ];
 
         foreach ($staticPages as $page) {
-            if (! \Illuminate\Support\Facades\Route::has($page['route'])) {
+            if (! Route::has($page['route'])) {
                 continue;
             }
 
@@ -112,7 +119,7 @@ class SitemapService
             $sitemap->add($url);
         }
 
-        foreach (\App\Models\Post::published()->get() as $post) {
+        foreach (Post::published()->get() as $post) {
             $postUrl = Url::create(route('blog.show', $post->slug))
                 ->setLastModificationDate($post->updated_at)
                 ->setPriority(0.7)
@@ -141,7 +148,7 @@ class SitemapService
             'Disallow: /register',
             'Disallow: /password',
             '',
-            'Sitemap: ' . url('/sitemap.xml'),
+            'Sitemap: '.url('/sitemap.xml'),
             '',
         ];
 

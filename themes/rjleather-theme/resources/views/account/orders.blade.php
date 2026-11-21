@@ -34,8 +34,8 @@
                                     @foreach($orders as $o)
                                         <tr>
                                             <td style="font-weight:700">{{ $o->order_number }}</td>
-                                            <td style="color:var(--rj-muted)">{{ $o->created_at->format('M d, Y') }}</td>
-                                            <td style="text-transform:uppercase;font-size:11px;letter-spacing:.06em;color:var(--rj-muted)">{{ $o->payment_method }}</td>
+                                            <td style="color:var(--rj-muted)">{{ store_time($o->created_at)->format('M d, Y') }}</td>
+                                            <td style="text-transform:uppercase;font-size:11px;letter-spacing:.06em;color:var(--rj-muted)">{{ $o->payment_method_label }}</td>
                                             <td><span class="rj-chip rj-chip--outline">{{ str_replace('_', ' ', $o->status) }}</span></td>
                                             <td style="font-weight:700">{{ order_price($o, $o->grand_total) }}</td>
                                             <td style="text-align:right"><a class="rj-textlink" style="font-size:10px" href="{{ route('orders.show', $o->id) }}">View details</a></td>

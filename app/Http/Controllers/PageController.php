@@ -40,7 +40,7 @@ class PageController extends Controller
     public function shipping(): Response
     {
         return response()
-            ->view('pages.shipping')
+            ->view('legal.shipping')
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
 
@@ -52,21 +52,21 @@ class PageController extends Controller
     public function privacy(): Response
     {
         return response()
-            ->view('pages.privacy')
+            ->view('legal.privacy')
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
 
     public function terms(): Response
     {
         return response()
-            ->view('pages.terms')
+            ->view('legal.terms')
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
 
     public function returns(): Response
     {
         return response()
-            ->view('pages.returns')
+            ->view('legal.returns')
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
 }

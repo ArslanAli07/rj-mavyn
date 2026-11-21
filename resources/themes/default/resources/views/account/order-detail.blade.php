@@ -51,7 +51,7 @@
                         <div>
                             <span class="text-xs text-espresso-400 font-semibold uppercase">Order Details</span>
                             <h2 class="font-heading font-bold text-espresso-800 text-lg sm:text-xl mt-0.5">Order #{{ $order->order_number }}</h2>
-                            <p class="text-xs text-espresso-500 mt-1">Placed on {{ $order->created_at->format('M d, Y \a\t h:i A') }}</p>
+                            <p class="text-xs text-espresso-500 mt-1">Placed on {{ store_time($order->created_at)->format('M d, Y \a\t h:i A') }}</p>
                         </div>
                         <div class="flex flex-col sm:items-end gap-2 shrink-0">
                             <span class="status-{{ $order->status }} uppercase text-xs px-3 py-1 rounded-full font-bold">
@@ -147,13 +147,7 @@
                             <div class="flex justify-between text-espresso-600">
                                 <span>Delivery Fee:</span>
                                 <span class="font-semibold text-espresso-800">
-                                    @if($order->delivery_fee > 0)
-                                        {{ order_price($order, $order->delivery_fee) }}
-                                    @elseif(is_null($order->delivery_zone_id))
-                                        To be confirmed
-                                    @else
-                                        Free
-                                    @endif
+                                    {{ $order->delivery_fee_label }}
                                 </span>
                             </div>
                             <div class="flex justify-between font-bold text-espresso-800 text-base border-t border-cream-150 pt-2">
@@ -169,7 +163,7 @@
                             <h4 class="font-bold text-espresso-800 uppercase tracking-wider text-[10px]">Delivery Address</h4>
                             <p class="text-espresso-700 leading-relaxed font-light">
                                 <span class="font-semibold block text-espresso-800">{{ $order->customer_name }}</span>
-                                {{ $order->delivery_address }}, {{ $order->delivery_area }}, {{ $order->delivery_city }}, {{ $order->delivery_country }}
+                                {{ $order->full_delivery_address }}
                             </p>
                             <p class="text-espresso-450 mt-1 font-medium">Phone: {{ $order->customer_phone }}</p>
                         </div>
@@ -179,7 +173,7 @@
                             <div class="space-y-1 text-espresso-700 leading-relaxed font-light">
                                 <div class="flex justify-between">
                                     <span>Method:</span>
-                                    <span class="font-bold text-espresso-800 uppercase">{{ $order->payment_method }}</span>
+                                    <span class="font-bold text-espresso-800 uppercase">{{ $order->payment_method_label }}</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span>Payment Status:</span>

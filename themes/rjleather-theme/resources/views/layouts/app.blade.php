@@ -159,8 +159,9 @@
                             $columns->push([
                                 'heading' => 'INFORMATION',
                                 'links' => [
-                                    ['label' => 'Made to Order', 'url' => route('about')],
-                                    ['label' => 'Size Guide', 'url' => route('faq')],
+                                    ['label' => 'How It Works', 'url' => route('guide.how-it-works')],
+                                    ['label' => 'Size Guide', 'url' => route('guide.size-guide')],
+                                    ['label' => 'How to Measure', 'url' => route('guide.how-to-measure')],
                                     ['label' => 'Shipping & Delivery', 'url' => route('shipping')],
                                     ['label' => 'Returns & Exchanges', 'url' => route('returns')],
                                     ['label' => 'Contact Us', 'url' => route('contact')],
@@ -524,6 +525,9 @@
     $footerColumns = [
         ['title' => 'Customer Service', 'links' => [
             ['label' => 'Contact Us', 'url' => route('contact')],
+            ['label' => 'How It Works', 'url' => route('guide.how-it-works')],
+            ['label' => 'Size Guide', 'url' => route('guide.size-guide')],
+            ['label' => 'Measurement Form', 'url' => route('guide.measurement-form')],
             ['label' => 'Help Centre', 'url' => route('faq')],
             ['label' => 'Delivery', 'url' => route('shipping')],
             ['label' => 'Returns', 'url' => route('returns')],

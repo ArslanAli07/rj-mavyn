@@ -6,8 +6,11 @@ use App\Services\CartService;
 use App\Services\Media\ContentMediaService;
 use App\Services\Plugins\PluginRuntime;
 use App\Services\Pricing\PricingService;
+use App\Services\Seo\StructuredDataService;
 use App\Services\StoreAvailabilityService;
 use App\Services\Themes\ThemeRuntime;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 use Mavyn\Core\Currencies;
 use Mavyn\Core\Money;
 
@@ -48,14 +51,32 @@ if (! function_exists('setting')) {
     }
 }
 
+if (! function_exists('store_timezone')) {
+    /** The store's configured local timezone; timestamps are stored in the app timezone (UTC). */
+    function store_timezone(): string
+    {
+        $timezone = (string) setting('store_timezone', config('site.timezone', config('app.timezone')));
+
+        return in_array($timezone, timezone_identifiers_list(), true) ? $timezone : config('app.timezone');
+    }
+}
+
+if (! function_exists('store_time')) {
+    /** Convert a stored timestamp to store-local time for display, e.g. store_time($order->created_at)->format('d M Y h:i A T'). */
+    function store_time(?DateTimeInterface $time): ?Carbon
+    {
+        return $time ? Carbon::instance($time)->copy()->setTimezone(store_timezone()) : null;
+    }
+}
+
 if (! function_exists('seo_schema')) {
     /**
      * Render a JSON-LD <script> tag for a structured-data graph built by
      * the StructuredDataService (Product, BreadcrumbList, ItemList…).
      */
-    function seo_schema(array $graph): \Illuminate\Support\HtmlString
+    function seo_schema(array $graph): HtmlString
     {
-        return app(\App\Services\Seo\StructuredDataService::class)->render($graph);
+        return app(StructuredDataService::class)->render($graph);
     }
 }
 

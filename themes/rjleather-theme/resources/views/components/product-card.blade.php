@@ -42,8 +42,6 @@
 
         @if (!$product->available_for_sale)
             <span class="rj-card__badge">Sold out</span>
-        @elseif($product->is_on_sale)
-            <span class="rj-card__badge">-{{ $product->discount_percentage }}%</span>
         @elseif($product->is_new_arrival)
             <span class="rj-card__badge">New</span>
         @elseif($product->is_bestseller)

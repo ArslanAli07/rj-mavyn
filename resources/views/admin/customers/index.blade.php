@@ -42,7 +42,7 @@
                                 <td class="text-body-secondary font-monospace">{{ $c->email }}</td>
                                 <td class="text-body-secondary">{{ $c->phone ?? 'N/A' }}</td>
                                 <td class="text-body-secondary fw-semibold">{{ $c->orders_count }}</td>
-                                <td class="text-body-secondary">{{ $c->created_at->format('Y-m-d') }}</td>
+                                <td class="text-body-secondary">{{ store_time($c->created_at)->format('Y-m-d') }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2 justify-content-end">
                                         <a href="{{ route('admin.customers.show', $c->id) }}" class="px-2 py-2 bg-body-tertiary rounded-2 fw-semibold">View profile</a>

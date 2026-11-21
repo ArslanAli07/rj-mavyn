@@ -7,8 +7,17 @@
     $mainImage = $hasImage ? $product->detail_image : ['url' => theme_asset('images/placeholder.svg'), 'alt_text' => $product->main_image_alt];
     $gallery = collect([$mainImage])->merge($product->gallery_images)->unique('url')->values();
 
-    // Sizing tables and gender setup
+    // Custom products (race suits, ...) use the 3-step builder: Style -> Size -> Extras. Everything else keeps the classic layout.
+    $builder = $activeOptionGroups->contains(fn ($g) => $g->step !== null) || $product->allows_design_upload;
+
+    // Sizing tables and gender setup. Builder products without their own chart borrow the catalogue chart for their garment type.
     $rawSizeChart = $product->size_chart ?? [];
+    if ($builder && empty($rawSizeChart['tables']) && empty($rawSizeChart['rows'])) {
+        $borrowed = \App\Http\Controllers\GuideController::chartFor($product);
+        if ($borrowed) {
+            $rawSizeChart = ['tables' => $borrowed['tables']] + $rawSizeChart;
+        }
+    }
     $sizeTables = $rawSizeChart['tables'] ?? [];
     $hasTables = !empty($sizeTables);
     $tableGenders = collect($sizeTables)->pluck('gender')->unique()->values()->all();
@@ -34,12 +43,64 @@
             $womenVariants->push($variant);
         } elseif (preg_match('/\b(men|mens|man)\b/i', $vName)) {
             $menVariants->push($variant);
+        } elseif (empty($groupedSizes) && preg_match('/^US (\d+)(?:\.\d+)? · EU \d+/u', $vName, $usMatch)) {
+            // Catalogue apparel sizes: women's run US 0-24, men's US 26 and up.
+            ((int) $usMatch[1] <= 24 ? $womenVariants : $menVariants)->push($variant);
         } else {
             $standardVariants->push($variant);
         }
     }
 
     $initialVariant = $defaultVariant ?: ($menVariants->first() ?: ($standardVariants->first() ?: ($womenVariants->first() ?: $customVariant)));
+
+    $builderSteps = [];
+    $sizeFinder = [];
+    $shipWindows = [];
+    $shipsFree = false;
+    if ($builder) {
+        if ($product->allows_design_upload || $activeOptionGroups->contains(fn ($g) => ($g->step ?? 'style') === 'style')) {
+            $builderSteps['style'] = 'Style';
+        }
+        if ($activeVariants->isNotEmpty()) {
+            $builderSteps['size'] = 'Size';
+        }
+        $builderSteps['extras'] = 'Extras';
+
+        // Size calculator: body measurements (cm) for each standard size, matched to its variant by US + EU size.
+        foreach ($sizeTables as $table) {
+            if (strtoupper((string) ($table['unit'] ?? '')) !== 'CENTIMETER') {
+                continue;
+            }
+            // Men / women charts match their tabs; a unisex chart matches the ungrouped sizes (e.g. a women-only jacket).
+            $fit = in_array($table['gender'] ?? '', ['men', 'women'], true) ? $table['gender'] : 'all';
+            $bucket = match ($fit) { 'men' => $menVariants, 'women' => $womenVariants, default => $standardVariants };
+            $col = fn (string $needle) => collect($table['columns'])->search(fn ($c) => stripos((string) $c, $needle) === 0);
+            [$usCol, $euCol] = [$col('U.S.'), $col('EU')];
+            if ($usCol === false || $euCol === false) {
+                continue;
+            }
+            foreach ($table['rows'] as $row) {
+                $variant = $bucket->first(fn ($v) => str_starts_with($v->display_name, 'US '.$row[$usCol].' · EU '.$row[$euCol].' '));
+                if (! $variant) {
+                    continue;
+                }
+                $measure = fn (string $needle) => ($i = $col($needle)) !== false && is_numeric($row[$i] ?? null) ? (float) $row[$i] : null;
+                $sizeFinder[$fit][] = ['id' => $variant->id, 'chest' => $measure('CHEST'), 'waist' => $measure('WAIST'), 'hip' => $measure('HIP'), 'height' => $measure('HEIGHT')];
+            }
+        }
+
+        // "Ready to ship" dates from the ordering guide's lead times (working days or weeks from today, store time).
+        $guideFacts = \App\Http\Controllers\GuideController::facts();
+        $today = now(store_timezone());
+        foreach (['standard', 'custom_size'] as $way) {
+            if (preg_match('/(\d+)\s*[–-]\s*(\d+)\s*(working days|days|weeks)/iu', $guideFacts['ways'][$way]['lead_time'], $m)) {
+                $add = fn (int $n) => match (strtolower($m[3])) { 'working days' => $today->copy()->addWeekdays($n), 'weeks' => $today->copy()->addWeeks($n), default => $today->copy()->addDays($n) };
+                $shipWindows[$way] = $add((int) $m[1])->format('M j').' – '.$add((int) $m[2])->format('M j');
+            }
+        }
+        $customLead = $guideFacts['ways']['custom_size']['lead_time'];
+        $shipsFree = app(\App\Services\ShippingService::class)->usesBuiltInDispatch();
+    }
 @endphp
 @foreach($display->notices as $notice)<p class="rj-flash" role="status">{{ $notice }}</p>@endforeach
 <div class="rj-product"
@@ -52,19 +113,34 @@
             currencySymbol: @js($currencySymbol),
             variants: @js($productVariantsPayload),
             optionGroups: @js($productOptionGroupsPayload),
-            selectedVariantId: {{ old('product_variant_id') ? (int) old('product_variant_id') : ($initialVariant?->id ? (int) $initialVariant->id : 'null') }},
+            selectedVariantId: {{ old('product_variant_id') ? (int) old('product_variant_id') : (! $builder && $initialVariant?->id ? (int) $initialVariant->id : 'null') }},
             selectedOptionIds: {},
+            builder: @js($builder),
+            stepKeys: @js(array_keys($builderSteps)),
+            step: @js(array_key_first($builderSteps) ?? 'style'),
+            texts: {},
+            visited: [],
+            fileNames: [],
+            dragging: false,
             openSizeModal: false,
             sizeGender: '{{ $defaultGender }}',
             sizeUnit: 'CENTIMETER',
             activeTab: 'overview',
             openFaq: null,
+            stepLabels: @js($builderSteps),
+            sizeTab: @js($menVariants->isNotEmpty() || $womenVariants->isEmpty() ? 'men' : 'women'),
+            customVariantId: {{ $customVariant?->id ?? 'null' }},
+            sizeFinder: @js($sizeFinder),
+            moreColors: {},
+            calcOpen: false,
+            calc: { gender: @js($menVariants->isNotEmpty() || $womenVariants->isEmpty() ? 'men' : 'women'), unit: 'cm', chest: '', height: '', waist: '', hip: '' },
+            calcResult: null,
             init() {
                 this.optionGroups.forEach(group => {
                     const previous = @js(array_map('intval', old('option_value_ids', [])));
                     const ids = group.values.filter(value => previous.includes(value.id)).map(value => value.id);
-                    this.selectedOptionIds[group.id] = group.selection_type === 'single' ? (ids[0] ?? (group.values[0]?.id ?? null)) : ids;
-                    if (!this.variants.some(variant => variant.id === this.selectedVariantId)) {
+                    this.selectedOptionIds[group.id] = group.selection_type === 'single' ? (ids[0] ?? (this.builder ? null : (group.values[0]?.id ?? null))) : ids;
+                    if (!this.builder && !this.variants.some(variant => variant.id === this.selectedVariantId)) {
                         this.selectedVariantId = this.variants.find(variant => variant.available_quantity !== 0)?.id ?? null;
                     }
                 });
@@ -80,6 +156,7 @@
             },
             get selectedOptionIdList() {
                 return this.optionGroups.flatMap(group => {
+                    if (!this.groupApplies(group)) return [];
                     const selected = this.selectedOptionIds[group.id];
                     if (group.selection_type === 'single') {
                         return selected ? [Number(selected)] : [];
@@ -90,6 +167,7 @@
             get optionsTotal() {
                 let total = 0;
                 this.optionGroups.forEach(group => {
+                    if (!this.groupApplies(group)) return;
                     const selected = this.selectedOptionIds[group.id];
                     const ids = group.selection_type === 'single'
                         ? (selected ? [Number(selected)] : [])
@@ -107,7 +185,8 @@
                 return (Math.round(base * 100) + Math.round(this.optionsTotal * 100)) / 100;
             },
             formatMoney(amount) {
-                return this.currencySymbol + ' ' + Number(amount).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                const n = Number(amount);
+                return this.currencySymbol + ' ' + n.toLocaleString(undefined, { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
             },
             savingsTag() {
                 const v = this.selectedVariant;
@@ -194,10 +273,161 @@
                 }
                 this.selectedOptionIds[groupId] = selected;
             },
+            // ---- builder helpers: conditional groups, text inputs, steps and progress ----
+            groupById(id) { return this.optionGroups.find(g => Number(g.id) === Number(id)); },
+            valueSelected(valueId) {
+                return this.optionGroups.some(g => this.isSelected(g.id, valueId));
+            },
+            groupApplies(group) {
+                return !group.depends_on_value_id || this.valueSelected(group.depends_on_value_id);
+            },
+            showGroup(id) {
+                const group = this.groupById(id);
+                return !!group && this.groupApplies(group);
+            },
+            get textValueIds() {
+                const ids = [];
+                this.optionGroups.forEach(group => {
+                    if (!this.groupApplies(group)) return;
+                    group.values.forEach(value => { if (value.input_label && this.isSelected(group.id, value.id)) ids.push(Number(value.id)); });
+                });
+                return ids;
+            },
+            inputsComplete() {
+                return this.textValueIds.every(id => String(this.texts[id] || '').trim() !== '');
+            },
+            get pickGroups() {
+                return this.optionGroups.filter(g => g.display === 'swatches' && g.selection_type === 'multiple' && this.groupApplies(g) && Array.isArray(this.selectedOptionIds[g.id]) && this.selectedOptionIds[g.id].length > 1);
+            },
+            swatchOrder(groupId, valueId) {
+                const selected = this.selectedOptionIds[groupId];
+                if (!Array.isArray(selected)) return '';
+                const index = selected.findIndex(id => Number(id) === Number(valueId));
+                return index === -1 ? '' : String(index + 1);
+            },
+            slotValue(groupId, slot) {
+                const group = this.groupById(groupId);
+                const id = (this.selectedOptionIds[groupId] || [])[slot];
+                return id === undefined ? null : (group?.values || []).find(v => Number(v.id) === Number(id)) || null;
+            },
+            stepIndex() { return this.stepKeys.indexOf(this.step); },
+            goStep(key) {
+                if (!this.visited.includes(this.step)) this.visited.push(this.step);
+                this.step = key;
+                this.$nextTick(() => this.$refs.productTitle?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+            },
+            groupStep(group) { return group.step === 'extras' ? 'extras' : 'style'; },
+            // Every required choice, in page order, so progress and the Next hint follow the customer's path.
+            get requiredItems() {
+                const items = [];
+                const sizeItem = { key: 'size', step: 'size', label: 'Size', done: !!this.selectedVariant };
+                const groups = this.optionGroups.filter(g => this.groupApplies(g) && g.min_selections > 0);
+                const push = group => {
+                    const selected = this.selectedOptionIds[group.id];
+                    const count = group.selection_type === 'single' ? (selected ? 1 : 0) : (Array.isArray(selected) ? selected.length : 0);
+                    let done = count >= group.min_selections;
+                    group.values.forEach(value => { if (done && value.input_label && this.isSelected(group.id, value.id) && String(this.texts[value.id] || '').trim() === '') done = false; });
+                    items.push({ key: 'g' + group.id, step: this.groupStep(group), label: group.name, done });
+                };
+                groups.filter(g => this.groupStep(g) === 'style').forEach(push);
+                if (this.variants.length) items.push(sizeItem);
+                groups.filter(g => this.groupStep(g) === 'extras').forEach(push);
+                return items;
+            },
+            get progress() {
+                const items = this.requiredItems;
+                return { done: items.filter(i => i.done).length, total: items.length, next: items.find(i => !i.done) || null };
+            },
+            stepDone(key) {
+                // A step with required choices is done when they are answered; one without (Extras) once the customer has been through it.
+                const items = this.requiredItems.filter(i => i.step === key);
+                return items.length ? items.every(i => i.done) : this.visited.includes(key);
+            },
+            // The next unanswered choice: first in the step on screen, otherwise the first anywhere.
+            get nextItem() {
+                const open = this.requiredItems.filter(i => !i.done);
+                return open.find(i => i.step === this.step) || open[0] || null;
+            },
+            get missingLabels() { return this.requiredItems.filter(i => !i.done).map(i => i.label); },
+            primaryLabel() {
+                if (this.nextItem) return 'Next: ' + this.nextItem.label;
+                const next = this.stepKeys[this.stepIndex() + 1];
+                return next ? 'Next: ' + this.stepLabels[next] : 'Add to cart';
+            },
+            primaryAction() {
+                if (this.nextItem) return this.goToItem(this.nextItem);
+                const next = this.stepKeys[this.stepIndex() + 1];
+                if (next) return this.goStep(next);
+                this.submitBuilder();
+            },
+            submitBuilder() {
+                if (this.missingLabels.length) return this.goToItem(this.requiredItems.find(i => !i.done));
+                this.$refs.productForm.requestSubmit();
+            },
+            goToItem(item) {
+                if (!this.visited.includes(this.step)) this.visited.push(this.step);
+                this.step = item.step;
+                this.$nextTick(() => {
+                    const el = document.getElementById('bld-' + item.key);
+                    if (!el) return;
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.classList.remove('is-flagged'); void el.offsetWidth; el.classList.add('is-flagged');
+                });
+            },
+            get isCustomSize() { return this.customVariantId !== null && Number(this.selectedVariantId) === Number(this.customVariantId); },
+            pickSize(id) {
+                this.selectedVariantId = Number(id);
+                this.quantity = Math.min(this.quantity, this.selectedVariant?.available_quantity ?? 20);
+            },
+            // Suggest a standard size from body measurements: the smallest size whose chart chest / waist / hip covers yours.
+            runCalc() {
+                const rows = this.sizeFinder[this.calc.gender] || Object.values(this.sizeFinder)[0] || [];
+                const k = this.calc.unit === 'in' ? 2.54 : 1;
+                const num = v => (String(v).trim() === '' ? null : Number(v) * k);
+                const me = { chest: num(this.calc.chest), height: num(this.calc.height), waist: num(this.calc.waist), hip: num(this.calc.hip) };
+                if (!(me.chest > 0) || !(me.height > 0)) { this.calcResult = { error: 'Enter your chest and height.' }; return; }
+                let index = 0;
+                for (const key of ['chest', 'waist', 'hip']) {
+                    if (!(me[key] > 0) || !rows.some(r => r[key])) continue;
+                    const fit = rows.findIndex(r => r[key] && r[key] + 2 >= me[key]);
+                    if (fit === -1) { this.calcResult = { custom: true, text: 'Your ' + key + ' is beyond our largest standard size.' }; return; }
+                    index = Math.max(index, fit);
+                }
+                const row = rows[index];
+                if (!row) { this.calcResult = { error: 'No size chart for this fit yet.' }; return; }
+                const variant = this.variants.find(v => v.id === row.id);
+                const tall = row.height && Math.abs(me.height - row.height) > 8;
+                this.calcResult = { id: row.id, gender: this.calc.gender, name: variant?.name || '', note: tall ? 'Your height is outside this size\'s range, so Custom Size will fit you better.' : '' };
+            },
+            useCalc(id) {
+                if (id) { this.sizeTab = this.calcResult?.gender || this.sizeTab; this.pickSize(id); }
+                else if (this.customVariantId) this.pickSize(this.customVariantId);
+                this.calcOpen = false;
+            },
+            shareProduct() {
+                const data = { title: document.title, url: location.href };
+                if (navigator.share) { navigator.share(data).catch(() => {}); return; }
+                navigator.clipboard?.writeText(location.href).then(() => window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Link copied', type: 'success' } })));
+            },
+            onFiles(input) {
+                const files = Array.from(input.files || []);
+                const allowed = ['image/png', 'image/jpeg', 'application/pdf'];
+                const problem = files.length > {{ \App\Services\ProductCustomizationService::MAX_FILES }} ? 'You can attach up to {{ \App\Services\ProductCustomizationService::MAX_FILES }} design files.'
+                    : files.find(f => !allowed.includes(f.type) || f.size > {{ \App\Services\ProductCustomizationService::MAX_KB * 1024 }}) ? 'Design files must be PNG, JPG or PDF, up to {{ \App\Services\ProductCustomizationService::MAX_KB / 1024 }} MB each.' : null;
+                if (problem) {
+                    input.value = '';
+                    this.fileNames = [];
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: problem, type: 'error' } }));
+                    return;
+                }
+                this.fileNames = files.map(f => f.name);
+            },
             configurationValid() {
                 if (!this.selectedVariant || this.selectedVariant.available_quantity === 0) return false;
                 if (!Number.isInteger(Number(this.quantity)) || Number(this.quantity) < 1 || Number(this.quantity) > Math.min(20, this.selectedVariant.available_quantity ?? 20)) return false;
+                if (!this.inputsComplete()) return false;
                 return this.optionGroups.every(group => {
+                    if (!this.groupApplies(group)) return true;
                     const selected = this.selectedOptionIds[group.id];
                     const count = group.selection_type === 'single'
                         ? (selected ? 1 : 0)
@@ -208,7 +438,7 @@
                 });
             }
          }"
-     x-on:keydown.escape.window="openSizeModal = false">
+     x-on:keydown.escape.window="openSizeModal = false; calcOpen = false">
     <div class="rj-container">
         <nav class="rj-breadcrumb" aria-label="Breadcrumb">
             <a href="{{ route('home') }}">Home</a><span>/</span>
@@ -278,6 +508,9 @@
                         @if($product->is_on_sale)
                             <span class="rj-discount-tag" x-cloak x-show="selectedVariant && selectedVariant.is_on_sale && optionsTotal === 0" x-text="savingsTag()"></span>
                         @endif
+                        @if($builder)
+                            <button type="button" class="purchase-favorite rj-bld-heart" data-favorite="{{ $product->id }}" @auth data-wishlist-url="{{ route('wishlist.toggle', $product->id) }}" @endauth aria-label="Save {{ $product->title }} to wishlist" aria-pressed="{{ auth('web')->check() && in_array($product->id, $storeWishlistedIds) ? 'true' : 'false' }}"><svg class="icon"><use href="#icon-heart"/></svg></button>
+                        @endif
                     </div>
                 </div>
 
@@ -288,17 +521,29 @@
                 @elseif(!shop_is_open())
                     <p class="rj-product-notice">Online ordering is available from {{ ordering_hours_label() }}.</p>
                 @elseif($product->available_for_sale)
-                    <form action="{{ route('cart.add') }}" method="POST" class="rj-product-form" @submit="if (!configurationValid()) { $event.preventDefault(); $event.stopPropagation(); window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Please complete the required options and check the quantity.', type: 'error' } })); }">
+                    <form action="{{ route('cart.add') }}" method="POST" class="rj-product-form" x-ref="productForm" @submit="if (!configurationValid()) { $event.preventDefault(); $event.stopPropagation(); window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Please complete the required options and check the quantity.', type: 'error' } })); }">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <input type="hidden" name="product_variant_id" :value="selectedVariantId" value="{{ $defaultVariant?->id }}">
                         <template x-for="optionId in selectedOptionIdList" :key="optionId">
                             <input type="hidden" name="option_value_ids[]" :value="optionId">
                         </template>
+                        @if($builder)
+                            {{-- Text asked for by chosen options (e.g. Pantone code) and the order colours were picked in --}}
+                            <template x-for="id in textValueIds" :key="'t' + id"><input type="hidden" :name="'option_inputs[' + id + ']'" :value="texts[id] || ''"></template>
+                            <template x-for="group in pickGroups" :key="'p' + group.id"><input type="hidden" :name="'pick_order[' + group.id + ']'" :value="(selectedOptionIds[group.id] || []).join(',')"></template>
+                            @include('product.builder', ['part' => 'tabs'])
+                        @endif
 
                         <div class="rj-configurations">
-                            {{-- Size Selector --}}
-                            @if($activeVariants->isNotEmpty())
+                            @if($builder)
+                                <div x-show="step === 'style'">@include('product.builder', ['part' => 'style'])</div>
+                            @endif
+
+                            {{-- Size Selector: builder products pick from size tiles, the rest from a dropdown --}}
+                            @if($builder && $activeVariants->isNotEmpty())
+                                <div x-show="step === 'size'" x-cloak>@include('product.builder', ['part' => 'size'])</div>
+                            @elseif($activeVariants->isNotEmpty())
                                 <div class="rj-form-group">
                                     <div class="size-heading">
                                         <label class="rj-form-label" for="product-size-select">SIZE <span class="rj-req-mark">*</span></label>
@@ -351,7 +596,8 @@
                             @endif
 
                             {{-- Option Groups: single-choice renders as a dropdown,
-                                 multi-choice "extras" render as priced checkboxes --}}
+                                 multi-choice "extras" render as priced checkboxes. Builder products render them as tiles instead. --}}
+                            @unless($builder)
                             @foreach($activeOptionGroups as $group)
                                 <div class="rj-form-group">
                                     <span class="rj-form-label">
@@ -418,17 +664,35 @@
                                     @endif
                                 </div>
                             @endforeach
+                            @endunless
 
-                            {{-- Order Instructions (Textarea matching Image 3) --}}
-                            <div class="rj-form-group">
-                                <label class="rj-form-label" for="special-request">ORDER INSTRUCTIONS</label>
+                            {{-- Order Instructions (Textarea matching Image 3); builder products show it in the Extras step --}}
+                            <div class="rj-form-group" @if($builder) x-show="step === 'extras'" x-cloak @endif>
+                                @if($builder)
+                                    <div style="margin-bottom:18px">@include('product.builder', ['part' => 'extras'])</div>
+                                @endif
+                                <label class="rj-form-label" for="special-request">ORDER INSTRUCTIONS @if($builder)<span class="rj-bld-optional">Optional</span>@endif</label>
                                 <textarea id="special-request"
                                           name="special_request"
                                           rows="3"
                                           class="rj-custom-textarea"
-                                          placeholder="You can request minor changes in Design, change of Color and Accessories.">{{ old('special_request') }}</textarea>
+                                          placeholder="{{ $builder ? 'Describe your design, names, numbers, logos or any change you want.' : 'You can request minor changes in Design, change of Color and Accessories.' }}">{{ old('special_request') }}</textarea>
+                                @if($builder)
+                                    <div class="rj-bld-qty">
+                                        <label class="rj-form-label" for="product-quantity">Quantity</label>
+                                        <div class="rj-quantity-stepper">
+                                            <button type="button" @click="if(quantity > 1) quantity--" aria-label="Decrease quantity">&minus;</button>
+                                            <input id="product-quantity" name="quantity" type="number" min="1" max="20" x-model.number="quantity" value="{{ old('quantity', 1) }}">
+                                            <button type="button" @click="if(quantity < Math.min(20, selectedVariant?.available_quantity ?? 20)) quantity++" aria-label="Increase quantity">+</button>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
+
+                        @if($builder)
+                            @include('product.builder', ['part' => 'summary'])
+                        @else
 
                         {{-- Quantity Row with Made to Order indicator --}}
                         <div class="rj-quantity-row">
@@ -449,16 +713,17 @@
                             <button type="button" class="purchase-favorite" data-favorite="{{ $product->id }}" @auth data-wishlist-url="{{ route('wishlist.toggle', $product->id) }}" @endauth aria-label="Save {{ $product->title }} to wishlist" aria-pressed="{{ auth('web')->check() && in_array($product->id, $storeWishlistedIds) ? 'true' : 'false' }}"><svg class="icon"><use href="#icon-heart"/></svg></button>
                         </div>
                         <p class="rj-checkout-secure-caption">Continue to secure checkout</p>
+                        @endif
 
                         {{-- Compact 4-Card Feature Bar: directly under the purchase actions --}}
                         <div class="rj-product-features">
-                            <div class="rj-feature-card">
+                            <a href="{{ route('guide.how-it-works') }}" class="rj-feature-card">
                                 <span class="rj-feature-card__icon">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
                                 </span>
                                 <span class="rj-feature-card__title">Made To Order</span>
-                                <span class="rj-feature-card__sub">Made After You Order</span>
-                            </div>
+                                <span class="rj-feature-card__sub">See How It Works</span>
+                            </a>
                             <a href="{{ route('shipping') }}" class="rj-feature-card">
                                 <span class="rj-feature-card__icon">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
@@ -481,7 +746,19 @@
                                 <span class="rj-feature-card__sub">Find Your Size</span>
                             </button>
                         </div>
+                        @if($builder)
+                            <div class="rj-bld-share-row">
+                                <span>Secure card checkout</span>
+                                <button type="button" class="rj-bld-share" @click="shareProduct()">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Share
+                                </button>
+                            </div>
+                        @endif
                     </form>
+                    @if($builder)
+                        @include('product.builder', ['part' => 'calc'])
+                        @include('product.builder', ['part' => 'bar'])
+                    @endif
                 @else
                     <p class="rj-product-notice">This product is currently unavailable. <a class="rj-textlink" href="{{ route('contact') }}">Contact us</a></p>
                 @endif

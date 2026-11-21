@@ -42,7 +42,7 @@
                                 </td>
                                 <td class="fw-semibold text-body">{{ $m->subject }}</td>
                                 <td class="text-body-secondary admin-max-width-xs text-truncate fst-italic">"{{ $m->message }}"</td>
-                                <td class="text-body-secondary">{{ $m->created_at->format('Y-m-d H:i') }}</td>
+                                <td class="text-body-secondary">{{ store_time($m->created_at)->format('Y-m-d H:i') }}</td>
                                 <td>
                                     <span class="badge small px-2 py-1 rounded-pill fw-semibold {{ $m->is_resolved ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis' }}">
                                         {{ $m->is_resolved ? 'Resolved' : 'Pending' }}

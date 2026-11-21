@@ -22,7 +22,7 @@
                     {{ substr($user->name, 0, 1) }}
                 </div>
                 <h4 class="text-body mt-2 admin-section-title">{{ $user->name }}</h4>
-                <span class="text-body-secondary">Customer since {{ $user->created_at->format('M Y') }}</span>
+                <span class="text-body-secondary">Customer since {{ store_time($user->created_at)->format('M Y') }}</span>
             </div>
 
             <div class="admin-stack-3 fw-medium text-body">
@@ -61,7 +61,7 @@
                             @foreach($user->orders as $o)
                                 <tr>
                                     <td class="text-body order-id">{{ $o->order_number }}</td>
-                                    <td class="text-body-secondary">{{ $o->created_at->format('Y-m-d H:i') }}</td>
+                                    <td class="text-body-secondary">{{ store_time($o->created_at)->format('Y-m-d H:i') }}</td>
                                     <td class="small fw-semibold">{{ $o->payment_method_label }}</td>
                                     <td>
                                         <span class="admin-status-pill payment-status-{{ $o->payment_status }}">

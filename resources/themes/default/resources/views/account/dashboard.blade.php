@@ -109,8 +109,8 @@
                                     @foreach($orders as $o)
                                         <tr class="hover:bg-cream-50/20">
                                             <td class="px-4 py-3 font-bold text-espresso-800">{{ $o->order_number }}</td>
-                                            <td class="px-4 py-3 text-espresso-500">{{ $o->created_at->format('M d, Y') }}</td>
-                                            <td class="px-4 py-3 text-espresso-500 uppercase">{{ $o->payment_method }}</td>
+                                            <td class="px-4 py-3 text-espresso-500">{{ store_time($o->created_at)->format('M d, Y') }}</td>
+                                            <td class="px-4 py-3 text-espresso-500 uppercase">{{ $o->payment_method_label }}</td>
                                             <td class="px-4 py-3">
                                                 <span class="status-{{ $o->status }} uppercase text-[9px] px-2 py-0.5 rounded-full font-bold">
                                                     {{ str_replace('_', ' ', $o->status) }}

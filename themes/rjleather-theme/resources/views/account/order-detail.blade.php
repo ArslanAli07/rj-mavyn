@@ -29,7 +29,7 @@
                             </div>
                         </div>
 
-                        <p style="font-size:12px;color:var(--rj-muted);margin-bottom:18px">Placed on {{ $order->created_at->format('M d, Y \a\t h:i A') }}</p>
+                        <p style="font-size:12px;color:var(--rj-muted);margin-bottom:18px">Placed on {{ store_time($order->created_at)->format('M d, Y \a\t h:i A') }}</p>
 
                         <div class="rj-timeline">
                             @foreach($statuses as $idx => $s)
@@ -63,7 +63,7 @@
                             @if($order->discount_amount > 0)
                                 <div><span>Discount</span><span style="color:var(--rj-accent-deep)">-{{ order_price($order, $order->discount_amount) }}</span></div>
                             @endif
-                            <div><span>Delivery fee</span><span>@if($order->delivery_fee > 0){{ order_price($order, $order->delivery_fee) }}@elseif(is_null($order->delivery_zone_id))To be confirmed@else Free @endif</span></div>
+                            <div><span>Delivery fee</span><span>{{ $order->delivery_fee_label }}</span></div>
                             <div class="grand"><span>Grand total</span><span>{{ order_price($order, $order->grand_total) }}</span></div>
                         </div>
                     </div>
@@ -73,14 +73,14 @@
                             <div class="rj-panel__head"><h2>Delivery address</h2></div>
                             <p style="font-size:13px;line-height:1.8;color:var(--rj-muted)">
                                 <strong style="color:#000">{{ $order->customer_name }}</strong><br>
-                                {{ $order->delivery_address }}, {{ $order->delivery_area }}, {{ $order->delivery_city }}, {{ $order->delivery_country }}<br>
+                                {{ $order->full_delivery_address }}<br>
                                 Phone: {{ $order->customer_phone }}
                             </p>
                         </div>
                         <div class="rj-panel">
                             <div class="rj-panel__head"><h2>Payment details</h2></div>
                             <div style="font-size:13px;color:var(--rj-muted)">
-                                Method: <strong style="color:#000;text-transform:uppercase">{{ $order->payment_method }}</strong><br>
+                                Method: <strong style="color:#000;text-transform:uppercase">{{ $order->payment_method_label }}</strong><br>
                                 Payment status: <strong style="color:#000;text-transform:uppercase">{{ $order->payment_status }}</strong>
                             </div>
                             @if($order->order_notes)

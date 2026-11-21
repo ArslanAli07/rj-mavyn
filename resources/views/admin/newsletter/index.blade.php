@@ -59,7 +59,7 @@
                                 <td class="admin-bulk-col"><x-admin.bulk-checkbox :value="$s->id" :label="'Select ' . $s->email" /></td>
                                 <td class="fw-semibold text-body font-monospace small">{{ $s->email }}</td>
                                 <td class="text-body fw-semibold">{{ $s->name ?? 'N/A' }}</td>
-                                <td class="text-body-secondary">{{ $s->subscribed_at ? $s->subscribed_at->format('Y-m-d H:i') : $s->created_at->format('Y-m-d H:i') }}</td>
+                                <td class="text-body-secondary">{{ $s->subscribed_at ? store_time($s->subscribed_at)->format('Y-m-d H:i') : store_time($s->created_at)->format('Y-m-d H:i') }}</td>
                                 <td>
                                     <span class="badge small px-2 py-1 rounded-pill fw-semibold {{ $s->is_active ? 'bg-success-subtle text-success' : 'bg-body-secondary text-body-secondary' }}">
                                         {{ $s->is_active ? 'Active' : 'Unsubscribed' }}

@@ -134,17 +134,24 @@
                         <div class="ck-field"><label for="postal_code">Postal code</label>
                             <input id="postal_code" name="postal_code" type="text" class="ck-input" value="{{ old('postal_code') }}"></div>
                         <div class="ck-field ck-field--full"><label for="country">Country</label>
-                            <input id="country" name="country" class="ck-input" required value="{{ old('country', setting('store_country_code', config('site.country_code', 'PK'))) }}"></div>
+                            @php($selectedCountry = \App\Support\Countries::code(old('country', $defaultAddr?->country ?: setting('store_country_code', config('site.country_code', 'PK')))))
+                            <select id="country" name="country" class="ck-input" required autocomplete="country-name">
+                                <option value="" disabled @selected(! $selectedCountry)>Select your country</option>
+                                @foreach(\App\Support\Countries::NAMES as $code => $countryName)
+                                    <option value="{{ $countryName }}" @selected($code === $selectedCountry)>{{ $countryName }}</option>
+                                @endforeach
+                            </select></div>
                     </div>
                 </section>
 
-                {{-- Shipping method --}}
-                <section class="ck-section">
+                {{-- Shipping method: hidden when the store uses built-in "ships after production" (no delivery plugin) --}}
+                @php($builtInDispatch = $shippingOptions->count() === 1 && \App\Services\ShippingService::isBuiltInToken((string) $shippingOptions->first()->id))
+                <section class="ck-section" id="shipping-section" @if($builtInDispatch) hidden @endif>
                     <h2 class="ck-section-title">Shipping method</h2>
                     <div id="shipping-options" class="ck-options" role="radiogroup" aria-label="Shipping method">
                         @foreach($shippingOptions as $option)
                             <label class="ck-option">
-                                <input type="radio" name="shipping_option" value="{{ $option->id }}" required @checked((string) old('shipping_option', $defaultShippingOption) === (string) $option->id)>
+                                <input type="radio" name="shipping_option" value="{{ $option->id }}" required @checked((string) old('shipping_option', $defaultShippingOption) === (string) $option->id || $shippingOptions->count() === 1)>
                                 <span class="ck-option__label">{{ $option->name }}</span>
                                 <span class="ck-option__price">{{ format_price($option->delivery_fee) }}</span>
                             </label>
@@ -162,7 +169,7 @@
                     <div id="payment-options" class="ck-options" role="radiogroup" aria-label="Payment method">
                         @foreach($paymentChoices as $method => $choice)
                             <label class="ck-option">
-                                <input type="radio" name="payment_method" value="{{ $method }}" required @checked((string) old('payment_method') === (string) $method)>
+                                <input type="radio" name="payment_method" value="{{ $method }}" required @checked((string) old('payment_method') === (string) $method || count($paymentChoices) === 1)>
                                 <span class="ck-option__label">{{ $choice['instructions']->label }}</span>
                             </label>
                         @endforeach
@@ -217,7 +224,7 @@
                     @if((float) $totals['discount'] > 0)
                         <div class="ck-row"><span>Discount</span><span>−{{ format_price($totals['discount']) }}</span></div>
                     @endif
-                    <div class="ck-row"><span>Delivery</span><span>Select shipping</span></div>
+                    <div class="ck-row"><span>Delivery</span><span>{{ $builtInDispatch ? \App\Services\ShippingService::dispatchLabel() : 'Select shipping' }}</span></div>
                     <div class="ck-row"><span>Tax</span><span>{{ format_price($totals['tax']) }}</span></div>
                     <div class="ck-row ck-row--total"><span>Total</span><span>{{ format_price($totals['grand_total']) }}</span></div>
                     <p class="ck-rows__note">Review the final quote before confirming your order.</p>
@@ -276,7 +283,8 @@
                 const label = document.createElement('label'); label.className = 'ck-option';
                 const input = document.createElement('input');
                 input.type = 'radio'; input.name = name; input.value = value.id; input.required = true;
-                input.checked = String(value.id) === String(previous);
+                // A single available choice is selected for the customer.
+                input.checked = String(value.id) === String(previous) || values.length === 1;
                 const text = document.createElement('span'); text.className = 'ck-option__label'; text.textContent = value.label;
                 label.append(input, text);
                 if (value.price) { const price = document.createElement('span'); price.className = 'ck-option__price'; price.textContent = value.price; label.append(price); }
@@ -293,6 +301,8 @@
                 const data = await post(@js(route('checkout.options')), reviewData());
                 if (version !== changeRevision) return;
                 renderOptions('shipping-options', 'shipping_option', data.shipping.map(option => ({id: option.id, label: option.label, price: `${data.currency} ${(option.fee_minor / 100).toFixed(2)}`})));
+                // Built-in "ships after production" needs no customer choice, so its section stays hidden.
+                document.getElementById('shipping-section').hidden = data.shipping.length === 1 && data.shipping[0].id === @js(\App\Services\ShippingService::DISPATCH_PROVIDER.':'.\App\Services\ShippingService::DISPATCH_OPTION);
                 payments = data.payments;
                 renderOptions('payment-options', 'payment_method', payments.map(payment => ({id: payment.id, label: payment.label})));
                 paymentInfo();
@@ -321,7 +331,7 @@
                 [['Subtotal', quote.subtotal_minor], ['Discount', -quote.discount_minor], ['Delivery', quote.shipping.fee_minor], ['Tax', quote.tax_minor], ['Total', quote.total_minor]].forEach(([label, minor]) => {
                     const row = document.createElement('div'); row.className = label === 'Total' ? 'ck-row ck-row--total' : 'ck-row';
                     const left = document.createElement('span'); left.textContent = label;
-                    const right = document.createElement('span'); right.textContent = `${quote.currency} ${(minor / 100).toFixed(2)}`;
+                    const right = document.createElement('span'); right.textContent = label === 'Delivery' && minor === 0 ? 'Free' : `${quote.currency} ${(minor / 100).toFixed(2)}`;
                     row.append(left, right);
                     summary.append(row);
                 });
@@ -347,6 +357,8 @@
                     location.assign(payment.href);
                     return;
                 }
+                const next = result.next_url ? new URL(result.next_url, location.origin) : null;
+                if (next && next.origin === location.origin) { location.assign(next.href); return; }
                 form.hidden = true;
                 message.replaceChildren(document.createTextNode('Order placed. '));
                 const tracking = new URL(result.tracking_url, location.origin);

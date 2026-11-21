@@ -80,6 +80,7 @@ class OrderPlacementService
                         $item->product_variant_id,
                         collect($item->options_snapshot ?? [])->pluck('value_id')->all(),
                         $item->special_request,
+                        $item->customization,
                     );
 
                     if (Money::minor($item->price) !== Money::minor($configuration['unit_price'])) {
@@ -88,6 +89,7 @@ class OrderPlacementService
                     $item->price = $configuration['unit_price'];
                     $item->weight = $configuration['variant_name'];
                     $item->options_snapshot = $configuration['options_snapshot'];
+                    $item->customization = $configuration['customization'];
                     $item->setRelation('product', $product);
                     $item->setRelation('variant', $configuration['variant']);
                     $item->product_variant_id = $configuration['variant']->id;
@@ -160,6 +162,7 @@ class OrderPlacementService
                         'weight' => $item->weight,
                         'variant_name' => $item->weight,
                         'options_snapshot' => $item->options_snapshot ?? [],
+                        'customization' => $item->customization,
                         'special_request' => $item->special_request,
                         'attributes_snapshot' => app(ProductAttributesService::class)->snapshot($item->product, $item->variant),
                         'product_title' => $item->product->title,

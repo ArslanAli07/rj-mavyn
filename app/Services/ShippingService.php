@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Services\Plugins\PluginRuntime;
 use App\Services\Pricing\PricingService;
+use App\Support\Countries;
 use Illuminate\Validation\ValidationException;
 use Mavyn\Contracts\Plugins\DeliveryZoneStore;
 use Mavyn\Contracts\Plugins\SelectableShippingProvider;
@@ -14,14 +15,39 @@ use RuntimeException;
 
 final class ShippingService
 {
+    /**
+     * Built-in fulfillment used only when no fulfillment plugin is active: made-to-order goods ship after
+     * production at no extra charge (e.g. a Stripe-only store). Any active fulfillment plugin replaces it.
+     */
+    public const DISPATCH_PROVIDER = 'core.dispatch';
+
+    public const DISPATCH_OPTION = 'standard';
+
     public function __construct(private PluginRuntime $runtime, private DeliveryZoneStore $zones) {}
+
+    public static function dispatchLabel(): string
+    {
+        return trim((string) setting('dispatch_label', 'Ships after production')) ?: 'Ships after production';
+    }
+
+    /** True when checkout has no fulfillment plugins and uses the built-in dispatch option. */
+    public function usesBuiltInDispatch(): bool
+    {
+        return $this->runtime->providers()->keys('fulfillment') === [];
+    }
+
+    public static function isBuiltInToken(?string $token): bool
+    {
+        return $token === self::DISPATCH_PROVIDER.':'.self::DISPATCH_OPTION;
+    }
 
     public function request(int $subtotalMinor, string $country, ?string $option = null, ?string $postalCode = null): ShippingRequest
     {
         $country = strtoupper(trim($country));
         $configuredName = strtoupper((string) setting('store_country', config('site.country')));
-        $code = $country === 'PAKISTAN' ? 'PK' : ($country === $configuredName ? (string) setting('store_country_code', config('site.country_code', 'PK')) : $country);
-        if (! preg_match('/^[A-Z]{2}$/D', $code)) {
+        // Customers may type a full country name ("United States"), an alias ("USA") or an ISO code.
+        $code = $country === $configuredName ? strtoupper((string) setting('store_country_code', config('site.country_code', 'PK'))) : (Countries::code($country) ?? $country);
+        if (! preg_match('/^[A-Z]{2}$/D', $code) || Countries::name($code) === null) {
             throw ValidationException::withMessages(['country' => 'Use a supported country name or two-letter country code.']);
         }
 
@@ -31,6 +57,13 @@ final class ShippingService
     public function choices(ShippingRequest $request): array
     {
         $registry = $this->runtime->providers();
+        if ($this->usesBuiltInDispatch()) {
+            return [self::DISPATCH_PROVIDER.':'.self::DISPATCH_OPTION => [
+                'provider_key' => self::DISPATCH_PROVIDER,
+                'option' => new ShippingOption(self::DISPATCH_OPTION, self::dispatchLabel(), 0, $request->currency),
+                'legacy_zone_id' => null,
+            ]];
+        }
         $choices = [];
         foreach ($registry->keys('fulfillment') as $key) {
             $provider = $registry->get('fulfillment', $key);
@@ -73,7 +106,16 @@ final class ShippingService
         $token = $data['shipping_option'] ?? null;
         $error = $token ? 'shipping_option' : 'delivery_zone_id';
         $token ??= isset($data['delivery_zone_id']) ? 'mavyn.local-delivery.zone:'.(int) $data['delivery_zone_id'] : '';
-        $choice = $this->choices($request)[$token] ?? throw ValidationException::withMessages([$error => 'Choose an available fulfillment option.']);
+        $choices = $this->choices($request);
+        // Built-in dispatch has a single option, so an omitted choice means it. An explicitly submitted option
+        // that is no longer offered (e.g. from a since-disabled plugin) is still rejected, never silently swapped.
+        if ($token === '' && $this->usesBuiltInDispatch()) {
+            $token = self::DISPATCH_PROVIDER.':'.self::DISPATCH_OPTION;
+        }
+        $choice = $choices[$token] ?? throw ValidationException::withMessages([$error => 'Choose an available fulfillment option.']);
+        if ($choice['provider_key'] === self::DISPATCH_PROVIDER) {
+            return $choice + ['quote' => new ShippingQuote(0, $request->currency, $choice['option']->label)];
+        }
         $quote = $this->runtime->providers()->get('fulfillment', $choice['provider_key'])->quote(
             new ShippingRequest($request->subtotalMinor, $request->currency, $request->country, $request->postalCode, $choice['option']->id),
         );

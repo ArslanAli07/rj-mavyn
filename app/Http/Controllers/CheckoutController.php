@@ -10,6 +10,7 @@ use App\Services\OrderPlacementService;
 use App\Services\PaymentMethodService;
 use App\Services\Payments\PaymentService;
 use App\Services\ShippingService;
+use App\Support\Countries;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -63,6 +64,7 @@ class CheckoutController extends Controller
 
     public function quote(Request $request): JsonResponse
     {
+        $this->defaultBuiltInDispatch($request);
         $input = $request->validate([
             'idempotency_key' => 'required|string|uuid',
             'first_name' => 'required|string|max:100', 'last_name' => 'required|string|max:100',
@@ -73,12 +75,12 @@ class CheckoutController extends Controller
             'postal_code' => 'nullable|string|max:30', 'payment_method' => 'required|string|max:100', 'order_notes' => 'nullable|string|max:1000',
         ]);
 
-        return response()->json(app(CheckoutReview::class)->issue($input));
+        return response()->json(app(CheckoutReview::class)->issue($this->normalizeCountry($input)));
     }
 
     public function options(Request $request): JsonResponse
     {
-        $input = $request->validate(['country' => 'required|string|max:100', 'postal_code' => 'nullable|string|max:30']);
+        $input = $this->normalizeCountry($request->validate(['country' => 'required|string|max:100', 'postal_code' => 'nullable|string|max:30']));
         $shipping = app(ShippingService::class);
         $totals = $this->cart->totals();
         $choices = $shipping->choices($shipping->request(Money::minor($totals['subtotal']), $input['country'], postalCode: $input['postal_code'] ?? null));
@@ -91,6 +93,7 @@ class CheckoutController extends Controller
 
     public function placeOrder(Request $request): RedirectResponse|JsonResponse
     {
+        $this->defaultBuiltInDispatch($request);
         $data = $request->validate([
             'review_token' => 'nullable|string|max:128',
             'idempotency_key' => 'required|string|uuid',
@@ -114,7 +117,7 @@ class CheckoutController extends Controller
             'order_notes' => 'nullable|string|max:1000',
         ]);
 
-        $placement = $this->orders->place($data, $request->file('payment_receipt'));
+        $placement = $this->orders->place($this->normalizeCountry($data), $request->file('payment_receipt'));
         $order = $placement->order;
 
         // Save order ID in session so guest checkout works on successive pages
@@ -128,6 +131,8 @@ class CheckoutController extends Controller
                 'replayed' => $placement->replayed,
                 'tracking_url' => route('orders.track-guest', $order->tracking_token),
                 'payment_action' => app(PaymentService::class)->checkoutAction($order),
+                // Where a non-gateway order continues: COD confirmation, or manual payment instructions.
+                'next_url' => $order->payment_method === 'cod' ? route('checkout.success', $order->id) : route('checkout.payment-instructions', $order->id),
             ]);
         }
 
@@ -159,5 +164,27 @@ class CheckoutController extends Controller
         $this->access->authorizeCustomer($order);
 
         return view('pages.order-success', compact('order'));
+    }
+
+    /** Without fulfillment plugins there is nothing to choose, so the single built-in option applies. */
+    private function defaultBuiltInDispatch(Request $request): void
+    {
+        if (! $request->filled('shipping_option') && ! $request->filled('delivery_zone_id') && app(ShippingService::class)->usesBuiltInDispatch()) {
+            $request->merge(['shipping_option' => ShippingService::DISPATCH_PROVIDER.':'.ShippingService::DISPATCH_OPTION]);
+        }
+    }
+
+    /**
+     * Store one canonical spelling ("United States") whatever the customer typed ("US", "usa").
+     * Quote and placement normalize identically, so the reviewed total and idempotency hash still match.
+     */
+    private function normalizeCountry(array $data): array
+    {
+        $code = Countries::code($data['country'] ?? null);
+        if ($code !== null) {
+            $data['country'] = Countries::name($code);
+        }
+
+        return $data;
     }
 }

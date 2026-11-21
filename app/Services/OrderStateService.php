@@ -75,6 +75,13 @@ class OrderStateService
                 }
                 // Fulfillment never implies staff confirmation that money was received.
                 $order->update($payload);
+                if ($status === 'cancelled' && $oldStatus !== 'cancelled') {
+                    // Placement counted these units toward best sellers; cancelled orders are terminal, so undo once.
+                    foreach ($order->items()->whereNotNull('product_id')->get(['product_id', 'quantity']) as $item) {
+                        DB::table('products')->where('id', $item->product_id)
+                            ->update(['sales_count' => DB::raw('CASE WHEN sales_count > '.(int) $item->quantity.' THEN sales_count - '.(int) $item->quantity.' ELSE 0 END')]);
+                    }
+                }
                 if ($notifyCustomer && $status !== $oldStatus) {
                     app(NotificationOutboxService::class)->recordStatusUpdate($order, $oldStatus);
                 }

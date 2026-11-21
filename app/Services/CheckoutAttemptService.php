@@ -79,6 +79,7 @@ class CheckoutAttemptService
             'currency' => $item->currency, 'pricing_revision' => (int) $item->pricing_revision,
             'price' => (string) $item->price, 'configuration' => $item->configuration_signature,
             'options' => $item->options_snapshot ?? [], 'special_request' => $item->special_request,
+            'customization' => $item->customization ?? null,
         ])->values()->all();
 
         return hash('sha256', json_encode(['items' => $rows, 'coupon' => session('coupon_code')], JSON_THROW_ON_ERROR));

@@ -1,0 +1,6 @@
+{
+    "name": "test/card-only",
+    "type": "library",
+    "require": {"php": "^8.3", "mavyn/core": "^0.1", "mavyn/contracts": "^0.1"},
+    "extra": {"mavyn": {"kind": "plugin", "id": "test.cardonly", "name": "Card-only gateway fixture (no fulfillment)", "provider": "Tests\\Fixtures\\CardOnly\\CardOnlyPlugin", "capabilities": ["payment.provider"]}}
+}

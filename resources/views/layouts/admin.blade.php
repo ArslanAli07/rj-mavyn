@@ -74,6 +74,14 @@
                 </span>
             </a>
 @endif
+            @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.measurements.index'))
+<a href="{{ route('admin.measurements.index') }}" class="admin-nav-item {{ request()->routeIs('admin.measurements.*') ? 'active' : '' }}">
+                <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 7v10h16V7M8 7v3m4-3v4m4-4v3"/></svg>
+                <span class="flex-grow-1">Measurements</span>
+                @php($newMeasurements = \App\Models\MeasurementSubmission::whereNull('reviewed_at')->count())
+                @if($newMeasurements > 0)<span class="ms-auto px-2 rounded-pill small fw-semibold lh-sm bg-primary-subtle text-primary">{{ $newMeasurements }}</span>@endif
+            </a>
+            @endif
             @if(\App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.customers.index'))
 <a href="{{ route('admin.customers.index') }}" class="admin-nav-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                 <svg class="admin-width-5 admin-height-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>

@@ -55,6 +55,16 @@ final class AdminPermissions
         if ($domain === 'staff') {
             return ['staff.manage'];
         }
+        if ($name === 'admin.orders.design') {
+            // Customer design files are private uploads, like payment receipts.
+            return ['orders.view', 'orders.receipts'];
+        }
+        if ($domain === 'measurements') {
+            // Customer measurement submissions belong to order handling; body photos are private like receipts.
+            return match ($action) {
+                'index', 'show' => ['orders.view'], 'photo' => ['orders.view', 'orders.receipts'], 'update' => ['orders.view', 'orders.manage'], default => null
+            };
+        }
         if ($domain === 'audit') {
             return ['audit.view', 'extensions.view', 'extensions.manage'];
         }

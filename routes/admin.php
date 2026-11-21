@@ -85,6 +85,13 @@ Route::prefix('admin')->name('admin.')->middleware(['admin', 'admin.permissions'
     Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('orders/{order}/receipt', [AdminOrderController::class, 'receipt'])->name('orders.receipt');
     Route::get('orders/{order}/invoice', [AdminOrderController::class, 'invoice'])->name('orders.invoice');
+    Route::get('orders/{order}/items/{item}/design/{index}', [AdminOrderController::class, 'design'])->whereNumber(['item', 'index'])->name('orders.design');
+
+    // Customer measurement submissions (Custom Size / Custom Made orders)
+    Route::get('measurements', [\App\Http\Controllers\Admin\MeasurementController::class, 'index'])->name('measurements.index');
+    Route::get('measurements/{measurement}', [\App\Http\Controllers\Admin\MeasurementController::class, 'show'])->name('measurements.show');
+    Route::patch('measurements/{measurement}', [\App\Http\Controllers\Admin\MeasurementController::class, 'update'])->name('measurements.update');
+    Route::get('measurements/{measurement}/photos/{index}', [\App\Http\Controllers\Admin\MeasurementController::class, 'photo'])->whereNumber('index')->name('measurements.photo');
 
     // Customers
     Route::get('customers', [AdminCustomerController::class, 'index'])->name('customers.index');

@@ -62,13 +62,13 @@
                     . $itemsText . "\n"
                     . "*Subtotal:* " . order_price($order, $order->subtotal) . "\n"
                     . ($order->discount_amount > 0 ? "*Discount:* -" . order_price($order, $order->discount_amount) . "\n" : "")
-                    . "*Delivery Fee:* " . ($order->delivery_fee > 0 ? order_price($order, $order->delivery_fee) : (is_null($order->delivery_zone_id) ? "To be confirmed" : "Free")) . "\n"
+                    . "*Delivery Fee:* " . $order->delivery_fee_label . "\n"
                     . "*Grand Total:* *" . order_price($order, $order->grand_total) . "*\n\n"
                     . "*Customer Details:*\n"
                     . "Name: " . $order->customer_name . "\n"
                     . "Phone: " . $order->customer_phone . "\n"
-                    . "Area/Zone: " . $order->delivery_area . "\n"
-                    . "Address: " . str_replace("\n", " ", $order->delivery_address) . "\n\n"
+                    . "Delivery: " . $order->delivery_method_label . "\n"
+                    . "Address: " . str_replace("\n", " ", $order->full_delivery_address) . "\n\n"
                     . "Attached is my payment screenshot. Please verify and confirm my order.";
 
                 $waText = urlencode($messageString);

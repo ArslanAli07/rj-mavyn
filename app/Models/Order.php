@@ -100,6 +100,17 @@ class Order extends Model
         return $this->belongsTo(DeliveryZone::class);
     }
 
+    public function measurementSubmissions(): HasMany
+    {
+        return $this->hasMany(MeasurementSubmission::class)->latest();
+    }
+
+    /** Custom Size / custom-made items need the customer's body measurements before production. */
+    public function getNeedsMeasurementsAttribute(): bool
+    {
+        return $this->items->contains(fn ($item) => preg_match('/custom\s*size|made[\s-]*to[\s-]*measure|custom\s*made/i', ($item->variant_name ?? '').' '.($item->product_title ?? '')) === 1);
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
@@ -113,6 +124,35 @@ class Order extends Model
     public function getStoreNameAttribute(): string
     {
         return $this->brand_snapshot['name'] ?? StoreIdentity::snapshot()['name'];
+    }
+
+    /**
+     * Street, city + postal code and country. Legacy local-delivery orders keep their zone/area as part
+     * of the address; plugin shipping methods (e.g. "Home Delivery") are a method, shown separately.
+     */
+    public function getFullDeliveryAddressAttribute(): string
+    {
+        return collect([
+            $this->delivery_address,
+            $this->delivery_zone_id ? $this->delivery_area : null,
+            trim(implode(' ', array_filter([$this->delivery_city, $this->delivery_postal_code]))),
+            $this->delivery_country,
+        ])->map(fn ($part) => trim((string) $part))->filter()->implode(', ');
+    }
+
+    /** "$ 10", "Free" (quoted at checkout, incl. free-shipping thresholds) or "To be confirmed" (legacy unquoted orders). */
+    public function getDeliveryFeeLabelAttribute(): string
+    {
+        if ((float) $this->delivery_fee > 0) {
+            return order_price($this, $this->delivery_fee);
+        }
+
+        return ($this->shipping_snapshot || $this->delivery_zone_id) ? 'Free' : 'To be confirmed';
+    }
+
+    public function getDeliveryMethodLabelAttribute(): ?string
+    {
+        return $this->shipping_snapshot['label'] ?? ($this->delivery_area ?: null);
     }
 
     public function getPaymentMethodLabelAttribute(): string

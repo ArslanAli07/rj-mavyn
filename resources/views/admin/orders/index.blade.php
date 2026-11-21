@@ -93,7 +93,7 @@
                                     <span class="fw-semibold text-body d-block">{{ $o->customer_name }}</span>
                                     <span class="text-body-secondary small">{{ $o->customer_phone }} · {{ $o->customer_email }}</span>
                                 </td>
-                                <td class="text-body-secondary">{{ $o->created_at->format('M d, Y h:i A') }}</td>
+                                <td class="text-body-secondary">{{ store_time($o->created_at)->format('M d, Y h:i A') }}</td>
                                 <td>
                                     <span class="fw-semibold text-body d-block">{{ $o->payment_method_label }}</span>
                                     <span class="admin-status-pill payment-status-{{ $o->payment_status }}">

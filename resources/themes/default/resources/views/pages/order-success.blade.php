@@ -45,14 +45,14 @@
                 <div>
                     <span class="text-espresso-400 block font-medium">Shipping Address:</span>
                     <span class="font-bold text-espresso-800 text-sm">
-                        {{ $order->delivery_address }}, {{ $order->delivery_area }}, {{ $order->delivery_city }}, {{ $order->delivery_country }}
+                        {{ $order->full_delivery_address }}
                     </span>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-cream-100">
                     <div>
                         <span class="text-espresso-400 block font-medium">Payment Method:</span>
-                        <span class="font-bold text-espresso-800 uppercase text-sm">{{ $order->payment_method }}</span>
+                        <span class="font-bold text-espresso-800 uppercase text-sm">{{ $order->payment_method_label }}</span>
                     </div>
                     <div>
                         <span class="text-espresso-400 block font-medium">Payment Status:</span>
@@ -60,6 +60,15 @@
                     </div>
                 </div>
             </div>
+
+            @if($order->needs_measurements)
+                <div class="border border-cream-200 rounded-2xl p-5 mb-6 max-w-md mx-auto text-sm text-left">
+                    <span class="font-bold block mb-1">Next step: send your measurements</span>
+                    <p class="text-espresso-600 mb-3 leading-relaxed">Your order includes a Custom Size or made-to-measure piece. Send your body measurements with order number {{ $order->order_number }} so we can start production.</p>
+                    <a href="{{ route('guide.measurement-form', ['order' => $order->order_number]) }}" class="btn-primary inline-block px-5 py-2 rounded-full text-xs">Send measurements</a>
+                    <a href="{{ route('guide.how-to-measure') }}" class="underline text-xs ml-3">How to measure</a>
+                </div>
+            @endif
 
             <div class="bg-primary-50 border border-primary-100 rounded-2xl p-5 mb-8 max-w-md mx-auto text-xs">
                 <span class="text-primary-700 font-bold block mb-1">Live Order Tracking Link</span>

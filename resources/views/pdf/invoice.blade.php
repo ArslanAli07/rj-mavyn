@@ -4,25 +4,32 @@
     <meta charset="utf-8">
     <title>Invoice - {{ $order->order_number }}</title>
     <style>
+        /* 58mm roll with 3mm margins: 32 Courier columns at 7.5pt (0.6em advance) = 144pt of 147pt. */
         @page {
-            margin: 4mm 4mm;
+            margin: 3mm 3mm;
         }
         body {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 10pt;
+            font-size: 7.5pt;
             line-height: 1.3;
-            white-space: pre;
             margin: 0;
             padding: 0;
+        }
+        /* Preserve column padding inside each receipt line only; newlines between lines must not render. */
+        div {
+            white-space: pre;
+            height: 1.3em;
+            overflow: hidden;
         }
     </style>
 </head>
 <body>
 @php
-    // Calibrate: print str_repeat('X', $LW) and adjust LW until it exactly fills one line
+    // Receipt width in characters; the controller sizes the paper to fit exactly this many columns.
     $LW = 32;
 
-    function padLine($left, $right, $width = 32) {
+    // Closures (not named functions) so the view can render more than once per request.
+    $padLine = function ($left, $right, $width = 32) {
         $left = (string) $left;
         $right = (string) $right;
         $space = $width - mb_strlen($left) - mb_strlen($right);
@@ -31,55 +38,105 @@
             $space = $width - mb_strlen($left) - mb_strlen($right);
         }
         return $left . str_repeat(' ', max($space, 1)) . $right;
-    }
+    };
 
-    function centerLine($text, $width = 32) {
+    $centerLine = function ($text, $width = 32) {
         $text = (string) $text;
         if (mb_strlen($text) >= $width) return $text;
-        $pad = (int) floor(($width - mb_strlen($text)) / 2);
-        return str_repeat(' ', $pad) . $text;
-    }
+        return str_repeat(' ', (int) floor(($width - mb_strlen($text)) / 2)) . $text;
+    };
 
-    function ruleLine($width = 32, $char = '-') {
-        return str_repeat($char, $width);
-    }
+    $ruleLine = fn ($width = 32, $char = '-') => str_repeat($char, $width);
+
+    // Word-wrap to the receipt width (hard-breaking long words) so nothing is clipped at the page edge.
+    $wrap = function ($text, $width = 32, $indent = '') {
+        $lines = [];
+        foreach (preg_split('/\R/u', trim((string) $text)) as $paragraph) {
+            $current = '';
+            foreach (preg_split('/\s+/u', trim($paragraph), -1, PREG_SPLIT_NO_EMPTY) as $word) {
+                $room = $width - mb_strlen($indent);
+                while (mb_strlen($word) > $room) {
+                    if ($current !== '') { $lines[] = $indent . $current; $current = ''; }
+                    $lines[] = $indent . mb_substr($word, 0, $room);
+                    $word = mb_substr($word, $room);
+                }
+                if ($current === '') { $current = $word; }
+                elseif (mb_strlen($indent . $current . ' ' . $word) <= $width) { $current .= ' ' . $word; }
+                else { $lines[] = $indent . $current; $current = $word; }
+            }
+            if ($current !== '') { $lines[] = $indent . $current; }
+        }
+        return $lines ?: [''];
+    };
+
+    $shipping = $order->shipping_snapshot;
+    $deliveryAmount = $order->delivery_fee > 0
+        ? order_price($order, $order->delivery_fee)
+        : (($shipping || $order->delivery_zone_id) ? 'Free' : 'To confirm');
+    $address = collect([$order->delivery_address, trim(implode(' ', array_filter([$order->delivery_city, $order->delivery_postal_code]))), $order->delivery_country])
+        ->filter(fn ($part) => trim((string) $part) !== '')->implode("\n");
 
     $siteName = $order->store_name;
     $sitePhone = trim((string) setting('site_phone'));
 @endphp
-<div>{{ centerLine(strtoupper($siteName), $LW) }}</div>
-<div>{{ centerLine($order->brand_snapshot['tagline'] ?? '', $LW) }}</div>
+@foreach($wrap(mb_strtoupper($siteName), $LW) as $line)
+<div>{{ $centerLine($line, $LW) }}</div>
+@endforeach
+@foreach($wrap($order->brand_snapshot['tagline'] ?? '', $LW) as $line)
+<div>{{ $centerLine($line, $LW) }}</div>
+@endforeach
 
 @if($sitePhone)
-<div>{{ centerLine($sitePhone, $LW) }}</div>
+<div>{{ $centerLine($sitePhone, $LW) }}</div>
 @endif
-<div>{{ ruleLine($LW) }}</div>
-<div>{{ centerLine('INVOICE', $LW) }}</div>
-<div>{{ centerLine($order->order_number, $LW) }}</div>
-<div>{{ ruleLine($LW) }}</div>
+<div>{{ $ruleLine($LW) }}</div>
+<div>{{ $centerLine('INVOICE', $LW) }}</div>
+@foreach($wrap($order->order_number, $LW) as $line)
+<div>{{ $centerLine($line, $LW) }}</div>
+@endforeach
+<div>{{ $ruleLine($LW) }}</div>
 <div>DATE</div>
-<div>{{ $order->created_at->tz('Asia/Karachi')->format('d M Y h:i A') }}</div>
+<div>{{ store_time($order->created_at)->format('d M Y h:i A T') }}</div>
 <div></div>
 <div>PAYMENT</div>
-<div>{{ $order->payment_method_label }} ({{ ucfirst($order->payment_status) }})</div>
+@foreach($wrap($order->payment_method_label . ' (' . ucfirst($order->payment_status) . ')', $LW) as $line)
+<div>{{ $line }}</div>
+@endforeach
 <div></div>
 <div>CUSTOMER</div>
-<div>{{ $order->customer_name }}</div>
+@foreach($wrap($order->customer_name, $LW) as $line)
+<div>{{ $line }}</div>
+@endforeach
 <div></div>
 <div>PHONE</div>
-<div>{{ $order->customer_phone }}</div>
-@if($order->delivery_address)
+@foreach($wrap($order->customer_phone, $LW) as $line)
+<div>{{ $line }}</div>
+@endforeach
+@if($address !== '')
 <div></div>
 <div>ADDRESS</div>
-<div>{{ $order->delivery_address }}</div>
+@foreach($wrap($address, $LW) as $line)
+<div>{{ $line }}</div>
+@endforeach
 @endif
-<div>{{ ruleLine($LW) }}</div>
-<div>{{ padLine('ITEM', 'AMOUNT', $LW) }}</div>
-<div>{{ ruleLine($LW) }}</div>
+@if($shipping)
+<div></div>
+<div>DELIVERY METHOD</div>
+@foreach($wrap($shipping['label'] ?? $order->delivery_area, $LW) as $line)
+<div>{{ $line }}</div>
+@endforeach
+@endif
+<div>{{ $ruleLine($LW) }}</div>
+<div>{{ $padLine('ITEM', 'AMOUNT', $LW) }}</div>
+<div>{{ $ruleLine($LW) }}</div>
 @foreach($order->items as $item)
-<div>{{ strtoupper($item->product_title) }}</div>
+@foreach($wrap(mb_strtoupper($item->product_title), $LW) as $line)
+<div>{{ $line }}</div>
+@endforeach
 @if($item->variant_label)
-<div>  {{ $item->variant_label }}</div>
+@foreach($wrap($item->variant_label, $LW, '  ') as $line)
+<div>{{ $line }}</div>
+@endforeach
 @endif
 @foreach($item->options_snapshot ?? [] as $option)
 @php
@@ -88,35 +145,50 @@
         $optLine .= ' (' . ((float) $option['price_adjustment'] > 0 ? '+' : '') . order_price($order, $option['price_adjustment']) . ')';
     }
 @endphp
-<div>{{ $optLine }}</div>
+@foreach($wrap($optLine, $LW, '  ') as $line)
+<div>{{ $line }}</div>
+@endforeach
+@endforeach
+@foreach(\App\Services\ProductCustomizationService::lines($item->customization) as $custom)
+@foreach($wrap($custom['label'] . ': ' . $custom['value'], $LW, '  ') as $line)
+<div>{{ $line }}</div>
+@endforeach
 @endforeach
 @if($item->special_request)
-<div>  Note: {{ $item->special_request }}</div>
+@foreach($wrap('Note: ' . $item->special_request, $LW, '  ') as $line)
+<div>{{ $line }}</div>
+@endforeach
 @endif
-<div>{{ padLine($item->quantity . ' x ' . order_price($order, $item->unit_price), order_price($order, $item->total_price), $LW) }}</div>
+<div>{{ $padLine($item->quantity . ' x ' . order_price($order, $item->unit_price), order_price($order, $item->total_price), $LW) }}</div>
 <div></div>
 @endforeach
-<div>{{ ruleLine($LW) }}</div>
-<div>{{ padLine('Subtotal', order_price($order, $order->subtotal), $LW) }}</div>
+<div>{{ $ruleLine($LW) }}</div>
+<div>{{ $padLine('Subtotal', order_price($order, $order->subtotal), $LW) }}</div>
 @if($order->discount_amount > 0)
-<div>{{ padLine('Discount', '-' . order_price($order, $order->discount_amount), $LW) }}</div>
+<div>{{ $padLine('Discount', '-' . order_price($order, $order->discount_amount), $LW) }}</div>
 @endif
 @if($order->tax_amount > 0)
-<div>{{ padLine('Tax', order_price($order, $order->tax_amount), $LW) }}</div>
+<div>{{ $padLine('Tax', order_price($order, $order->tax_amount), $LW) }}</div>
 @endif
-<div>{{ padLine('Delivery', $order->delivery_fee > 0 ? order_price($order, $order->delivery_fee) : (is_null($order->delivery_zone_id) ? 'To confirm' : 'Free'), $LW) }}</div>
-<div>{{ ruleLine($LW) }}</div>
-<div>{{ padLine('TOTAL', order_price($order, $order->grand_total), $LW) }}</div>
-<div>{{ ruleLine($LW) }}</div>
+<div>{{ $padLine('Delivery', $deliveryAmount, $LW) }}</div>
+<div>{{ $ruleLine($LW) }}</div>
+<div>{{ $padLine('TOTAL', order_price($order, $order->grand_total), $LW) }}</div>
+<div>{{ $ruleLine($LW) }}</div>
 @if($order->order_notes)
 <div>NOTES:</div>
-<div>{{ $order->order_notes }}</div>
-<div>{{ ruleLine($LW) }}</div>
+@foreach($wrap($order->order_notes, $LW) as $line)
+<div>{{ $line }}</div>
+@endforeach
+<div>{{ $ruleLine($LW) }}</div>
 @endif
-<div>{{ centerLine('Thank you for choosing', $LW) }}</div>
-<div>{{ centerLine($siteName . '.', $LW) }}</div>
+<div>{{ $centerLine('Thank you for choosing', $LW) }}</div>
+@foreach($wrap($siteName . '.', $LW) as $line)
+<div>{{ $centerLine($line, $LW) }}</div>
+@endforeach
 @if($sitePhone)
-<div>{{ centerLine('Questions? ' . $sitePhone, $LW) }}</div>
+@foreach($wrap('Questions? ' . $sitePhone, $LW) as $line)
+<div>{{ $centerLine($line, $LW) }}</div>
+@endforeach
 @endif
 </body>
 </html>

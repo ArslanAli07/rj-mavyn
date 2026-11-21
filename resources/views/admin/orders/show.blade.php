@@ -55,10 +55,43 @@
                 <div class="">
                     <span class="text-body-secondary d-block fw-medium">Detailed Delivery Address:</span>
                     <span class="fw-semibold text-body lh-lg">
-                        {{ $order->delivery_address }}, {{ $order->delivery_area }}, {{ $order->delivery_city }}, {{ $order->delivery_country }}
+                        {{ $order->full_delivery_address }}
                     </span>
                 </div>
+
+                @if($order->delivery_method_label)
+                    <div class="">
+                        <span class="text-body-secondary d-block fw-medium">Delivery Method:</span>
+                        <span class="fw-semibold text-body">{{ $order->delivery_method_label }}@if((float) $order->delivery_fee > 0) · {{ order_price($order, $order->delivery_fee) }}@elseif(! str_contains($order->delivery_method_label, 'Free')) · Free @endif</span>
+                    </div>
+                @endif
+
+                <div class="">
+                    <span class="text-body-secondary d-block fw-medium">Placed:</span>
+                    <span class="fw-semibold text-body">{{ store_time($order->created_at)->format('M d, Y h:i A T') }}</span>
+                </div>
             </div>
+
+            {{-- Customer measurements (Custom Size / Custom Made) --}}
+            @php($measurementSubmissions = $order->measurementSubmissions)
+            @if($measurementSubmissions->isNotEmpty() || $order->needs_measurements)
+                <div class="card bg-white border border-light-subtle rounded-2 p-4 shadow-sm">
+                    <h3 class="text-body border-bottom border-light-subtle pb-2 mb-3 admin-section-title">Customer measurements</h3>
+                    @forelse($measurementSubmissions as $submission)
+                        <div class="{{ $loop->first ? '' : 'border-top border-light-subtle pt-3 mt-3' }}">
+                            <div class="d-flex flex-wrap justify-content-between gap-2 small mb-2">
+                                <span><span class="fw-semibold">{{ $submission->garment_label }} · {{ ucfirst($submission->fit) }}</span> from {{ $submission->name }} · {{ store_time($submission->created_at)->format('M d, Y h:i A') }}</span>
+                                <span>@if($submission->reviewed_at)<span class="badge bg-success-subtle text-success">Reviewed</span>@else<span class="badge bg-primary-subtle text-primary">New</span>@endif
+                                    <a href="{{ route('admin.measurements.show', $submission) }}" class="ms-2 fw-semibold">Open</a></span>
+                            </div>
+                            @include('admin.measurements._table')
+                        </div>
+                    @empty
+                        <p class="small mb-0"><span class="badge bg-warning-subtle text-warning-emphasis">Awaiting measurements</span>
+                            This order has a Custom Size or made-to-measure item and no measurements have been received yet. Check <a href="{{ route('admin.measurements.index', ['filter' => 'unmatched']) }}">unlinked submissions</a> before contacting the customer.</p>
+                    @endforelse
+                </div>
+            @endif
 
             {{-- Ordered items --}}
             <div class="card bg-white border border-light-subtle rounded-2 p-4 shadow-sm">
@@ -73,6 +106,13 @@
                             <div class="flex-grow-1 admin-min-width-0">
                                 <p class="fw-semibold text-body text-truncate">{{ $item->product_title }}</p>
                                 @include('components.item-configuration', ['item' => $item, 'class' => 'mt-1 admin-stack-1', 'labelClass' => 'small text-body-secondary', 'optionClass' => 'small text-body-secondary', 'titleClass' => 'fw-medium text-body', 'adjustmentClass' => 'text-body-secondary num'])
+                                @if(! empty($item->customization['files']) && \App\Services\AdminPermissions::canRoute(auth('admin')->user(), 'admin.orders.design'))
+                                    <div class="mt-1 small">
+                                        @foreach($item->customization['files'] as $fileIndex => $file)
+                                            <a href="{{ route('admin.orders.design', [$order, $item, $fileIndex]) }}" target="_blank" rel="noopener" class="d-inline-block me-3 fw-semibold">Download {{ $file['name'] }} ({{ number_format(($file['size'] ?? 0) / 1024) }} KB)</a>
+                                        @endforeach
+                                    </div>
+                                @endif
                                 <p class="text-body-secondary mt-1">SKU: <span class="sku">{{ $item->product_sku }}</span> · Qty: {{ $item->quantity }} @ {{ order_price($order, $item->unit_price) }}</p>
                                 @if($allocation = $item->inventoryReservation)
                                     <p class="small text-body-secondary mt-1">Stock: {{ match($allocation->state) {

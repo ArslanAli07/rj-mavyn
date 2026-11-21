@@ -53,6 +53,9 @@
                                 @endif
                             </div>
                         @endforeach
+                        @foreach(\App\Services\ProductCustomizationService::lines($item->customization) as $custom)
+                            <div style="font-size: 11px; color: #8C7568;">{{ $custom['label'] }}: {{ $custom['value'] }}</div>
+                        @endforeach
                         @if($item->special_request)
                             <div style="font-size: 11px; color: #8C7568;">Note: {{ $item->special_request }}</div>
                         @endif
@@ -68,7 +71,7 @@
     {{-- Pricing Totals --}}
     <div class="total-box">
         Subtotal: <span style="font-weight: normal; color: #2E1B12; margin-right: 15px;">{{ order_price($order, $order->subtotal) }}</span>
-        Delivery: <span style="font-weight: normal; color: #2E1B12; margin-right: 15px;">{{ $order->delivery_fee > 0 ? order_price($order, $order->delivery_fee) : (is_null($order->delivery_zone_id) ? 'To be confirmed' : 'Free') }}</span>
+        Delivery: <span style="font-weight: normal; color: #2E1B12; margin-right: 15px;">{{ $order->delivery_fee_label }}</span>
         @if($order->discount_amount > 0)
             Discount: <span style="font-weight: normal; color: #8FBF9F; margin-right: 15px;">-{{ order_price($order, $order->discount_amount) }}</span>
         @endif
@@ -80,8 +83,20 @@
         </div>
     </div>
 
+    @if($order->needs_measurements)
+        <div style="margin: 24px 0; padding: 16px 18px; background: #f6f5f2; border-left: 3px solid #17120f;">
+            <strong>Next step: send your measurements</strong><br>
+            Your order includes a Custom Size or made-to-measure piece. Please send your body measurements with order number <strong>{{ $order->order_number }}</strong> so we can start production.
+            <div style="margin-top: 10px;">
+                <a href="{{ route('guide.how-to-measure') }}">How to measure</a> &nbsp;·&nbsp;
+                <a href="{{ route('guide.measurement-form', ['order' => $order->order_number]) }}">Send your measurements</a>
+            </div>
+        </div>
+    @endif
+
     <center>
-        @if($order->payment_method !== 'cod')
+        {{-- Manual methods (bank transfer, wallets) have instructions; card gateways and COD do not. --}}
+        @if($order->payment_method !== 'cod' && ! ($order->payment_instructions_snapshot['gateway'] ?? false))
             <a href="{{ route('checkout.payment-instructions', $order->id) }}" class="button" style="margin-right: 10px;">
                 View Payment Instructions
             </a>

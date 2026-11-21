@@ -15,6 +15,7 @@ class OrderItem extends Model
         'weight',
         'variant_name',
         'options_snapshot',
+        'customization',
         'special_request', 'attributes_snapshot',
         'product_title',
         'product_sku',
@@ -29,7 +30,7 @@ class OrderItem extends Model
         return [
             'attributes_snapshot' => 'array',            'unit_price' => 'decimal:2',
             'total_price' => 'decimal:2',
-            'options_snapshot' => 'array', 'media_snapshot' => 'array',
+            'options_snapshot' => 'array', 'customization' => 'array', 'media_snapshot' => 'array',
         ];
     }
 

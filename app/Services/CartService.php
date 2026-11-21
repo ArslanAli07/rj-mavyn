@@ -74,20 +74,22 @@ class CartService
         int $quantity = 1,
         ?ProductVariant $variant = null,
         array $optionValueIds = [],
-        ?string $specialRequest = null
+        ?string $specialRequest = null,
+        ?array $customization = null
     ): void {
-        $this->ownerLocks->synchronized([$this->checkoutOwner()], function () use ($product, $quantity, $variant, $optionValueIds, $specialRequest) {
-            $this->addItem($product, $quantity, $variant, $optionValueIds, $specialRequest);
+        $this->ownerLocks->synchronized([$this->checkoutOwner()], function () use ($product, $quantity, $variant, $optionValueIds, $specialRequest, $customization) {
+            $this->addItem($product, $quantity, $variant, $optionValueIds, $specialRequest, $customization);
         });
     }
 
-    private function addItem(Product $product, int $quantity, ?ProductVariant $variant, array $optionValueIds, ?string $specialRequest): void
+    private function addItem(Product $product, int $quantity, ?ProductVariant $variant, array $optionValueIds, ?string $specialRequest, ?array $customization = null): void
     {
         $config = $this->configurations->resolve(
             $product,
             $variant?->id,
             $optionValueIds,
-            $specialRequest
+            $specialRequest,
+            $customization
         );
 
         $lookup = [
@@ -108,6 +110,7 @@ class CartService
         $item->weight = $config['weight'];
         $item->options_snapshot = $config['options_snapshot'];
         $item->special_request = $config['special_request'];
+        $item->customization = $item->exists ? $item->customization : $config['customization'];
         $item->currency = $config['currency'];
         $item->pricing_revision = $config['pricing_revision'];
         $item->price = $config['unit_price'];
@@ -143,6 +146,7 @@ class CartService
         if ($quantity !== null) {
             if ($quantity <= 0) {
                 $item->delete();
+                app(ProductCustomizationService::class)->deleteFiles($item->customization);
                 $this->resetCache();
 
                 return;
@@ -158,7 +162,8 @@ class CartService
                 $item->product,
                 $variantId ?? $item->product_variant_id,
                 $optionValueIds ?? $existingOptionIds,
-                $updateSpecialRequest ? $specialRequest : $item->special_request
+                $updateSpecialRequest ? $specialRequest : $item->special_request,
+                $item->customization
             );
 
             $existing = $this->query()
@@ -188,6 +193,7 @@ class CartService
             $item->weight = $config['weight'];
             $item->options_snapshot = $config['options_snapshot'];
             $item->special_request = $config['special_request'];
+            $item->customization = $config['customization'];
             $item->configuration_signature = $config['configuration_signature'];
             $item->currency = $config['currency'];
             $item->pricing_revision = $config['pricing_revision'];
@@ -222,7 +228,12 @@ class CartService
     public function remove(int $itemId): void
     {
         $this->ownerLocks->synchronized([$this->checkoutOwner()], function () use ($itemId) {
-            $this->query()->lockForUpdate()->find($itemId)?->delete();
+            $item = $this->query()->lockForUpdate()->find($itemId);
+            if ($item) {
+                $item->delete();
+                // Uploaded design files only live as long as the line that carries them.
+                app(ProductCustomizationService::class)->deleteFiles($item->customization);
+            }
         });
         $this->resetCache();
     }
@@ -295,7 +306,7 @@ class CartService
                     throw ValidationException::withMessages(['cart' => 'A product is unavailable.']);
                 }
                 $config = $this->configurations->resolve($product, $item->product_variant_id,
-                    collect($item->options_snapshot ?? [])->pluck('value_id')->all(), $item->special_request);
+                    collect($item->options_snapshot ?? [])->pluck('value_id')->all(), $item->special_request, $item->customization);
                 $item->price = $config['unit_price'];
                 $item->currency = $context->currency;
                 $item->pricing_revision = $context->revision;
@@ -381,7 +392,8 @@ class CartService
                 'has_unavailable' => $this->items()->contains(fn ($item) => $item->pricing_available === false),
                 'subtotal' => $subtotal,
                 'discount' => $discount,
-                'delivery_fee' => null,
+                // Unknown until checkout when plugins quote by destination; built-in dispatch is always free.
+                'delivery_fee' => app(ShippingService::class)->usesBuiltInDispatch() ? '0.00' : null,
                 'tax' => Money::decimal($tax),
                 'grand_total' => $grandTotal,
                 'coupon' => $coupon,

@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Services\CartService;
 use App\Services\CheckoutAttemptService;
 use App\Services\ProductConfigurationService;
+use App\Services\ProductCustomizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,7 +40,13 @@ class CartController extends Controller
             'special_request' => 'nullable|string|max:255',
             'options.special_request' => 'nullable|string|max:255',
             'quantity' => 'integer|min:1|max:20',
-        ]);
+            'option_inputs' => 'nullable|array',
+            'option_inputs.*' => 'nullable|string|max:120',
+            'pick_order' => 'nullable|array',
+            'pick_order.*' => 'nullable|string|max:120',
+            'design_files' => 'nullable|array|max:'.ProductCustomizationService::MAX_FILES,
+            'design_files.*' => 'file|mimes:png,jpg,jpeg,pdf|max:'.ProductCustomizationService::MAX_KB,
+        ], ['design_files.*.mimes' => 'Design files must be PNG, JPG or PDF.', 'design_files.*.max' => 'Each design file can be up to '.(ProductCustomizationService::MAX_KB / 1024).' MB.']);
 
         $product = Product::active()
             ->with(['variants', 'optionGroups.values'])
@@ -56,21 +63,43 @@ class CartController extends Controller
         $specialRequest = $request->input('special_request')
             ?? $request->input('options.special_request');
 
+        $customizations = app(ProductCustomizationService::class);
+        $storedFiles = [];
+        $added = false;
         try {
+            $customization = $customizations->fromRequest(
+                $product,
+                $request->input('option_value_ids', []),
+                (array) $request->input('option_inputs', []),
+                (array) $request->input('pick_order', [])
+            );
+            // Validate everything (options, required text, product rules) before any file is written.
             $config = $this->configurations->resolve(
                 $product,
                 $request->integer('product_variant_id') ?: null,
                 $request->input('option_value_ids', []),
-                $specialRequest
+                $specialRequest,
+                $customization
             );
+
+            $uploads = array_values(array_filter((array) $request->file('design_files', [])));
+            if ($uploads !== []) {
+                if (! $product->allows_design_upload) {
+                    throw ValidationException::withMessages(['design_files' => 'Design files are not accepted for this product.']);
+                }
+                $storedFiles = $customizations->storeFiles($uploads);
+                $customization = [...($customization ?? []), 'files' => $storedFiles];
+            }
 
             $this->cart->add(
                 $product,
                 $request->integer('quantity', 1),
                 $config['variant'],
                 $request->input('option_value_ids', []),
-                $specialRequest
+                $specialRequest,
+                $customization
             );
+            $added = true;
         } catch (ValidationException $e) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -81,6 +110,11 @@ class CartController extends Controller
             }
 
             throw $e;
+        } finally {
+            // Never leave design files behind when the line was not added (validation or any other failure).
+            if (! $added) {
+                $customizations->deleteFiles(['files' => $storedFiles]);
+            }
         }
 
         $msg = "{$product->title} added to cart!";

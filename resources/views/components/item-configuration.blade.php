@@ -4,9 +4,11 @@
     $options = $item->options_snapshot ?? [];
     $specialRequest = $item->special_request ?? null;
     $attributes = $item->attributes_snapshot ?? [];
+    // Customer details outside the priced options: colour order, Pantone codes, uploaded design files.
+    $customLines = \App\Services\ProductCustomizationService::lines($item->customization ?? null);
 @endphp
 
-@if($variantLabel || !empty($options) || $specialRequest || $attributes)
+@if($variantLabel || !empty($options) || $specialRequest || $attributes || $customLines)
     <div class="{{ $class ?? 'mt-1 space-y-0.5' }}">
         @if($variantLabel)
             <p class="{{ $labelClass ?? 'text-xs text-espresso-600' }}">
@@ -24,6 +26,13 @@
                         ({{ (float) $option['price_adjustment'] > 0 ? '+' : '' }}{{ ($historyOrder ? order_price($historyOrder, $option['price_adjustment']) : format_price($option['price_adjustment'], $item->currency ?? null)) }})
                     </span>
                 @endif
+            </p>
+        @endforeach
+
+        @foreach($customLines as $line)
+            <p class="{{ $optionClass ?? 'text-xs text-espresso-600' }}">
+                <span class="{{ $titleClass ?? 'font-semibold text-espresso-800' }}">{{ $line['label'] }}:</span>
+                {{ $line['value'] }}
             </p>
         @endforeach
 

@@ -7,6 +7,7 @@ use App\Models\LegacyMediaImport;
 use App\Models\Order;
 use App\Services\InventoryService;
 use App\Services\OrderStateService;
+use App\Services\ProductCustomizationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -191,41 +192,33 @@ class OrderController extends Controller
         ])->setPrivate();
     }
 
+    /** Private download of a customer's uploaded design file; the path must belong to this order's item. */
+    public function design(Order $order, int $item, int $index): BinaryFileResponse
+    {
+        $line = $order->items()->whereKey($item)->firstOrFail();
+        $file = $line->customization['files'][$index] ?? abort(404);
+        $path = (string) ($file['path'] ?? '');
+        $disk = Storage::disk(ProductCustomizationService::DISK);
+        abort_unless(str_starts_with($path, 'designs/') && ! str_contains($path, '..') && $disk->exists($path), 404);
+
+        return response()->download($disk->path($path), $file['name'] ?? basename($path), [
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function invoice(Order $order): Response
     {
         $order->load('items', 'user');
 
-        // Base height start at 220mm for 1-column layout + full customer address
-        $baseHeightMm = 80;
+        // 58mm thermal roll, 32 monospace columns. Every receipt line is its own <div>, so the
+        // page height follows the real wrapped line count and the receipt stays on one page.
+        $html = view('pdf.invoice', compact('order'))->render();
+        $lines = substr_count($html, '<div');
+        $widthPt = 58 * 72 / 25.4;
+        $heightPt = (2 * 3 * 72 / 25.4) + ($lines * 7.5 * 1.3) + 12;
 
-        $extraLines = 0;
-        foreach ($order->items as $item) {
-            $extraLines += 3; // Account for item name wrapping on 25% column
-            if ($item->variant_label) {
-                $extraLines++;
-            }
-            $extraLines += count($item->options_snapshot ?? []);
-            if ($item->special_request) {
-                $extraLines++;
-            }
-        }
-
-        if ((float) $order->discount_amount > 0) {
-            $extraLines++;
-        }
-        if ($order->order_notes) {
-            $extraLines += 3;
-        }
-
-        // Scale dynamically without a restrictive upper cap
-        $heightMm = $baseHeightMm + ($extraLines * 6);
-
-        $widthMm = 48;
-        $widthPt = $widthMm * 72 / 25.4;
-        $heightPt = $heightMm * 72 / 25.4;
-
-        $pdf = Pdf::loadView('pdf.invoice', compact('order'))
-            ->setPaper([0, 0, $widthPt, $heightPt], 'portrait');
+        $pdf = Pdf::loadHTML($html)->setPaper([0, 0, $widthPt, $heightPt], 'portrait');
 
         return $pdf->stream("invoice-{$order->order_number}.pdf");
     }

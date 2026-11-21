@@ -16,6 +16,7 @@ class CartItem extends Model
         'weight',
         'configuration_signature',
         'options_snapshot',
+        'customization',
         'special_request',
         'quantity',
         'price', 'currency', 'pricing_revision',
@@ -26,6 +27,7 @@ class CartItem extends Model
         return [
             'price' => 'decimal:2',
             'options_snapshot' => 'array',
+            'customization' => 'array',
         ];
     }
 

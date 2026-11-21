@@ -29,7 +29,7 @@ class ProductConfigurationService
      *     configuration_signature: string
      * }
      */
-    public function resolve(Product $product, ?int $variantId = null, array $optionValueIds = [], ?string $specialRequest = null): array
+    public function resolve(Product $product, ?int $variantId = null, array $optionValueIds = [], ?string $specialRequest = null, ?array $customization = null): array
     {
         $product->loadMissing([
             'variants' => fn ($q) => $q->ordered(),
@@ -46,6 +46,7 @@ class ProductConfigurationService
             throw ValidationException::withMessages(['price' => 'This configuration is unavailable in '.$context->currency.'.']);
         }
         $this->assertGroupRules($product, $selectedValues);
+        $customization = app(ProductCustomizationService::class)->assertValid($product, $selectedValues, $customization);
 
         $optionsSnapshot = $selectedValues
             ->sortBy(fn (ProductOptionValue $value) => [
@@ -82,11 +83,13 @@ class ProductConfigurationService
             'variant_name' => $variantName,
             'options_snapshot' => $optionsSnapshot,
             'special_request' => $specialRequest,
+            'customization' => $customization,
             'configuration_signature' => $this->signature(
                 $product->id,
                 $variant->id,
                 collect($optionsSnapshot)->pluck('value_id')->all(),
-                $specialRequest
+                $specialRequest,
+                $customization
             ),
         ];
     }
@@ -94,9 +97,15 @@ class ProductConfigurationService
     /**
      * @param  array<int, int|string>  $optionValueIds
      */
-    public function signature(int $productId, ?int $variantId, array $optionValueIds = [], ?string $specialRequest = null): string
+    public function signature(int $productId, ?int $variantId, array $optionValueIds = [], ?string $specialRequest = null, ?array $customization = null): string
     {
-        return ProductConfiguration::signature($productId, $variantId, $optionValueIds, $specialRequest);
+        // Customer details (design files, Pantone codes, colour order) must keep otherwise identical lines apart.
+        // The fingerprint leads the text so the core's 255-character cut can never remove it; lines without
+        // customization keep their original signature.
+        $fingerprint = app(ProductCustomizationService::class)->fingerprint($customization);
+        $text = $fingerprint === '' ? $specialRequest : 'c:'.$fingerprint.'|'.ProductConfiguration::normalizeSpecialRequest($specialRequest);
+
+        return ProductConfiguration::signature($productId, $variantId, $optionValueIds, $text);
     }
 
     protected function resolveVariant(Product $product, ?int $variantId): ProductVariant
@@ -164,9 +173,22 @@ class ProductConfigurationService
     protected function assertGroupRules(Product $product, Collection $selectedValues): void
     {
         $grouped = $selectedValues->groupBy('product_option_group_id');
+        $selectedIds = $selectedValues->pluck('id')->map(fn ($id) => (int) $id)->all();
 
         foreach ($product->optionGroups->where('is_active', true) as $group) {
             $count = $grouped->get($group->id, collect())->count();
+
+            // A dependent group (e.g. "Gloves size") only applies while the option it depends on is chosen.
+            if ($group->depends_on_value_id !== null && ! in_array((int) $group->depends_on_value_id, $selectedIds, true)) {
+                if ($count > 0) {
+                    throw ValidationException::withMessages([
+                        'option_value_ids' => "{$group->name} is only available with the option it belongs to.",
+                    ]);
+                }
+
+                continue;
+            }
+
             $min = $group->effectiveMinSelections();
             $max = $group->effectiveMaxSelections();
 

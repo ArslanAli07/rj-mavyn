@@ -11,49 +11,72 @@
             @foreach(array_keys(\Mavyn\Core\Currencies::SYMBOLS) as $code)<option value="{{ $code }}" @selected($code === $reportCurrency)>{{ $code }}</option>@endforeach
         </select><button class="btn btn-primary">Apply</button>
     </form>
-    {{-- Stats Cards --}}
+    {{-- Stats Cards: collected money first, booked/unpaid separately so unpaid COD or abandoned gateway checkouts never read as revenue --}}
     <div class="d-grid admin-cols-1 admin-cols-sm-2 admin-cols-lg-4 gap-4 mb-5">
-        
-        {{-- Total sales --}}
         <div class="card admin-kpi-card bg-white border border-light-subtle rounded-2 p-4 shadow-sm position-relative">
             <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-success-subtle text-success d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.2 0-4 1.1-4 2.5S9.8 13 12 13s4 1.1 4 2.5S14.2 18 12 18s-4-1.1-4-2.5M12 6v14M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
             <div>
-                <span class="text-body-secondary admin-kpi-label">Total sales</span>
-                <span class="admin-kpi text-body mt-1">{{ format_price($stats['total_sales'], $reportCurrency) }}</span>
+                <span class="text-body-secondary admin-kpi-label">Collected revenue</span>
+                <span class="admin-kpi text-body mt-1">{{ format_price($stats['collected'], $reportCurrency) }}</span>
+                <span class="small text-body-secondary d-block mt-1">Paid orders, net of refunds</span>
             </div>
         </div>
-
-        {{-- Today Sales --}}
         <div class="card admin-kpi-card bg-white border border-light-subtle rounded-2 p-4 shadow-sm position-relative">
             <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19h16M5 15l5-5 4 3 6-8m-5 0h5v5"/></svg></div>
             <div>
-                <span class="text-body-secondary admin-kpi-label">Today's sales</span>
-                <span class="admin-kpi text-body mt-1">{{ format_price($stats['today_sales'], $reportCurrency) }}</span>
+                <span class="text-body-secondary admin-kpi-label">Today's collected</span>
+                <span class="admin-kpi text-body mt-1">{{ format_price($stats['today_collected'], $reportCurrency) }}</span>
+                <span class="small text-body-secondary d-block mt-1">Booked today: {{ format_price($stats['today_booked'], $reportCurrency) }}</span>
             </div>
         </div>
-
-        {{-- Pending Orders --}}
+        <div class="card admin-kpi-card bg-white border border-light-subtle rounded-2 p-4 shadow-sm position-relative">
+            <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+            <div>
+                <span class="text-body-secondary admin-kpi-label">Awaiting payment</span>
+                <span class="admin-kpi text-body mt-1">{{ format_price($stats['awaiting_payment'], $reportCurrency) }}</span>
+                <span class="small text-body-secondary d-block mt-1">{{ $stats['awaiting_orders'] }} {{ \Illuminate\Support\Str::plural('order', $stats['awaiting_orders']) }} unpaid (COD / unfinished checkout)</span>
+            </div>
+        </div>
+        <div class="card admin-kpi-card bg-white border border-light-subtle rounded-2 p-4 shadow-sm position-relative">
+            <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-info-subtle text-info-emphasis d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19h16M5 15l5-5 4 3 6-8m-5 0h5v5"/></svg></div>
+            <div>
+                <span class="text-body-secondary admin-kpi-label">Booked sales</span>
+                <span class="admin-kpi text-body mt-1">{{ format_price($stats['booked_sales'], $reportCurrency) }}</span>
+                <span class="small text-body-secondary d-block mt-1">{{ $stats['booked_orders'] }} non-cancelled {{ \Illuminate\Support\Str::plural('order', $stats['booked_orders']) }}</span>
+            </div>
+        </div>
         <div class="card admin-kpi-card bg-white border border-light-subtle rounded-2 p-4 shadow-sm position-relative">
             <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14v14H5zM8 3v4m8-4v4M5 10h14m-7 3v3l2 1"/></svg></div>
             <div>
                 <span class="text-body-secondary admin-kpi-label">Pending / total (all currencies)</span>
-                <span class="admin-kpi text-body mt-1">
-                    {{ $stats['pending_orders'] }} <span class="text-body-secondary small">/ {{ $stats['total_orders'] }}</span>
-                </span>
+                <span class="admin-kpi text-body mt-1">{{ $stats['pending_orders'] }} <span class="text-body-secondary small">/ {{ $stats['total_orders'] }}</span></span>
+                <span class="small text-body-secondary d-block mt-1">Orders awaiting confirmation</span>
             </div>
         </div>
-
-        {{-- Low Stock Alert --}}
+        <div class="card admin-kpi-card bg-white border border-light-subtle rounded-2 p-4 shadow-sm position-relative">
+            <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.2 0-4 1.1-4 2.5S9.8 13 12 13s4 1.1 4 2.5S14.2 18 12 18s-4-1.1-4-2.5M12 6v14M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+            <div>
+                <span class="text-body-secondary admin-kpi-label">Avg order value</span>
+                <span class="admin-kpi text-body mt-1">{{ format_price($stats['average_order_value'], $reportCurrency) }}</span>
+                <span class="small text-body-secondary d-block mt-1">Discounts {{ format_price($stats['total_discounts'], $reportCurrency) }} · Delivery {{ format_price($stats['delivery_fees'], $reportCurrency) }}</span>
+            </div>
+        </div>
+        <div class="card admin-kpi-card bg-white border border-light-subtle rounded-2 p-4 shadow-sm position-relative">
+            <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-danger-subtle text-danger d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4"/></svg></div>
+            <div>
+                <span class="text-body-secondary admin-kpi-label">Refunded</span>
+                <span class="admin-kpi text-body mt-1">{{ format_price($stats['refunded'], $reportCurrency) }}</span>
+                <span class="small text-body-secondary d-block mt-1">Gateway and manual refunds</span>
+            </div>
+        </div>
         <div class="card admin-kpi-card bg-white border border-light-subtle rounded-2 p-4 shadow-sm position-relative">
             <div class="admin-width-8 admin-height-8 position-absolute top-0 end-0 mt-3 me-3 rounded-2 bg-warning-subtle text-warning d-flex align-items-center justify-content-center fs-4"><svg class="admin-width-6 admin-height-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v5m0 3h.01M10.3 3.9L2.1 18.1A2 2 0 003.8 21h16.4a2 2 0 001.7-2.9L13.7 3.9a2 2 0 00-3.4 0z"/></svg></div>
             <div>
                 <span class="text-body-secondary admin-kpi-label">Low stock products</span>
-                <span class="admin-kpi text-body mt-1 {{ $stats['low_stock'] > 0 ? 'text-warning' : '' }}">
-                    {{ $stats['low_stock'] }}
-                </span>
+                <span class="admin-kpi text-body mt-1{{ $stats['low_stock'] > 0 ? ' text-warning' : '' }}">{{ $stats['low_stock'] }}</span>
+                <span class="small text-body-secondary d-block mt-1">Tracked stock at 5 or fewer; made-to-order excluded</span>
             </div>
         </div>
-
     </div>
 
     {{-- Charts and Top Selling --}}
@@ -62,7 +85,7 @@
         {{-- Revenue Chart --}}
         <div class="card bg-white border border-light-subtle rounded-2 p-4 shadow-sm admin-span-lg-2 d-flex flex-column admin-height-96">
             <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-light-subtle pb-2">
-                <h3 class="text-body admin-section-title">7-day revenue trend ({{ $reportCurrency }})</h3>
+                <h3 class="text-body admin-section-title">7-day sales: booked vs collected ({{ $reportCurrency }}, {{ store_timezone() }})</h3>
             </div>
             <div class="flex-grow-1 admin-min-height-0 position-relative">
                 <canvas id="revenueChart" class="w-100 h-100"></canvas>
@@ -124,7 +147,7 @@
                                     <span class="fw-medium text-body d-block">{{ $order->customer_name }}</span>
                                     <span class="text-body-secondary small">{{ $order->customer_phone }}</span>
                                 </td>
-                                <td class="text-body-secondary">{{ $order->created_at->format('Y-m-d H:i') }}</td>
+                                <td class="text-body-secondary">{{ store_time($order->created_at)->format('Y-m-d H:i') }}</td>
                                 <td class="small fw-semibold">{{ $order->payment_method_label }}</td>
                                 <td>
                                     <span class="admin-status-pill payment-status-{{ $order->payment_status }}">
@@ -158,6 +181,7 @@
                     .then(data => {
                         const labels = data.map(item => item.date);
                         const revenues = data.map(item => item.revenue);
+                        const collected = data.map(item => item.collected);
 
                         const tokens = getComputedStyle(document.documentElement);
                         const color = name => tokens.getPropertyValue(name).trim();
@@ -167,13 +191,22 @@
                             data: {
                                 labels: labels,
                                 datasets: [{
-                                    label: @js('Daily revenue ('.$reportCurrency.')'),
+                                    label: @js('Booked ('.$reportCurrency.')'),
                                     data: revenues,
                                     borderColor: color('--chart-revenue'),
                                     backgroundColor: 'rgba(79, 70, 229, 0.08)',
                                     fill: true,
                                     tension: 0.3,
                                     borderWidth: 2
+                                }, {
+                                    label: @js('Collected ('.$reportCurrency.')'),
+                                    data: collected,
+                                    borderColor: color('--success') || '#198754',
+                                    backgroundColor: 'transparent',
+                                    fill: false,
+                                    tension: 0.3,
+                                    borderWidth: 2,
+                                    borderDash: [4, 3]
                                 }]
                             },
                             options: {
@@ -181,7 +214,8 @@
                                 maintainAspectRatio: false,
                                 plugins: {
                                     legend: {
-                                        display: false
+                                        display: true,
+                                        position: 'bottom'
                                     }
                                 },
                                 scales: {
